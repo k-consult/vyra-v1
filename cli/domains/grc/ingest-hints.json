@@ -1,0 +1,42 @@
+{
+  "version": "2.0.0",
+  "idColumn": "id",
+  "nameColumn": "name",
+  "feedMap": {
+    "knowledge/regulations.csv":      "Regulation",
+    "knowledge/controls.csv":         "Control",
+    "execution/tasks.csv":            "Task",
+    "execution/capas.csv":            "CAPA",
+    "execution/verifications.csv":    "Verification",
+    "operational/facilities.csv":     "Facility",
+    "operational/incidents.csv":      "Incident",
+    "operational/assets.csv":         "Asset",
+    "operational/vendors.csv":        "Vendor",
+    "intelligence/findings.csv":      "Finding",
+    "intelligence/risks.csv":         "Risk",
+    "intelligence/rcas.csv":          "RCA",
+    "assurance/evidence.csv":         "Evidence"
+  },
+  "edgeMap": {
+    "edges/incident_regulation.csv":  { "relType": "GOVERNED_BY",    "sourceCol": "incidentId",      "sourceLabel": "Incident",    "targetCol": "regulationId",    "targetLabel": "Regulation" },
+    "edges/incident_control.csv":     { "relType": "FAILED_AGAINST", "sourceCol": "incidentId",      "sourceLabel": "Incident",    "targetCol": "controlId",       "targetLabel": "Control" },
+    "edges/incident_asset.csv":       { "relType": "INVOLVES",       "sourceCol": "incidentId",      "sourceLabel": "Incident",    "targetCol": "assetId",         "targetLabel": "Asset" },
+    "edges/incident_vendor.csv":      { "relType": "MANAGED_BY",     "sourceCol": "incidentId",      "sourceLabel": "Incident",    "targetCol": "vendorId",        "targetLabel": "Vendor" },
+    "edges/incident_finding.csv":     { "relType": "HAS_FINDING",    "sourceCol": "incidentId",      "sourceLabel": "Incident",    "targetCol": "findingId",       "targetLabel": "Finding" },
+    "edges/incident_task.csv":        { "relType": "HAS_TASK",       "sourceCol": "incidentId",      "sourceLabel": "Incident",    "targetCol": "taskId",          "targetLabel": "Task" },
+    "edges/finding_rca.csv":          { "relType": "ANALYSED_BY",    "sourceCol": "findingId",       "sourceLabel": "Finding",     "targetCol": "rcaId",           "targetLabel": "RCA" },
+    "edges/rca_capa.csv":             { "relType": "REQUIRES_CAPA",  "sourceCol": "rcaId",           "sourceLabel": "RCA",         "targetCol": "capaId",          "targetLabel": "CAPA" },
+    "edges/capa_verification.csv":    { "relType": "CLOSES",         "sourceCol": "verificationId",  "sourceLabel": "Verification","targetCol": "capaId",          "targetLabel": "CAPA" }
+  },
+  "defaults": {
+    "status": "active",
+    "version": "1.0"
+  },
+  "riskScoring": {
+    "Critical": { "score": 20, "likelihood": 5, "consequence": 4 },
+    "High":     { "score": 12, "likelihood": 4, "consequence": 3 },
+    "Medium":   { "score": 6,  "likelihood": 3, "consequence": 2 },
+    "Low":      { "score": 2,  "likelihood": 2, "consequence": 1 },
+    "Unknown":  { "score": 0,  "likelihood": 0, "consequence": 0 }
+  }
+}

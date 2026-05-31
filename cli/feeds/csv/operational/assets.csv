@@ -1,0 +1,8 @@
+id,name,assetType,owner,facilityId,vendorId,status,version
+FSD-BLR-WH-B-447,Honeywell NOTIFIER Smoke Detector,equipment,Facility & EHS,FAC-1002,VND-2002,active,1.0
+BIO-RCT-2209,Sartorius Biostat STR 2000L,equipment,Bioprocess Operations,FAC-1003,VND-2003,active,1.0
+CIP-MOGA-884,GEA CIP Cleaning System,equipment,Food Manufacturing,FAC-1004,VND-2004,active,1.0
+RO-HYD-1102,Veolia RO Water Treatment System,equipment,Utilities & Engineering,FAC-1005,VND-2005,active,1.0
+DRN-PKG-221,Drainage System - Packaging Hall,equipment,Packaging Operations,FAC-1006,VND-2006,active,1.0
+WT-ANAND-778,Mettler Toledo ICS685 Scale,equipment,Quality Assurance,FAC-1007,VND-2007,active,1.0
+IOT-CHN-992,Cisco Industrial IoT Gateway,equipment,Digital Manufacturing,FAC-1008,VND-2008,active,1.0

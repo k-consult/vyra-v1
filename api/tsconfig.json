@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "outDir": "./dist",
+    "rootDir": "../",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "baseUrl": "./",
+    "paths": {
+      "@lib/*": ["../lib/*"]
+    },
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["modules/**/*", "index.ts", "API.ts", "types.ts", "setup/**/*", "../lib/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -1,0 +1,16 @@
+id,name,rootCause,analysedAt,findingId,status,version
+RCA-001-01,AMC renewal missed,AMC renewal missed,2026-05-03 17:36,FND-001-01,completed,1.0
+RCA-001-02,Vendor maintenance skipped,Vendor maintenance skipped,2026-05-03 17:36,FND-001-01,completed,1.0
+RCA-001-03,No expiry alerts configured,No expiry alerts configured,2026-05-03 17:36,FND-001-01,completed,1.0
+RCA-002-01,Valve actuator failure,Valve actuator failure,2026-05-04 21:45,FND-002-01,completed,1.0
+RCA-002-02,Delayed preventive maintenance,Delayed preventive maintenance,2026-05-04 21:45,FND-002-01,completed,1.0
+RCA-003-01,Chemical dosing pump malfunction,Chemical dosing pump malfunction,2026-05-05 19:12,FND-003-01,completed,1.0
+RCA-003-02,SOP deviation by operator,SOP deviation by operator,2026-05-05 19:12,FND-003-01,completed,1.0
+RCA-004-01,Filter saturation,Filter saturation,2026-05-06 22:53,FND-004-01,completed,1.0
+RCA-004-02,Missed predictive maintenance,Missed predictive maintenance,2026-05-06 22:53,FND-004-01,completed,1.0
+RCA-005-01,Blocked drainage,Blocked drainage,2026-05-07 18:23,FND-005-01,completed,1.0
+RCA-005-02,Missed safety walkthrough,Missed safety walkthrough,2026-05-07 18:23,FND-005-01,completed,1.0
+RCA-006-01,Sensor drift,Sensor drift,2026-05-08 19:27,FND-006-01,completed,1.0
+RCA-006-02,Calibration scheduling gaps,Calibration scheduling gaps,2026-05-08 19:27,FND-006-01,completed,1.0
+RCA-007-01,Network switch failure,Network switch failure,2026-05-10 00:43,FND-007-01,completed,1.0
+RCA-007-02,Redundancy configuration gaps,Redundancy configuration gaps,2026-05-10 00:43,FND-007-01,completed,1.0

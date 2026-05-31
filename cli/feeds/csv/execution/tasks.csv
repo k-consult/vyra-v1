@@ -1,0 +1,25 @@
+id,name,owner,frequency,priority,dueDate,workflowId,evidenceRequired,status,version
+TSK-001-01,Inspect detector,Priya Nair - QA Executive,incident-driven,Critical,2026-05-03 17:36,,yes,closed,1.0
+TSK-001-02,Renew AMC,Priya Nair - QA Executive,incident-driven,Critical,2026-05-03 17:36,,yes,closed,1.0
+TSK-001-03,Verify fire panel logs,Priya Nair - QA Executive,incident-driven,Critical,2026-05-03 17:36,,yes,closed,1.0
+TSK-001-04,Conduct readiness drill,Priya Nair - QA Executive,incident-driven,Critical,2026-05-03 17:36,,yes,closed,1.0
+TSK-002-01,Pressure calibration,Priya Nair - QA Executive,incident-driven,Critical,2026-05-04 21:45,,yes,closed,1.0
+TSK-002-02,Batch quarantine,Priya Nair - QA Executive,incident-driven,Critical,2026-05-04 21:45,,yes,closed,1.0
+TSK-002-03,SCADA review,Priya Nair - QA Executive,incident-driven,Critical,2026-05-04 21:45,,yes,closed,1.0
+TSK-002-04,Vendor inspection,Priya Nair - QA Executive,incident-driven,Critical,2026-05-04 21:45,,yes,closed,1.0
+TSK-003-01,Conduct ATP swab tests,Priya Nair - QA Executive,incident-driven,High,2026-05-05 19:12,,yes,closed,1.0
+TSK-003-02,Re-run CIP cycle,Priya Nair - QA Executive,incident-driven,High,2026-05-05 19:12,,yes,closed,1.0
+TSK-003-03,Inspect dosing pumps,Priya Nair - QA Executive,incident-driven,High,2026-05-05 19:12,,yes,closed,1.0
+TSK-004-01,Collect water samples,Sanjay Rao - Facility Engineer,incident-driven,High,2026-05-06 22:53,,yes,closed,1.0
+TSK-004-02,Replace RO membranes,Sanjay Rao - Facility Engineer,incident-driven,High,2026-05-06 22:53,,yes,closed,1.0
+TSK-004-03,Validate conductivity,Sanjay Rao - Facility Engineer,incident-driven,High,2026-05-06 22:53,,yes,closed,1.0
+TSK-005-01,Secure area,Priya Nair - QA Executive,incident-driven,Medium,2026-05-07 18:23,,yes,closed,1.0
+TSK-005-02,Capture CCTV,Priya Nair - QA Executive,incident-driven,Medium,2026-05-07 18:23,,yes,closed,1.0
+TSK-005-03,Conduct witness interviews,Priya Nair - QA Executive,incident-driven,Medium,2026-05-07 18:23,,yes,closed,1.0
+TSK-005-04,Drainage inspection,Priya Nair - QA Executive,incident-driven,Medium,2026-05-07 18:23,,yes,closed,1.0
+TSK-006-01,Recalibrate scale,Anita Sharma - Compliance Lead,incident-driven,Medium,2026-05-08 19:27,,yes,closed,1.0
+TSK-006-02,Hold affected batches,Anita Sharma - Compliance Lead,incident-driven,Medium,2026-05-08 19:27,,yes,closed,1.0
+TSK-006-03,Review packaging records,Anita Sharma - Compliance Lead,incident-driven,Medium,2026-05-08 19:27,,yes,closed,1.0
+TSK-007-01,Review SIEM logs,Sanjay Rao - Facility Engineer,incident-driven,High,2026-05-10 00:43,,yes,closed,1.0
+TSK-007-02,Replace switch,Sanjay Rao - Facility Engineer,incident-driven,High,2026-05-10 00:43,,yes,closed,1.0
+TSK-007-03,Validate network redundancy,Sanjay Rao - Facility Engineer,incident-driven,High,2026-05-10 00:43,,yes,closed,1.0

@@ -1,0 +1,17 @@
+id,name,version,status
+REG-OSHA,OSHA,1.0,active
+REG-NBC_INDIA,NBC India,1.0,active
+REG-ISO_45001,ISO 45001,1.0,active
+REG-US_FDA_GMP,US FDA GMP,1.0,active
+REG-EU_GMP_ANNEX_1,EU GMP Annex 1,1.0,active
+REG-ISO_13485,ISO 13485,1.0,active
+REG-FSMA,FSMA,1.0,active
+REG-HACCP,HACCP,1.0,active
+REG-FSSAI_SCHEDULE_4,FSSAI Schedule 4,1.0,active
+REG-USP,USP,1.0,active
+REG-FDA_WATER_SYSTEMS_GU,FDA Water Systems Guidance,1.0,active
+REG-ISO_22000,ISO 22000,1.0,active
+REG-ISO_17025,ISO 17025,1.0,active
+REG-FSSAI_PACKAGING_RULE,FSSAI Packaging Rules,1.0,active
+REG-IEC_62443,IEC 62443,1.0,active
+REG-NIST_CSF,NIST CSF,1.0,active

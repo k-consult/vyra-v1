@@ -1,0 +1,21 @@
+id,name,owner,dueDate,findingId,status,version
+CAPA-001-01,Renew AMC,Priya Nair - QA Executive,2026-05-03 17:36,FND-001-01,closed,1.0
+CAPA-001-02,Replace detector,Priya Nair - QA Executive,2026-05-03 17:36,FND-001-01,closed,1.0
+CAPA-001-03,Configure AMC alerts,Priya Nair - QA Executive,2026-05-03 17:36,FND-001-01,closed,1.0
+CAPA-001-04,Monthly fire audits,Priya Nair - QA Executive,2026-05-03 17:36,FND-001-01,closed,1.0
+CAPA-002-01,Replace valve,Priya Nair - QA Executive,2026-05-04 21:45,FND-002-01,closed,1.0
+CAPA-002-02,Revise PM schedule,Priya Nair - QA Executive,2026-05-04 21:45,FND-002-01,closed,1.0
+CAPA-002-03,Retrain operators,Priya Nair - QA Executive,2026-05-04 21:45,FND-002-01,closed,1.0
+CAPA-003-01,Replace dosing pump,Priya Nair - QA Executive,2026-05-05 19:12,FND-003-01,closed,1.0
+CAPA-003-02,Retrain sanitation crew,Priya Nair - QA Executive,2026-05-05 19:12,FND-003-01,closed,1.0
+CAPA-003-03,Increase ATP frequency,Priya Nair - QA Executive,2026-05-05 19:12,FND-003-01,closed,1.0
+CAPA-004-01,Replace membranes,Sanjay Rao - Facility Engineer,2026-05-06 22:53,FND-004-01,closed,1.0
+CAPA-004-02,Configure predictive alerts,Sanjay Rao - Facility Engineer,2026-05-06 22:53,FND-004-01,closed,1.0
+CAPA-005-01,Improve drainage,Priya Nair - QA Executive,2026-05-07 18:23,FND-005-01,closed,1.0
+CAPA-005-02,Add wet floor sensors,Priya Nair - QA Executive,2026-05-07 18:23,FND-005-01,closed,1.0
+CAPA-005-03,Conduct retraining,Priya Nair - QA Executive,2026-05-07 18:23,FND-005-01,closed,1.0
+CAPA-006-01,Recalibrate scale,Anita Sharma - Compliance Lead,2026-05-08 19:27,FND-006-01,closed,1.0
+CAPA-006-02,Add calibration reminders,Anita Sharma - Compliance Lead,2026-05-08 19:27,FND-006-01,closed,1.0
+CAPA-007-01,Replace switch,Sanjay Rao - Facility Engineer,2026-05-10 00:43,FND-007-01,closed,1.0
+CAPA-007-02,Add failover network,Sanjay Rao - Facility Engineer,2026-05-10 00:43,FND-007-01,closed,1.0
+CAPA-007-03,Update monitoring rules,Sanjay Rao - Facility Engineer,2026-05-10 00:43,FND-007-01,closed,1.0

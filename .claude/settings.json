@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/krishnan/work/projects/vyra-v1/.claude/hooks/eslint-fix.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

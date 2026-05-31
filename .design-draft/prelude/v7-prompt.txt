@@ -1,0 +1,80 @@
+You are a Principal Architect designing a category-defining Agentic GRC platform called Vyra.
+
+We are creating the canonical document:
+
+# Vyra Platform Architecture v7
+
+## Agentic Risk & Compliance Infrastructure
+
+Audience:
+
+* Investors
+* CTOs
+* Enterprise Architects
+* Engineering Teams
+* Design Partners
+
+This is NOT a graph schema document.
+
+It is a platform architecture narrative.
+
+The document must follow a strong throughline:
+
+Regulations
+→ Requirements
+→ Execution
+→ Operations
+→ Signals
+→ Reasoning
+→ Risk
+→ Remediation
+→ Assurance
+
+This is called the Continuous Compliance Loop.
+
+Every chapter must contribute to advancing the reader through this loop.
+
+Key principles:
+
+* Explain the platform before the graph.
+* Explain business capabilities before implementation.
+* Explain agent collaboration before Neo4j.
+* The graph is the platform operating system, not the product.
+* Agents collaborate through shared graph memory.
+* Use a mix of diagrams:
+
+  * Venn diagrams
+  * Network diagrams
+  * Radial diagrams
+  * Lifecycle diagrams
+  * Timelines
+  * Service maps
+* Avoid excessive top-down box diagrams.
+* Keep graph schemas to approximately 20–25% of the document.
+* Focus on platform behavior, reasoning, collaboration, and autonomy.
+
+The architecture should include:
+
+1. Executive Vision
+2. Continuous Compliance Loop
+3. Platform Architecture Overview
+4. Four Interconnected Graphs
+5. Unified Vyra Graph
+6. Platform Services Architecture
+7. Agent Ecosystem
+8. Multi-Agent Collaboration Model
+9. Shared Memory Architecture
+10. Signal Ontology
+11. Control Ontology
+12. Risk Ontology
+13. Jobs-To-Be-Done Architecture
+14. Lifecycle Models
+15. Domain Model
+16. Entity Classification
+17. Unified Graph Model
+18. Query Patterns
+19. Neo4j Implementation Guide
+20. Why Graph Native
+21. Future Architecture
+
+The final result should feel like a modern platform architecture document that explains how Vyra continuously converts regulations into operational assurance.

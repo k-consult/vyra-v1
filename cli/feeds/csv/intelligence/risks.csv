@@ -1,0 +1,8 @@
+id,name,inherentRating,inherentScore,inherentLikelihood,inherentConsequence,residualRating,residualScore,findingId,owner,status,version
+RSK-001,Risk - Quarterly EHS Audit,Critical,18,4,5,Critical,18,FND-001-01,Karthik Iyer - Corporate EHS,closed,1.0
+RSK-002,Risk - Monthly GMP Audit,Critical,20,5,5,Critical,20,FND-002-01,Dr. Mehul Patel - QA Director,closed,1.0
+RSK-003,Risk - Food Safety Audit,High,14,4,4,High,14,FND-003-01,Dr. Mehul Patel - QA Director,closed,1.0
+RSK-004,Risk - Utility Health Audit,High,15,3,5,High,15,FND-004-01,Neha Kapoor - Compliance Manager,closed,1.0
+RSK-005,Risk - Operational Safety Walkthrough,Medium,11,3,4,Medium,11,FND-005-01,Suresh Babu - Operations Director,closed,1.0
+RSK-006,Risk - Calibration Audit,Medium,10,4,3,Medium,10,FND-006-01,Karthik Iyer - Corporate EHS,closed,1.0
+RSK-007,Risk - Cyber-Physical Security Audit,High,17,5,4,High,17,FND-007-01,Dr. Mehul Patel - QA Director,closed,1.0

@@ -1,0 +1,21 @@
+{
+  "name": "@vyra/agents",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npx ts-node --transpile-only runtime/index.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.36.0",
+    "dotenv": "^17.2.3",
+    "ramda": "^0.31.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/ramda": "^0.29.12",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": { "node": ">=20.0.0" }
+}

@@ -1,0 +1,16 @@
+id,name,severity,detectedAt,controlId,incidentId,status,version
+FND-001-01,Critical fire detector offline,Critical,2026-05-03 17:36,CTL-001-01,INC-001,closed,1.0
+FND-001-02,AMC expired 45 days,Critical,2026-05-03 17:36,CTL-001-01,INC-001,closed,1.0
+FND-001-03,Missing calibration records,Critical,2026-05-03 17:36,CTL-001-01,INC-001,closed,1.0
+FND-002-01,Pressure excursions during fermentation,Critical,2026-05-04 21:45,CTL-002-01,INC-002,closed,1.0
+FND-002-02,Delayed alarm acknowledgement,Critical,2026-05-04 21:45,CTL-002-01,INC-002,closed,1.0
+FND-003-01,ATP failures on filler heads,High,2026-05-05 19:12,CTL-003-01,INC-003,closed,1.0
+FND-003-02,Incomplete cleaning cycle,High,2026-05-05 19:12,CTL-003-01,INC-003,closed,1.0
+FND-004-01,Conductivity above threshold,High,2026-05-06 22:53,CTL-004-01,INC-004,closed,1.0
+FND-004-02,Delayed membrane replacement,High,2026-05-06 22:53,CTL-004-01,INC-004,closed,1.0
+FND-005-01,Water accumulation near packaging line,Medium,2026-05-07 18:23,CTL-005-01,INC-005,closed,1.0
+FND-005-02,Missing warning signage,Medium,2026-05-07 18:23,CTL-005-01,INC-005,closed,1.0
+FND-006-01,Scale drift beyond tolerance,Medium,2026-05-08 19:27,CTL-006-01,INC-006,closed,1.0
+FND-006-02,Delayed calibration review,Medium,2026-05-08 19:27,CTL-006-01,INC-006,closed,1.0
+FND-007-01,Loss of sensor telemetry,High,2026-05-10 00:43,CTL-007-01,INC-007,closed,1.0
+FND-007-02,Delayed OT incident response,High,2026-05-10 00:43,CTL-007-01,INC-007,closed,1.0

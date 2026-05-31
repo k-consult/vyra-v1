@@ -1,0 +1,8 @@
+id,name,businessUnit,status,version
+FAC-1002,FAC-1002,Facility & EHS,active,1.0
+FAC-1003,FAC-1003,Bioprocess Operations,active,1.0
+FAC-1004,FAC-1004,Food Manufacturing,active,1.0
+FAC-1005,FAC-1005,Utilities & Engineering,active,1.0
+FAC-1006,FAC-1006,Packaging Operations,active,1.0
+FAC-1007,FAC-1007,Quality Assurance,active,1.0
+FAC-1008,FAC-1008,Digital Manufacturing,active,1.0

@@ -1,0 +1,21 @@
+{
+  "name": "vyra-v1",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "lib",
+    "cli",
+    "agents",
+    "api",
+    "ui"
+  ],
+  "scripts": {
+    "build:lib": "cd lib && npm run build",
+    "setup": "./setup.sh",
+    "ingest": "./ingest.sh",
+    "start": "./run.sh"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

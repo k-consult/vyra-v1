@@ -1,0 +1,16 @@
+id,name,controlType,owner,requirementId,status,version
+CTL-001-01,Fire Safety SOP,policy-sop,Facility & EHS,,active,1.0
+CTL-001-02,AMC Renewal SOP,policy-sop,Facility & EHS,,active,1.0
+CTL-001-03,Emergency Readiness SOP,policy-sop,Facility & EHS,,active,1.0
+CTL-002-01,Bioreactor SOP,policy-sop,Bioprocess Operations,,active,1.0
+CTL-002-02,GMP Batch Control SOP,policy-sop,Bioprocess Operations,,active,1.0
+CTL-003-01,Sanitation SOP,policy-sop,Food Manufacturing,,active,1.0
+CTL-003-02,CIP Validation Procedure,policy-sop,Food Manufacturing,,active,1.0
+CTL-004-01,Water System SOP,policy-sop,Utilities & Engineering,,active,1.0
+CTL-004-02,Utility Monitoring SOP,policy-sop,Utilities & Engineering,,active,1.0
+CTL-005-01,Slip Prevention SOP,policy-sop,Packaging Operations,,active,1.0
+CTL-005-02,Incident Reporting SOP,policy-sop,Packaging Operations,,active,1.0
+CTL-006-01,Calibration SOP,policy-sop,Quality Assurance,,active,1.0
+CTL-006-02,Packaging QA SOP,policy-sop,Quality Assurance,,active,1.0
+CTL-007-01,OT Security SOP,policy-sop,Digital Manufacturing,,active,1.0
+CTL-007-02,Network Incident SOP,policy-sop,Digital Manufacturing,,active,1.0

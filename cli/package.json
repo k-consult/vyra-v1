@@ -1,0 +1,24 @@
+{
+  "name": "@vyra/cli",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "ingest": "npx ts-node --transpile-only orchestration/index.ts",
+    "ingest:dry": "npx ts-node --transpile-only orchestration/index.ts --dry-run",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "csv-parse": "^6.1.0",
+    "csv-stringify": "^6.6.0",
+    "dotenv": "^17.2.3",
+    "ramda": "^0.31.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/ramda": "^0.29.12",
+    "ts-node": "^10.9.0",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": { "node": ">=20.0.0" }
+}

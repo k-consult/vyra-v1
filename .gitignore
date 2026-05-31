@@ -1,0 +1,23 @@
+node_modules/
+dist/
+.env
+.env.local
+CLAUDE.local.md
+
+# Neo4j generated CSVs (copied to Neo4j import dir)
+cli/neo4j-import/
+
+# Generated CLI artifacts
+cli/cypher/
+cli/out/
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+
+# Build
+.next/
+*.tsbuildinfo

@@ -1,0 +1,14 @@
+id,name,outcome,verifiedAt,verifiedBy,capaId,status,version
+VER-001-01,Detector tested successfully,Detector tested successfully,2026-05-03 17:36,Karthik Iyer - Corporate EHS,CAPA-001-01,closed,1.0
+VER-001-02,Fire panel validated,Fire panel validated,2026-05-03 17:36,Karthik Iyer - Corporate EHS,CAPA-001-01,closed,1.0
+VER-002-01,Pressure stability validated,Pressure stability validated,2026-05-04 21:45,Dr. Mehul Patel - QA Director,CAPA-002-01,closed,1.0
+VER-002-02,Batch disposition approved,Batch disposition approved,2026-05-04 21:45,Dr. Mehul Patel - QA Director,CAPA-002-01,closed,1.0
+VER-003-01,Re-cleaning verified,Re-cleaning verified,2026-05-05 19:12,Dr. Mehul Patel - QA Director,CAPA-003-01,closed,1.0
+VER-003-02,ATP passed,ATP passed,2026-05-05 19:12,Dr. Mehul Patel - QA Director,CAPA-003-01,closed,1.0
+VER-004-01,Water quality normalized,Water quality normalized,2026-05-06 22:53,Neha Kapoor - Compliance Manager,CAPA-004-01,closed,1.0
+VER-004-02,QA validated,QA validated,2026-05-06 22:53,Neha Kapoor - Compliance Manager,CAPA-004-01,closed,1.0
+VER-005-01,Area re-inspected,Area re-inspected,2026-05-07 18:23,Suresh Babu - Operations Director,CAPA-005-01,closed,1.0
+VER-005-02,EHS closure approval,EHS closure approval,2026-05-07 18:23,Suresh Babu - Operations Director,CAPA-005-01,closed,1.0
+VER-006-01,QA verified scale accuracy,QA verified scale accuracy,2026-05-08 19:27,Karthik Iyer - Corporate EHS,CAPA-006-01,closed,1.0
+VER-007-01,Network restored,Network restored,2026-05-10 00:43,Dr. Mehul Patel - QA Director,CAPA-007-01,closed,1.0
+VER-007-02,Telemetry validated,Telemetry validated,2026-05-10 00:43,Dr. Mehul Patel - QA Director,CAPA-007-01,closed,1.0
