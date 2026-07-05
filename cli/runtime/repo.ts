@@ -34,7 +34,7 @@ export const loadNodes = async (label: string, rows: Record<string, any>[]): Pro
         RETURN count(n) AS total
     `;
     try {
-        const result = await db().exec(cypher, { rows }) as any[];
+        const result = await db().exec(cypher, { args: { rows } }) as any[];
         const raw = Array.isArray(result) ? result : [result];
         return Number(raw[0]?.total ?? rows.length);
     } catch (err: any) {
@@ -60,7 +60,7 @@ export const loadEdges = async (
         RETURN count(*) AS total
     `;
     try {
-        const result = await db().exec(cypher, { pairs }) as any[];
+        const result = await db().exec(cypher, { args: { pairs } }) as any[];
         const raw = Array.isArray(result) ? result : [result];
         return Number(raw[0]?.total ?? pairs.length);
     } catch (err: any) {

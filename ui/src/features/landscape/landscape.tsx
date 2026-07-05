@@ -306,7 +306,7 @@ export function LandscapeView() {
                         </div>
                         <div>
                             <p className="text-base font-semibold leading-tight">VYRA</p>
-                            <p className="text-xs text-zinc-500 leading-tight">GRC Knowledge Graph</p>
+                            <p className="text-xs text-zinc-500 leading-tight">Compliance Handled.</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-5">
