@@ -21,3 +21,8 @@ logs/
 # Build
 .next/
 *.tsbuildinfo
+
+# Editor
+.vscode/
+
+package-lock.json

@@ -40,7 +40,7 @@ Vyra treats compliance as an operational system.
 ### Traditional Compliance
 
 ```text
-Regulations
+→ Regulations
 → Humans
 → Policies
 → Spreadsheets
@@ -51,7 +51,7 @@ Regulations
 ### Vyra
 
 ```text
-Regulations
+→ Regulations
 → Agents
 → Continuous Compliance
 → Assurance
@@ -67,7 +67,7 @@ The platform continuously transforms obligations into execution, execution into 
 Everything in Vyra exists to support a single operating model.
 
 ```text
-Regulations
+→ Regulations
 → Requirements
 → Execution
 → Operations

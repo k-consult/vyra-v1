@@ -85,7 +85,7 @@ export const project = (ir: GraphIR): ProjectionResult => {
         `CREATE INDEX inc_status  IF NOT EXISTS FOR (n:Incident)  ON (n.status);`,
         `CREATE INDEX fnd_sev     IF NOT EXISTS FOR (n:Finding)   ON (n.severity);`,
         `CREATE INDEX fnd_status  IF NOT EXISTS FOR (n:Finding)   ON (n.status);`,
-        `CREATE INDEX rsk_score   IF NOT EXISTS FOR (n:Risk)      ON (n.residualRisk);`,
+        `CREATE INDEX rsk_score   IF NOT EXISTS FOR (n:Risk)      ON (n.residualScore);`,
         `CREATE INDEX capa_status IF NOT EXISTS FOR (n:CAPA)      ON (n.status);`,
         `CREATE INDEX ast_fac     IF NOT EXISTS FOR (n:Asset)     ON (n.facilityId);`,
     ].join('\n');
