@@ -33,7 +33,7 @@ export const v2: Contract = {
             graph: Graph.Knowledge,
             props: { ...baseProps, referenceDoc: 'referenceDoc', effectiveDate: 'effectiveDate', jurisdictionId: 'jurisdictionId' },
             axes: [Axis.Regulatory],
-            rels: [{ type: 'GOVERNED_BY', targetLabel: 'Jurisdiction', sourceField: 'jurisdictionId' }],
+            rels: [{ type: 'IN_JURISDICTION', targetLabel: 'Jurisdiction', sourceField: 'jurisdictionId' }],
         },
 
         Clause: {
@@ -114,7 +114,7 @@ export const v2: Contract = {
             graph: Graph.Execution,
             props: { ...baseProps, outcome: 'outcome', verifiedAt: 'verifiedAt', verifiedBy: 'verifiedBy', capaId: 'capaId' },
             axes: [Axis.Process],
-            rels: [{ type: 'CLOSES', targetLabel: 'CAPA', sourceField: 'capaId' }],
+            rels: [],
         },
 
         // ── Operational Graph ────────────────────────────────────────────
@@ -155,8 +155,6 @@ export const v2: Contract = {
             axes: [Axis.Enterprise, Axis.Risk],
             rels: [
                 { type: 'OCCURRED_AT', targetLabel: 'Facility', sourceField: 'facilityId' },
-                { type: 'INVOLVES',    targetLabel: 'Asset',    sourceField: 'assetId' },
-                { type: 'MANAGED_BY',  targetLabel: 'Vendor',   sourceField: 'vendorId' },
             ],
         },
 
@@ -222,7 +220,7 @@ export const v2: Contract = {
             graph: Graph.Intelligence,
             props: { ...baseProps, rootCause: 'rootCause', analysedAt: 'analysedAt', findingId: 'findingId' },
             axes: [Axis.Risk],
-            rels: [{ type: 'ANALYSES', targetLabel: 'Finding', sourceField: 'findingId' }],
+            rels: [],
         },
 
         // ── Assurance Graph ──────────────────────────────────────────────

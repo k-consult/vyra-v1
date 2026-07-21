@@ -10,8 +10,8 @@ const db = () => DB.get(config.db.twin.database, {
 
 const TRACE_FORWARD = `
     MATCH path = (reg:Regulation {id: $id})
-                 -[:CONTAINS]->(cls:Clause)
-                 -[:DEFINES]->(req:Requirement)
+                 <-[:BELONGS_TO]-(cls:Clause)
+                 <-[:DEFINED_BY]-(req:Requirement)
                  <-[:IMPLEMENTS]-(ctl:Control)
     RETURN
         properties(reg) AS regulation,
@@ -25,8 +25,8 @@ const TRACE_REVERSE = `
     MATCH path = (fnd:Finding {id: $id})
                  -[:AGAINST]->(ctl:Control)
                  -[:IMPLEMENTS]->(req:Requirement)
-                 <-[:DEFINES]-(cls:Clause)
-                 <-[:CONTAINS]-(reg:Regulation)
+                 -[:DEFINED_BY]->(cls:Clause)
+                 -[:BELONGS_TO]->(reg:Regulation)
     RETURN
         properties(fnd) AS finding,
         properties(ctl) AS control,

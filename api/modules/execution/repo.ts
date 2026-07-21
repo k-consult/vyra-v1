@@ -53,7 +53,7 @@ export const listPrograms = async () => {
 export const listTasks = async (workflowId?: string) => {
     try {
         const cypher = workflowId
-            ? `MATCH (w:Workflow {id: $id})-[:HAS_TASK]->(t:Task) RETURN properties(t) AS task`
+            ? `MATCH (t:Task)-[:PART_OF]->(w:Workflow {id: $id}) RETURN properties(t) AS task`
             : `MATCH (t:Task) RETURN properties(t) AS task LIMIT 200`;
         return await db().fetch2(cypher, { id: workflowId });
     } catch (err: any) {

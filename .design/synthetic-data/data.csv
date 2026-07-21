@@ -1,0 +1,1583 @@
+--- WORKSHEET: 01_Business_Scenario ---
+
+Field,Value,Value2,Value3
+WINAIM Compliance Work Definition Workbook,,,
+"Synthetic seed dataset for Compliance Traceability Network (CTN), Knowledge Graph, AI reasoning, and 52-week operational calendar",,,
+,,,
+SYNTHETIC DATA DISCLAIMER,,,
+"All regulatory authorities, regulation names, clause numbers, standard citations, insurance clauses, and vendor details in this workbook are ILLUSTRATIVE AND SYNTHETIC. They are not real regulatory guidance and have not been independently verified. This dataset is a structural seed for compliance workflow, knowledge-graph, and calendar systems only, and must not be used as, or substituted for, verified regulatory research, legal advice, actual insurance policy wording, or a real compliance determination.",,,
+,,,
+Business Domain,Industrial Parks & Warehouse Chain (3PL / Built-to-Suit Logistics Real Estate),,
+Business Scenario,"Multi-country network of Industrial Parks each hosting one or more grade-A warehouses, covering EHS, Fire & Life Safety (FIRe), Facilities Management (FM), Hazard Management, and Waste Management",,
+Company,Vantage Industrial Parks & Logistics REIT,,
+Network Scale,"20 Industrial Park locations (10 India, 10 UK) hosting 50 warehouses in total",,
+Applicable Regulatory Authorities,"BIS, State Fire & Emergency Services Dept (India), Factories & Boilers Inspectorate (India), CPCB/SPCB, PESO, HSE (UK), Local Fire and Rescue Authority (UK), Environment Agency (UK)",,
+Applicable Regulations,"National Building Code of India Part 4 (Fire & Life Safety), State Fire NOC Rules, Factories Act 1948, Hazardous Waste Rules 2016, Solid Waste Management Rules 2016, Petroleum/Pressure Vessel Rules, Regulatory Reform (Fire Safety) Order 2005, Building Regulations 2010 Approved Document B, Health and Safety at Work etc. Act 1974, COMAH Regulations 2015, Environmental Permitting Regulations 2016",,
+Applicable Standards,"ISO 45001:2018, ISO 14001:2015, ISO 41001:2018, ISO 31000:2018, ISO 22301:2019, ISO 9001:2015, NFPA 25, NFPA 72, BS 9999:2017, IS 3844 / SP 7 (NBC)",,
+Business Units,"EHS, Facilities Management, Compliance, Risk & Insurance, Warehouse Operations, Security",,
+Organization Structure,Company -> Business Unit -> Department -> Role,,
+Spatial Hierarchy,Company -> Site (Industrial Park) -> Building (Warehouse) -> Floor -> Zone -> Room -> Process -> Asset -> Equipment,,
+Compliance Pillars,"EHS, Fire & Life Safety (FIRe), Facilities Management (FM), Hazard Management, Waste Management, plus Insurance Risk Mitigation as a cross-cutting pillar",,
+Compliance Areas,Fire Detection & Alarm Systems; Fire Suppression Systems; Emergency Preparedness & Response; Occupational Health & Safety (EHS); Hazardous Materials & Chemical Safety; Waste Management; Facilities & Asset Maintenance (FM); Environmental Compliance; Hazard & Risk Assessment; Insurance Compliance & Risk Mitigation,,
+Regulatory Scope Note,"Building/fire safety codes scoped to India (NBC Part 4, State Fire NOC, IS 3844) and UK (RRFSO 2005, Building Regs Approved Doc B, BS 9999); ISO management-system standards applied network-wide; fire suppression assets tracked with SLA/checks/SOP/vendor (AMC) linkage; emergency response and insurance risk-mitigation clauses/premium stipulations tracked as first-class compliance domains.",,
+Operational Controls (count),30,,
+Output Scale - Tasks,60,,
+Output Scale - Controls,30,,
+Output Scale - Compliance Areas,10,,
+Output Scale - Business Units,6,,
+Output Scale - Sites (Industrial Parks),20,,
+Output Scale - Buildings (Warehouses),50,,
+Output Scale - Roles,16,,
+Output Scale - Vendors (AMC/Service),12,,
+Output Scale - Insurance Risk Clauses,15,,
+Calendar Duration,52 weeks,,
+Generated On,2026-07-16,,
+,,,
+Data Volume Calibration (ratios applied),,,
+Entity,Default Ratio to Controls,Generated Count,Notes
+Obligations,~1.1 per Control,34,A control may satisfy more than one obligation; 4 obligations are general/contextual
+Clauses,1.0 per Obligation,34,One primary clause per obligation
+Tasks,2 per Control,60,Two frequency variants generated per control
+Checklists / Templates,2 per Compliance Area,20,"One primary + one specific checklist per compliance area, reused across tasks"
+Roles,"~50% of Compliance Areas x 1.6, min 8",16,Roles are shared across tasks and sites
+Sites x Buildings x Assets,20 sites / 50 warehouses / 31 asset types,20 sites / 50 buildings / 31 assets,Each task resolves to >=1 concrete Site/Building/Asset pair
+Vendors,Illustrative AMC/service coverage,12,One vendor entry may cover multiple sites/countries
+Insurance Risk Clauses,Illustrative warranty/clause set,15,Each linked to a Risk and a Control for premium-impact traceability
+
+
+--- WORKSHEET: 02_Regulatory_Authorities ---
+
+AuthorityID,Name,Abbreviation,Jurisdiction,Type,Description
+AUTH-001,Bureau of Indian Standards,BIS,India,National Standards Body,Publishes the National Building Code of India (NBC) and IS fire/safety codes referenced in building and fire design.
+AUTH-002,State Fire and Emergency Services Department,State Fire Dept.,India,State Fire Authority,State-level authority issuing Fire NOC (No Objection Certificate) and enforcing state Fire Prevention and Life Safety Acts/Rules.
+AUTH-003,Directorate/Chief Inspectorate of Factories and Boilers,DISH/Factories Inspectorate,India,State Regulator,State authority enforcing the Factories Act and workplace occupational safety compliance for warehousing/industrial premises.
+AUTH-004,Central Pollution Control Board / State Pollution Control Board,CPCB/SPCB,India,Environmental Regulator,"National/state body regulating hazardous waste, solid waste, effluent, and emission compliance."
+AUTH-005,Petroleum and Explosives Safety Organisation,PESO,India,National Regulator,"National regulator for storage and handling of petroleum products, compressed gases, and hazardous/flammable materials."
+AUTH-006,Health and Safety Executive,HSE,UK,National Regulator,"UK national regulator for workplace health, safety, and major accident hazard compliance."
+AUTH-007,Local Fire and Rescue Authority (Home Office oversight),FRA,UK,Fire Authority,Local Fire and Rescue Authority enforcing the Regulatory Reform (Fire Safety) Order 2005 and carrying out fire safety audits.
+AUTH-008,Environment Agency,EA,UK,Environmental Regulator,"UK regulator for environmental permitting, waste management, and pollution control."
+
+
+--- WORKSHEET: 03_Regulations ---
+
+RegulationID,Name,AuthorityID,Jurisdiction,Effective Date,Description
+REG-001,"National Building Code of India (NBC) 2016, Part 4 - Fire and Life Safety",AUTH-001,India,2017-01-01,"Prescribes fire and life safety design, means of escape, and fire protection system requirements for buildings including warehouses."
+REG-002,State Fire Prevention and Life Safety Act / Fire NOC Rules,AUTH-002,India,2015-04-01,"Governs issuance and renewal of Fire NOC, mandatory fire fighting installations, and periodic fire safety audits for industrial premises."
+REG-003,Factories Act 1948 and State Factories Rules,AUTH-003,India,1948-09-23,"Governs occupational health, safety, and welfare of workers, including machinery guarding, hazardous processes, and safety officers."
+REG-004,Hazardous and Other Wastes (Management and Transboundary Movement) Rules 2016,AUTH-004,India,2016-04-04,"Regulates generation, storage, handling, and disposal of hazardous waste including used oil, batteries, and packaging waste."
+REG-005,Solid Waste Management Rules 2016,AUTH-004,India,2016-04-08,"Governs segregation, collection, storage, and disposal of solid/dry waste generated at industrial and warehousing premises."
+REG-006,Static and Mobile Pressure Vessels (Unfired) Rules / Petroleum Rules,AUTH-005,India,2016-08-01,"Regulates storage and handling licences for flammable gases, petroleum products, and pressure vessels used in warehouse operations."
+REG-007,Regulatory Reform (Fire Safety) Order 2005 (RRFSO),AUTH-007,UK,2006-10-01,Primary UK fire safety legislation requiring a Responsible Person to carry out fire risk assessments and maintain fire precautions.
+REG-008,"Building Regulations 2010, Approved Document B - Fire Safety",AUTH-006,UK,2010-10-01,"Sets means of escape, fire compartmentation, and fire protection system design standards for non-domestic buildings including warehouses."
+REG-009,Health and Safety at Work etc. Act 1974,AUTH-006,UK,1974-07-31,"General duty legislation requiring employers to ensure health, safety, and welfare of employees and others affected by work activities."
+REG-010,Control of Major Accident Hazards (COMAH) Regulations 2015,AUTH-006,UK,2015-06-01,"Regulates sites storing hazardous substances above threshold quantities, requiring major accident prevention policies and safety reports."
+REG-011,Environmental Permitting (England and Wales) Regulations 2016,AUTH-008,UK,2016-01-01,"Governs environmental permits for waste operations, hazardous waste storage, and pollution prevention at industrial sites."
+
+
+--- WORKSHEET: 04_Standards ---
+
+StandardID,Name,Issuing Body,Version,Description
+STD-001,ISO 45001:2018,ISO,2018,Occupational health and safety management systems - requirements with guidance for use.
+STD-002,ISO 14001:2015,ISO,2015,Environmental management systems - requirements with guidance for use.
+STD-003,ISO 41001:2018,ISO,2018,Facility management - management systems - requirements with guidance for use.
+STD-004,ISO 31000:2018,ISO,2018,Risk management - guidelines for principles and generic framework.
+STD-005,ISO 22301:2019,ISO,2019,Security and resilience - business continuity management systems - requirements.
+STD-006,ISO 9001:2015,ISO,2015,"Quality management systems - requirements, applied to FM process control and documentation."
+STD-007,NFPA 25,National Fire Protection Association,2023 Ed.,"Standard for the inspection, testing, and maintenance of water-based fire protection systems."
+STD-008,NFPA 72,National Fire Protection Association,2022 Ed.,"National Fire Alarm and Signaling Code - detection, alarm, and emergency communication systems."
+STD-009,BS 9999:2017,British Standards Institution,2017,"Code of practice for fire safety in the design, management and use of buildings (UK)."
+STD-010,IS 3844:1989 / SP 7 (NBC),Bureau of Indian Standards,Reaffirmed,"Code of practice for fire hydrant, fire hose reel, and internal fire fighting installations (India)."
+
+
+--- WORKSHEET: 05_Clauses ---
+
+ClauseID,Source Type,Source ID,Clause Number,Title,Clause Text (Synthetic)
+CLA-0001,STD,STD-008,17.7,Smoke and heat detector periodic testing,Synthetic clause text summarizing 'Smoke and heat detector periodic testing' as applied to a multi-site industrial park and warehouse chain.
+CLA-0002,STD,STD-008,14.4,Fire alarm control panel and zone integrity verification,Synthetic clause text summarizing 'Fire alarm control panel and zone integrity verification' as applied to a multi-site industrial park and warehouse chain.
+CLA-0003,STD,STD-008,18.4.3,Emergency voice/alarm communication system testing,Synthetic clause text summarizing 'Emergency voice/alarm communication system testing' as applied to a multi-site industrial park and warehouse chain.
+CLA-0004,STD,STD-010,5.2,Fire hydrant and internal hose reel installation testing,Synthetic clause text summarizing 'Fire hydrant and internal hose reel installation testing' as applied to a multi-site industrial park and warehouse chain.
+CLA-0005,STD,STD-007,5.3,Sprinkler system and ESFR head visual inspection,Synthetic clause text summarizing 'Sprinkler system and ESFR head visual inspection' as applied to a multi-site industrial park and warehouse chain.
+CLA-0006,REG,REG-002,12,Portable fire extinguisher inspection and maintenance,Synthetic clause text summarizing 'Portable fire extinguisher inspection and maintenance' as applied to a multi-site industrial park and warehouse chain.
+CLA-0007,STD,STD-007,8.1,Fire pump assembly weekly and monthly operational test,Synthetic clause text summarizing 'Fire pump assembly weekly and monthly operational test' as applied to a multi-site industrial park and warehouse chain.
+CLA-0008,REG,REG-001,4.10,Fire and emergency evacuation drill frequency,Synthetic clause text summarizing 'Fire and emergency evacuation drill frequency' as applied to a multi-site industrial park and warehouse chain.
+CLA-0009,STD,STD-005,8.4,Emergency response team competency and readiness,Synthetic clause text summarizing 'Emergency response team competency and readiness' as applied to a multi-site industrial park and warehouse chain.
+CLA-0010,REG,REG-007,18,Cooperation and coordination with fire and rescue authority,Synthetic clause text summarizing 'Cooperation and coordination with fire and rescue authority' as applied to a multi-site industrial park and warehouse chain.
+CLA-0011,STD,STD-001,8.1.2,Personal protective equipment provision and compliance,Synthetic clause text summarizing 'Personal protective equipment provision and compliance' as applied to a multi-site industrial park and warehouse chain.
+CLA-0012,STD,STD-001,8.1.1,Control of hazardous mobile plant and MHE operations,Synthetic clause text summarizing 'Control of hazardous mobile plant and MHE operations' as applied to a multi-site industrial park and warehouse chain.
+CLA-0013,REG,REG-003,36,Permit-to-work and hot work authorization procedure,Synthetic clause text summarizing 'Permit-to-work and hot work authorization procedure' as applied to a multi-site industrial park and warehouse chain.
+CLA-0014,REG,REG-006,9,Licensed storage of flammable and hazardous substances,Synthetic clause text summarizing 'Licensed storage of flammable and hazardous substances' as applied to a multi-site industrial park and warehouse chain.
+CLA-0015,REG,REG-010,7,Major accident hazard prevention for battery/energy storage areas,Synthetic clause text summarizing 'Major accident hazard prevention for battery/energy storage areas' as applied to a multi-site industrial park and warehouse chain.
+CLA-0016,STD,STD-001,8.2,Emergency preparedness and spill response readiness,Synthetic clause text summarizing 'Emergency preparedness and spill response readiness' as applied to a multi-site industrial park and warehouse chain.
+CLA-0017,REG,REG-005,4,Segregation and storage of solid/dry waste at source,Synthetic clause text summarizing 'Segregation and storage of solid/dry waste at source' as applied to a multi-site industrial park and warehouse chain.
+CLA-0018,REG,REG-004,6,Hazardous waste manifest and authorized disposal,Synthetic clause text summarizing 'Hazardous waste manifest and authorized disposal' as applied to a multi-site industrial park and warehouse chain.
+CLA-0019,STD,STD-003,8.3,Electrical distribution and transformer preventive maintenance,Synthetic clause text summarizing 'Electrical distribution and transformer preventive maintenance' as applied to a multi-site industrial park and warehouse chain.
+CLA-0020,STD,STD-003,8.4,HVAC and ventilation system preventive maintenance,Synthetic clause text summarizing 'HVAC and ventilation system preventive maintenance' as applied to a multi-site industrial park and warehouse chain.
+CLA-0021,REG,REG-001,4.6,Structural safety of storage racking systems,Synthetic clause text summarizing 'Structural safety of storage racking systems' as applied to a multi-site industrial park and warehouse chain.
+CLA-0022,STD,STD-003,8.5,Standby power (DG set) operational readiness,Synthetic clause text summarizing 'Standby power (DG set) operational readiness' as applied to a multi-site industrial park and warehouse chain.
+CLA-0023,REG,REG-011,14,Trade effluent and STP discharge quality limits,Synthetic clause text summarizing 'Trade effluent and STP discharge quality limits' as applied to a multi-site industrial park and warehouse chain.
+CLA-0024,REG,REG-011,15,Air emissions and generator stack monitoring,Synthetic clause text summarizing 'Air emissions and generator stack monitoring' as applied to a multi-site industrial park and warehouse chain.
+CLA-0025,REG,REG-007,9,Fire risk assessment review and revalidation,Synthetic clause text summarizing 'Fire risk assessment review and revalidation' as applied to a multi-site industrial park and warehouse chain.
+CLA-0026,STD,STD-006,9.2,Internal audit and management review of the compliance system,Synthetic clause text summarizing 'Internal audit and management review of the compliance system' as applied to a multi-site industrial park and warehouse chain.
+CLA-0027,STD,STD-004,6.5,Incident investigation and corrective/preventive action closure,Synthetic clause text summarizing 'Incident investigation and corrective/preventive action closure' as applied to a multi-site industrial park and warehouse chain.
+CLA-0028,STD,STD-005,8.3,Business continuity and insurer warranty clause conformance,Synthetic clause text summarizing 'Business continuity and insurer warranty clause conformance' as applied to a multi-site industrial park and warehouse chain.
+CLA-0029,REG,REG-002,6,Fire NOC issue and periodic renewal,Synthetic clause text summarizing 'Fire NOC issue and periodic renewal' as applied to a multi-site industrial park and warehouse chain.
+CLA-0030,STD,STD-004,6.4.4,Risk engineering survey recommendation closure,Synthetic clause text summarizing 'Risk engineering survey recommendation closure' as applied to a multi-site industrial park and warehouse chain.
+CLA-0031,STD,STD-001,4.1,Understanding the organization and its context for OH&S,Synthetic clause text summarizing 'Understanding the organization and its context for OH&S' as applied to a multi-site industrial park and warehouse chain.
+CLA-0032,STD,STD-002,4.1,Understanding the organization and its context for environmental aspects,Synthetic clause text summarizing 'Understanding the organization and its context for environmental aspects' as applied to a multi-site industrial park and warehouse chain.
+CLA-0033,REG,REG-009,2,General duty of employer to ensure safety of employees,Synthetic clause text summarizing 'General duty of employer to ensure safety of employees' as applied to a multi-site industrial park and warehouse chain.
+CLA-0034,REG,REG-008,B1,Means of escape and fire compartmentation design conformance,Synthetic clause text summarizing 'Means of escape and fire compartmentation design conformance' as applied to a multi-site industrial park and warehouse chain.
+
+
+--- WORKSHEET: 06_Obligations ---
+
+ObligationID,ClauseID,Description,Obligation Type,Mandatory (Y/N)
+OBL-0001,CLA-0001,Conduct periodic functional testing of smoke and heat detectors across all zones,Mandatory,Y
+OBL-0002,CLA-0002,Verify fire alarm control panel status and zone-wise detector mapping integrity,Mandatory,Y
+OBL-0003,CLA-0003,Test emergency voice/PA evacuation announcement system for audibility and coverage,Mandatory,Y
+OBL-0004,CLA-0004,Conduct hydrant and hose reel pressure test and record flow/pressure readings,Mandatory,Y
+OBL-0005,CLA-0005,"Visually inspect sprinkler risers, ESFR heads, and control valves for obstruction or damage",Mandatory,Y
+OBL-0006,CLA-0006,Inspect and tag portable fire extinguishers; recharge or replace as required,Mandatory,Y
+OBL-0007,CLA-0007,Run diesel/electric/jockey fire pump operational test and record start pressure and duration,Mandatory,Y
+OBL-0008,CLA-0008,Conduct scheduled fire and emergency evacuation drills and document attendance/timing,Mandatory,Y
+OBL-0009,CLA-0009,"Verify Emergency Response Team roster, training currency, and equipment readiness",Mandatory,Y
+OBL-0010,CLA-0010,Coordinate periodic mutual-aid exercise with local fire and rescue authority,Recommended,N
+OBL-0011,CLA-0011,"Verify PPE issuance, condition, and usage compliance across warehouse floor personnel",Mandatory,Y
+OBL-0012,CLA-0012,Inspect MHE/forklift pre-use checklist compliance and operator certification currency,Mandatory,Y
+OBL-0013,CLA-0013,Verify permit-to-work and hot work authorization records prior to maintenance activity,Mandatory,Y
+OBL-0014,CLA-0014,"Verify hazardous/flammable material storage licence, segregation, and labelling compliance",Mandatory,Y
+OBL-0015,CLA-0015,"Inspect battery charging area ventilation, spill containment, and thermal monitoring",Mandatory,Y
+OBL-0016,CLA-0016,"Verify spill kit availability, staff training, and chemical spill response readiness",Mandatory,Y
+OBL-0017,CLA-0017,"Verify segregation, labelling, and secure storage of general/dry waste at source",Recommended,N
+OBL-0018,CLA-0018,Record and retain hazardous waste manifests and authorized disposal vendor evidence,Mandatory,Y
+OBL-0019,CLA-0019,Perform preventive maintenance and thermal scanning of electrical panels and transformers,Mandatory,Y
+OBL-0020,CLA-0020,Perform preventive maintenance of HVAC/ventilation systems serving occupied and storage areas,Mandatory,Y
+OBL-0021,CLA-0021,"Inspect racking system structural integrity, load signage, and beam damage",Mandatory,Y
+OBL-0022,CLA-0022,Test standby DG set for load-bearing readiness and automatic transfer switch function,Mandatory,Y
+OBL-0023,CLA-0023,Conduct effluent/STP discharge sampling and verify limits against permit conditions,Mandatory,Y
+OBL-0024,CLA-0024,Monitor DG stack emissions and record against permitted limits,Mandatory,Y
+OBL-0025,CLA-0025,Review and revalidate site fire risk assessment following any material change,Mandatory,Y
+OBL-0026,CLA-0026,Conduct internal audit and management review of the compliance program,Mandatory,Y
+OBL-0027,CLA-0027,Investigate incidents/near-misses and verify closure of corrective and preventive actions,Mandatory,Y
+OBL-0028,CLA-0028,Verify conformance with insurer risk-engineering warranty clauses ahead of policy renewal,Mandatory,Y
+OBL-0029,CLA-0029,Track Fire NOC and statutory certificate validity and initiate timely renewal,Mandatory,Y
+OBL-0030,CLA-0030,Track and close out risk engineering survey recommendations within committed timelines,Mandatory,Y
+OBL-0031,CLA-0031,Establish and maintain documented procedure to satisfy understanding of organizational context for OH&S,Mandatory,Y
+OBL-0032,CLA-0032,Establish and maintain documented procedure to satisfy understanding of organizational context for environmental aspects,Mandatory,Y
+OBL-0033,CLA-0033,Ensure general duty of care towards employee and visitor safety across site operations,Mandatory,Y
+OBL-0034,CLA-0034,Verify means of escape routes and fire compartmentation remain unobstructed and conformant,Mandatory,Y
+
+
+--- WORKSHEET: 07_Compliance_Areas ---
+
+ComplianceAreaID,Name,Description
+CA-001,Fire Detection & Alarm Systems,"Smoke/heat detection, fire alarm panels, and voice evacuation systems across warehouses."
+CA-002,Fire Suppression Systems,"Hydrants, sprinklers/ESFR, fire pump houses, and portable fire extinguishers."
+CA-003,Emergency Preparedness & Response,"Evacuation drills, emergency response team readiness, and mutual-aid coordination."
+CA-004,Occupational Health & Safety (EHS),"Machinery, MHE/forklift, PPE, and general workplace safety controls."
+CA-005,Hazardous Materials & Chemical Safety,"Storage, handling, and permit compliance for flammable and hazardous substances."
+CA-006,Waste Management,"Segregation, storage, and licensed disposal of general and hazardous waste."
+CA-007,Facilities & Asset Maintenance (FM),"Preventive maintenance of MEP, racking, MHE, and utility assets."
+CA-008,Environmental Compliance,"Effluent, emissions, and environmental permit conformance."
+CA-009,Hazard & Risk Assessment,"Structured hazard identification, risk register review, and audit closure."
+CA-010,Insurance Compliance & Risk Mitigation,Conformance with insurer warranty clauses and risk-engineering recommendations affecting premiums.
+
+
+--- WORKSHEET: 08_Operational_Controls ---
+
+ControlID,Name,ComplianceAreaID,Control Type,Description,RiskID,Primary ObligationID(s),ClauseID,StandardID,RegulationID,AuthorityID
+CTRL-001,Smoke & Heat Detector Functional Test,CA-001,Detective,Operational control ensuring smoke & heat detector functional test is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-007,OBL-0001,CLA-0001,STD-008,REG-001,AUTH-002
+CTRL-002,Fire Alarm Panel & Zone Verification,CA-001,Preventive,Operational control ensuring fire alarm panel & zone verification is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-007,OBL-0002,CLA-0002,STD-008,REG-008,AUTH-007
+CTRL-003,PA / Voice Evacuation System Test,CA-001,Preventive,Operational control ensuring pa / voice evacuation system test is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-009,OBL-0003,CLA-0003,STD-008,REG-007,AUTH-007
+CTRL-004,Fire Hydrant System Pressure Test,CA-002,Preventive,Operational control ensuring fire hydrant system pressure test is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-013,OBL-0004,CLA-0004,STD-010,REG-002,AUTH-002
+CTRL-005,Sprinkler Riser & ESFR Head Inspection,CA-002,Preventive,Operational control ensuring sprinkler riser & esfr head inspection is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-002,OBL-0005,CLA-0005,STD-007,REG-001,AUTH-002
+CTRL-006,Fire Extinguisher Inspection & Recharge Check,CA-002,Preventive,Operational control ensuring fire extinguisher inspection & recharge check is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-001,OBL-0006,CLA-0006,STD-007,REG-002,AUTH-002
+CTRL-007,Fire Pump House Operational Test,CA-002,Preventive,Operational control ensuring fire pump house operational test is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-013,OBL-0007,CLA-0007,STD-007,REG-008,AUTH-007
+CTRL-008,Fire & Emergency Evacuation Drill,CA-003,Preventive,Operational control ensuring fire & emergency evacuation drill is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-009,OBL-0008,CLA-0008,STD-005,REG-001,AUTH-002
+CTRL-009,Emergency Response Team Readiness Check,CA-003,Preventive,Operational control ensuring emergency response team readiness check is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-009,OBL-0009,CLA-0009,STD-005,REG-009,AUTH-006
+CTRL-010,Mock Drill - Mutual Aid & External Agency Coordination,CA-003,Detective,Operational control ensuring mock drill - mutual aid & external agency coordination is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-009,OBL-0010,CLA-0010,STD-005,REG-007,AUTH-007
+CTRL-011,PPE Compliance Inspection,CA-004,Preventive,Operational control ensuring ppe compliance inspection is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-004,OBL-0011,CLA-0011,STD-001,REG-003,AUTH-003
+CTRL-012,MHE / Forklift Safety Inspection,CA-004,Preventive,Operational control ensuring mhe / forklift safety inspection is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-004,OBL-0012,CLA-0012,STD-001,REG-009,AUTH-006
+CTRL-013,Permit-to-Work & Hot Work Compliance Check,CA-004,Preventive,Operational control ensuring permit-to-work & hot work compliance check is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-007,OBL-0013,CLA-0013,STD-001,REG-003,AUTH-003
+CTRL-014,Hazardous Chemical Storage Compliance Check,CA-005,Preventive,Operational control ensuring hazardous chemical storage compliance check is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-006,OBL-0014,CLA-0014,STD-002,REG-006,AUTH-005
+CTRL-015,Battery Charging Area Safety Inspection,CA-005,Preventive,Operational control ensuring battery charging area safety inspection is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-005,OBL-0015,CLA-0015,STD-004,REG-010,AUTH-006
+CTRL-016,Spill Kit & Chemical Spill Response Readiness Check,CA-005,Detective,Operational control ensuring spill kit & chemical spill response readiness check is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-006,OBL-0016,CLA-0016,STD-001,REG-006,AUTH-005
+CTRL-017,Waste Segregation & Storage Verification,CA-006,Preventive,Operational control ensuring waste segregation & storage verification is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-010,OBL-0017,CLA-0017,STD-002,REG-005,AUTH-004
+CTRL-018,Hazardous Waste Disposal & Manifest Verification,CA-006,Detective,Operational control ensuring hazardous waste disposal & manifest verification is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-010,OBL-0018,CLA-0018,STD-002,REG-004,AUTH-004
+CTRL-019,Electrical Panel & Transformer Preventive Maintenance,CA-007,Preventive,Operational control ensuring electrical panel & transformer preventive maintenance is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-007,OBL-0019,CLA-0019,STD-003,REG-003,AUTH-003
+CTRL-020,HVAC / Ventilation System Preventive Maintenance,CA-007,Preventive,Operational control ensuring hvac / ventilation system preventive maintenance is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-015,OBL-0020,CLA-0020,STD-003,REG-009,AUTH-006
+CTRL-021,Racking System Structural Safety Inspection,CA-007,Preventive,Operational control ensuring racking system structural safety inspection is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-008,OBL-0021,CLA-0021,STD-001,REG-001,AUTH-001
+CTRL-022,Diesel Generator (DG) Set Operational Test,CA-007,Preventive,Operational control ensuring diesel generator (dg) set operational test is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-015,OBL-0022,CLA-0022,STD-003,REG-008,AUTH-006
+CTRL-023,Effluent / STP Discharge Quality Testing,CA-008,Detective,Operational control ensuring effluent / stp discharge quality testing is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-014,OBL-0023,CLA-0023,STD-002,REG-011,AUTH-008
+CTRL-024,Air Emission & DG Stack Monitoring,CA-008,Detective,Operational control ensuring air emission & dg stack monitoring is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-014,OBL-0024,CLA-0024,STD-002,REG-011,AUTH-008
+CTRL-025,Fire Risk Assessment Review,CA-009,Preventive,Operational control ensuring fire risk assessment review is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-001,OBL-0025,CLA-0025,STD-004,REG-007,AUTH-007
+CTRL-026,Internal Audit & Management Review,CA-009,Detective,Operational control ensuring internal audit & management review is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-011,OBL-0026,CLA-0026,STD-006,REG-002,AUTH-002
+CTRL-027,Incident Investigation & CAPA Closure Verification,CA-009,Corrective,Operational control ensuring incident investigation & capa closure verification is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-011,OBL-0027,CLA-0027,STD-004,REG-009,AUTH-006
+CTRL-028,Insurance Warranty Clause Compliance Check,CA-010,Preventive,Operational control ensuring insurance warranty clause compliance check is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-012,OBL-0028,CLA-0028,STD-005,REG-002,AUTH-002
+CTRL-029,Fire NOC / Statutory Certificate Renewal Tracking,CA-010,Preventive,Operational control ensuring fire noc / statutory certificate renewal tracking is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-011,OBL-0029,CLA-0029,STD-004,REG-002,AUTH-002
+CTRL-030,Risk Engineering Survey Recommendation Closure,CA-010,Corrective,Operational control ensuring risk engineering survey recommendation closure is performed and evidenced per SOP across the industrial park / warehouse network.,RSK-012,OBL-0030,CLA-0030,STD-004,REG-010,AUTH-006
+
+
+--- WORKSHEET: 09_Task_Master ---
+
+TaskID,Task Name,Compliance Area,Control ID,Obligation ID,Clause ID,Authority ID,Regulation ID,Standard ID,Risk ID,Hazard,Business Unit,Department,Responsible Role ID,Assigned User,Approval Authority,Frequency,Schedule Type,Calendar Rule,Due Date,SLA,Escalation Rule,Site,Building,Floor,Zone,Area,Process,Asset ID,Equipment,Checklist ID,Inspection Form,SOP Reference,Template ID,Evidence Type,Digital Signature Required (Y/N),Execution Method,Priority,Duration (min),Output Type
+TSK-0001,Smoke & Heat Detector Functional Test - Monthly Check,CA-001,CTRL-001,OBL-0001,CLA-0001,AUTH-002,REG-001,STD-008,RSK-007,Electrical fault / transformer fire,EHS,Fire & Life Safety,ROLE-005,Fire & Life Safety Site Team,Fire & Safety Manager,Monthly,Fixed,Monthly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window,LOC-001,BLD-003,1,ZN-006,RM-006,Smoke & Heat Detector Functional Test,AST-011,Smoke Detector Panel,CHK-001,Fire Detection & Alarm Test Log,SOP-CA-001-001,CHK-001,Digital Signature,Y,Mobile,Medium,25,Observation
+TSK-0002,Smoke & Heat Detector Functional Test - Quarterly Check,CA-001,CTRL-001,OBL-0001,CLA-0001,AUTH-002,REG-001,STD-008,RSK-007,Electrical fault / transformer fire,EHS,Fire & Life Safety,ROLE-005,Fire & Life Safety Site Team,Fire & Safety Manager,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window,LOC-002,BLD-006,1,ZN-011,RM-011,Smoke & Heat Detector Functional Test,AST-011,Smoke Detector Panel,CHK-011,Fire Alarm Zone Verification Log,SOP-CA-001-002,CHK-011,Digital Signature,Y,Mobile,Low,35,Deviation/NCR
+TSK-0003,Fire Alarm Panel & Zone Verification - Weekly Check,CA-001,CTRL-002,OBL-0002,CLA-0002,AUTH-007,REG-008,STD-008,RSK-007,Electrical fault / transformer fire,EHS,Fire & Life Safety,ROLE-005,Fire & Life Safety Site Team,Fire & Safety Manager,Weekly,Fixed,Weekly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window,LOC-003,BLD-008,1,ZN-016,RM-016,Fire Alarm Panel & Zone Verification,AST-013,Fire Alarm Control Panel,CHK-001,Fire Detection & Alarm Test Log,SOP-CA-001-003,CHK-001,Digital Signature,Y,Mobile,High,45,Audit Evidence
+TSK-0004,Fire Alarm Panel & Zone Verification - Monthly Check,CA-001,CTRL-002,OBL-0002,CLA-0002,AUTH-007,REG-008,STD-008,RSK-007,Electrical fault / transformer fire,EHS,Fire & Life Safety,ROLE-005,Fire & Life Safety Site Team,Fire & Safety Manager,Monthly,Fixed,Monthly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window,LOC-004,BLD-011,1,ZN-021,RM-021,Fire Alarm Panel & Zone Verification,AST-013,Fire Alarm Control Panel,CHK-011,Fire Alarm Zone Verification Log,SOP-CA-001-004,CHK-011,Digital Signature,Y,Mobile,Medium,55,Pass/Fail
+TSK-0005,PA / Voice Evacuation System Test - Quarterly Check,CA-001,CTRL-003,OBL-0003,CLA-0003,AUTH-007,REG-007,STD-008,RSK-009,Inadequate emergency evacuation,EHS,Fire & Life Safety,ROLE-005,Fire & Life Safety Site Team,Fire & Safety Manager,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window,LOC-005,BLD-013,1,ZN-026,RM-026,PA / Voice Evacuation System Test,AST-014,PA / Voice Evacuation System,CHK-001,Fire Detection & Alarm Test Log,SOP-CA-001-005,CHK-001,Digital Signature,Y,Mobile,Low,65,Observation
+TSK-0006,PA / Voice Evacuation System Test - Half-Yearly Check,CA-001,CTRL-003,OBL-0003,CLA-0003,AUTH-007,REG-007,STD-008,RSK-009,Inadequate emergency evacuation,EHS,Fire & Life Safety,ROLE-005,Fire & Life Safety Site Team,Fire & Safety Manager,Half-Yearly,Fixed,Half-Yearly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window,LOC-006,BLD-016,1,ZN-031,RM-031,PA / Voice Evacuation System Test,AST-014,PA / Voice Evacuation System,CHK-011,Fire Alarm Zone Verification Log,SOP-CA-001-006,CHK-011,Digital Signature,Y,Mobile,High,15,Deviation/NCR
+TSK-0007,Fire Hydrant System Pressure Test - Monthly Check,CA-002,CTRL-004,OBL-0004,CLA-0004,AUTH-002,REG-002,STD-010,RSK-013,Inadequate fire water supply / pump pressure,EHS,Fire & Life Safety,ROLE-005,Fire & Life Safety Site Team,Fire & Safety Manager,Monthly,Fixed,Monthly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window,LOC-006,BLD-018,1,ZN-036,RM-036,Fire Hydrant System Pressure Test,AST-001,Fire Hydrant System,CHK-002,Fire Suppression Inspection Checklist,SOP-CA-002-007,CHK-002,Digital Signature,Y,Mobile,Medium,25,Audit Evidence
+TSK-0008,Fire Hydrant System Pressure Test - Sensor Triggered Check,CA-002,CTRL-004,OBL-0004,CLA-0004,AUTH-002,REG-002,STD-010,RSK-013,Inadequate fire water supply / pump pressure,EHS,Fire & Life Safety,ROLE-005,Fire & Life Safety Site Team,Fire & Safety Manager,Sensor Triggered,Triggered,Sensor Triggered per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window,LOC-007,BLD-021,1,ZN-041,RM-041,Fire Hydrant System Pressure Test,AST-001,Fire Hydrant System,CHK-012,Fire Pump & Hydrant Test Log,SOP-CA-002-008,CHK-012,Digital Signature,Y,Mobile,Low,35,Pass/Fail
+TSK-0009,Sprinkler Riser & ESFR Head Inspection - Quarterly Check,CA-002,CTRL-005,OBL-0005,CLA-0005,AUTH-002,REG-001,STD-007,RSK-002,Failure of fire suppression system on demand,EHS,Fire & Life Safety,ROLE-005,Fire & Life Safety Site Team,Fire & Safety Manager,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window,LOC-008,BLD-023,1,ZN-046,RM-046,Sprinkler Riser & ESFR Head Inspection,AST-003,Sprinkler Riser Assembly,CHK-002,Fire Suppression Inspection Checklist,SOP-CA-002-009,CHK-002,Digital Signature,Y,Mobile,High,45,Observation
+TSK-0010,Sprinkler Riser & ESFR Head Inspection - Half-Yearly Check,CA-002,CTRL-005,OBL-0005,CLA-0005,AUTH-002,REG-001,STD-007,RSK-002,Failure of fire suppression system on demand,EHS,Fire & Life Safety,ROLE-005,Fire & Life Safety Site Team,Fire & Safety Manager,Half-Yearly,Fixed,Half-Yearly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window,LOC-009,BLD-026,1,ZN-051,RM-051,Sprinkler Riser & ESFR Head Inspection,AST-003,Sprinkler Riser Assembly,CHK-012,Fire Pump & Hydrant Test Log,SOP-CA-002-010,CHK-012,Digital Signature,Y,Mobile,Medium,55,Deviation/NCR
+TSK-0011,Fire Extinguisher Inspection & Recharge Check - Monthly Check,CA-002,CTRL-006,OBL-0006,CLA-0006,AUTH-002,REG-002,STD-007,RSK-001,Fire outbreak in racking/storage area,EHS,Fire & Life Safety,ROLE-005,Fire & Life Safety Site Team,Fire & Safety Manager,Monthly,Fixed,Monthly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window,LOC-010,BLD-028,1,ZN-056,RM-056,Fire Extinguisher Inspection & Recharge Check,AST-008,Fire Extinguisher - ABC Dry Powder,CHK-002,Fire Suppression Inspection Checklist,SOP-CA-002-011,CHK-002,Digital Signature,Y,Mobile,Low,65,Audit Evidence
+TSK-0012,Fire Extinguisher Inspection & Recharge Check - Quarterly Check,CA-002,CTRL-006,OBL-0006,CLA-0006,AUTH-002,REG-002,STD-007,RSK-001,Fire outbreak in racking/storage area,EHS,Fire & Life Safety,ROLE-005,Fire & Life Safety Site Team,Fire & Safety Manager,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window,LOC-011,BLD-031,1,ZN-061,RM-061,Fire Extinguisher Inspection & Recharge Check,AST-008,Fire Extinguisher - ABC Dry Powder,CHK-012,Fire Pump & Hydrant Test Log,SOP-CA-002-012,CHK-012,Digital Signature,Y,Mobile,High,15,Pass/Fail
+TSK-0013,Fire Pump House Operational Test - Weekly Check,CA-002,CTRL-007,OBL-0007,CLA-0007,AUTH-007,REG-008,STD-007,RSK-013,Inadequate fire water supply / pump pressure,EHS,Fire & Life Safety,ROLE-005,Fire & Life Safety Site Team,Fire & Safety Manager,Weekly,Fixed,Weekly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window,LOC-012,BLD-033,1,ZN-066,RM-066,Fire Pump House Operational Test,AST-005,Fire Pump - Diesel Engine Driven,CHK-002,Fire Suppression Inspection Checklist,SOP-CA-002-013,CHK-002,Digital Signature,Y,Mobile,Medium,25,Observation
+TSK-0014,Fire Pump House Operational Test - Monthly Check,CA-002,CTRL-007,OBL-0007,CLA-0007,AUTH-007,REG-008,STD-007,RSK-013,Inadequate fire water supply / pump pressure,EHS,Fire & Life Safety,ROLE-005,Fire & Life Safety Site Team,Fire & Safety Manager,Monthly,Fixed,Monthly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window,LOC-013,BLD-036,1,ZN-071,RM-071,Fire Pump House Operational Test,AST-005,Fire Pump - Diesel Engine Driven,CHK-012,Fire Pump & Hydrant Test Log,SOP-CA-002-014,CHK-012,Digital Signature,Y,Mobile,Low,35,Deviation/NCR
+TSK-0015,Fire & Emergency Evacuation Drill - Half-Yearly Check,CA-003,CTRL-008,OBL-0008,CLA-0008,AUTH-002,REG-001,STD-005,RSK-009,Inadequate emergency evacuation,EHS,Emergency Response,ROLE-012,Emergency Response Site Team,EHS Manager (Regional),Half-Yearly,Fixed,Half-Yearly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-014,BLD-038,1,ZN-076,RM-076,Fire & Emergency Evacuation Drill,AST-016,Assembly Point Signage & Muster Station,CHK-003,Emergency Preparedness Drill Report,SOP-CA-003-015,CHK-003,Photo,N,Tablet,High,45,Audit Evidence
+TSK-0016,Fire & Emergency Evacuation Drill - Annual Check,CA-003,CTRL-008,OBL-0008,CLA-0008,AUTH-002,REG-001,STD-005,RSK-009,Inadequate emergency evacuation,EHS,Emergency Response,ROLE-012,Emergency Response Site Team,EHS Manager (Regional),Annual,Fixed,Annual per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-016,BLD-041,1,ZN-081,RM-081,Fire & Emergency Evacuation Drill,AST-016,Assembly Point Signage & Muster Station,CHK-013,ERT Readiness & Mutual Aid Log,SOP-CA-003-016,CHK-013,Photo,N,Tablet,Medium,55,Pass/Fail
+TSK-0017,Emergency Response Team Readiness Check - Quarterly Check,CA-003,CTRL-009,OBL-0009,CLA-0009,AUTH-006,REG-009,STD-005,RSK-009,Inadequate emergency evacuation,EHS,Emergency Response,ROLE-012,Emergency Response Site Team,EHS Manager (Regional),Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-017,BLD-043,1,ZN-086,RM-086,Emergency Response Team Readiness Check,AST-017,First Aid & Spill Kit Station,CHK-003,Emergency Preparedness Drill Report,SOP-CA-003-017,CHK-003,Photo,N,Tablet,Low,65,Observation
+TSK-0018,Emergency Response Team Readiness Check - Half-Yearly Check,CA-003,CTRL-009,OBL-0009,CLA-0009,AUTH-006,REG-009,STD-005,RSK-009,Inadequate emergency evacuation,EHS,Emergency Response,ROLE-012,Emergency Response Site Team,EHS Manager (Regional),Half-Yearly,Fixed,Half-Yearly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-018,BLD-046,1,ZN-091,RM-091,Emergency Response Team Readiness Check,AST-017,First Aid & Spill Kit Station,CHK-013,ERT Readiness & Mutual Aid Log,SOP-CA-003-018,CHK-013,Photo,N,Tablet,High,15,Deviation/NCR
+TSK-0019,Mock Drill - Mutual Aid & External Agency Coordination - Annual Check,CA-003,CTRL-010,OBL-0010,CLA-0010,AUTH-007,REG-007,STD-005,RSK-009,Inadequate emergency evacuation,EHS,Emergency Response,ROLE-012,Emergency Response Site Team,EHS Manager (Regional),Annual,Fixed,Annual per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-019,BLD-048,1,ZN-096,RM-096,Mock Drill - Mutual Aid & External Agency Coordination,AST-015,Emergency Lighting & Exit Signage,CHK-003,Emergency Preparedness Drill Report,SOP-CA-003-019,CHK-003,Photo,N,Tablet,Medium,25,Audit Evidence
+TSK-0020,Mock Drill - Mutual Aid & External Agency Coordination - Event Based Check,CA-003,CTRL-010,OBL-0010,CLA-0010,AUTH-007,REG-007,STD-005,RSK-009,Inadequate emergency evacuation,EHS,Emergency Response,ROLE-012,Emergency Response Site Team,EHS Manager (Regional),Event Based,Triggered,Event Based per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-001,BLD-001,1,ZN-001,RM-001,Mock Drill - Mutual Aid & External Agency Coordination,AST-015,Emergency Lighting & Exit Signage,CHK-013,ERT Readiness & Mutual Aid Log,SOP-CA-003-020,CHK-013,Photo,N,Tablet,Low,35,Pass/Fail
+TSK-0021,PPE Compliance Inspection - Weekly Check,CA-004,CTRL-011,OBL-0011,CLA-0011,AUTH-003,REG-003,STD-001,RSK-004,Forklift/MHE collision causing injury,EHS,Safety,ROLE-003,Safety Site Team,EHS Manager (Regional),Weekly,Fixed,Weekly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-001,BLD-003,1,ZN-006,RM-006,PPE Compliance Inspection,AST-018,Forklift / MHE Unit,CHK-004,EHS/PPE/MHE Safety Checklist,SOP-CA-004-021,CHK-004,Photo,N,Mobile,High,45,Observation
+TSK-0022,PPE Compliance Inspection - Monthly Check,CA-004,CTRL-011,OBL-0011,CLA-0011,AUTH-003,REG-003,STD-001,RSK-004,Forklift/MHE collision causing injury,EHS,Safety,ROLE-003,Safety Site Team,EHS Manager (Regional),Monthly,Fixed,Monthly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-002,BLD-006,1,ZN-011,RM-011,PPE Compliance Inspection,AST-018,Forklift / MHE Unit,CHK-014,Permit-to-Work / Hot Work Register,SOP-CA-004-022,CHK-014,Photo,N,Mobile,Medium,55,Deviation/NCR
+TSK-0023,MHE / Forklift Safety Inspection - Daily Check,CA-004,CTRL-012,OBL-0012,CLA-0012,AUTH-006,REG-009,STD-001,RSK-004,Forklift/MHE collision causing injury,EHS,Safety,ROLE-003,Safety Site Team,EHS Manager (Regional),Daily,Fixed,Daily per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),24 hours,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-003,BLD-008,1,ZN-016,RM-016,MHE / Forklift Safety Inspection,AST-018,Forklift / MHE Unit,CHK-004,EHS/PPE/MHE Safety Checklist,SOP-CA-004-023,CHK-004,Photo,N,Mobile,Low,65,Audit Evidence
+TSK-0024,MHE / Forklift Safety Inspection - Weekly Check,CA-004,CTRL-012,OBL-0012,CLA-0012,AUTH-006,REG-009,STD-001,RSK-004,Forklift/MHE collision causing injury,EHS,Safety,ROLE-003,Safety Site Team,EHS Manager (Regional),Weekly,Fixed,Weekly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-004,BLD-011,1,ZN-021,RM-021,MHE / Forklift Safety Inspection,AST-018,Forklift / MHE Unit,CHK-014,Permit-to-Work / Hot Work Register,SOP-CA-004-024,CHK-014,Photo,N,Mobile,High,15,Pass/Fail
+TSK-0025,Permit-to-Work & Hot Work Compliance Check - Event Based Check,CA-004,CTRL-013,OBL-0013,CLA-0013,AUTH-003,REG-003,STD-001,RSK-007,Electrical fault / transformer fire,EHS,Safety,ROLE-003,Safety Site Team,EHS Manager (Regional),Event Based,Triggered,Event Based per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-005,BLD-013,1,ZN-026,RM-026,Permit-to-Work & Hot Work Compliance Check,AST-022,Electrical Distribution Panel,CHK-004,EHS/PPE/MHE Safety Checklist,SOP-CA-004-025,CHK-004,Photo,N,Mobile,Medium,25,Observation
+TSK-0026,Permit-to-Work & Hot Work Compliance Check - Condition Based Check,CA-004,CTRL-013,OBL-0013,CLA-0013,AUTH-003,REG-003,STD-001,RSK-007,Electrical fault / transformer fire,EHS,Safety,ROLE-003,Safety Site Team,EHS Manager (Regional),Condition Based,Triggered,Condition Based per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-006,BLD-016,1,ZN-031,RM-031,Permit-to-Work & Hot Work Compliance Check,AST-022,Electrical Distribution Panel,CHK-014,Permit-to-Work / Hot Work Register,SOP-CA-004-026,CHK-014,Photo,N,Mobile,Low,35,Deviation/NCR
+TSK-0027,Hazardous Chemical Storage Compliance Check - Monthly Check,CA-005,CTRL-014,OBL-0014,CLA-0014,AUTH-005,REG-006,STD-002,RSK-006,Hazardous chemical spill or improper storage,EHS,Hazmat & Chemical Safety,ROLE-010,Hazmat & Chemical Safety Site Team,EHS Manager (Regional),Monthly,Fixed,Monthly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-006,BLD-018,1,ZN-036,RM-036,Hazardous Chemical Storage Compliance Check,AST-026,Hazardous Waste Storage Shed,CHK-005,Hazmat & Chemical Safety Checklist,SOP-CA-005-027,CHK-005,Photo,N,QR Code,High,45,Audit Evidence
+TSK-0028,Hazardous Chemical Storage Compliance Check - Quarterly Check,CA-005,CTRL-014,OBL-0014,CLA-0014,AUTH-005,REG-006,STD-002,RSK-006,Hazardous chemical spill or improper storage,EHS,Hazmat & Chemical Safety,ROLE-010,Hazmat & Chemical Safety Site Team,EHS Manager (Regional),Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-007,BLD-021,1,ZN-041,RM-041,Hazardous Chemical Storage Compliance Check,AST-026,Hazardous Waste Storage Shed,CHK-015,Spill Response Readiness Log,SOP-CA-005-028,CHK-015,Photo,N,QR Code,Medium,55,Pass/Fail
+TSK-0029,Battery Charging Area Safety Inspection - Weekly Check,CA-005,CTRL-015,OBL-0015,CLA-0015,AUTH-006,REG-010,STD-004,RSK-005,Battery charging area thermal runaway,EHS,Hazmat & Chemical Safety,ROLE-010,Hazmat & Chemical Safety Site Team,EHS Manager (Regional),Weekly,Fixed,Weekly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-008,BLD-023,1,ZN-046,RM-046,Battery Charging Area Safety Inspection,AST-021,Battery Charging Station (MHE),CHK-005,Hazmat & Chemical Safety Checklist,SOP-CA-005-029,CHK-005,Photo,N,QR Code,Low,65,Observation
+TSK-0030,Battery Charging Area Safety Inspection - Hourly Check,CA-005,CTRL-015,OBL-0015,CLA-0015,AUTH-006,REG-010,STD-004,RSK-005,Battery charging area thermal runaway,EHS,Hazmat & Chemical Safety,ROLE-010,Hazmat & Chemical Safety Site Team,EHS Manager (Regional),Hourly,Fixed,Hourly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),24 hours,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-009,BLD-026,1,ZN-051,RM-051,Battery Charging Area Safety Inspection,AST-021,Battery Charging Station (MHE),CHK-015,Spill Response Readiness Log,SOP-CA-005-030,CHK-015,Photo,N,QR Code,High,15,Deviation/NCR
+TSK-0031,Spill Kit & Chemical Spill Response Readiness Check - Monthly Check,CA-005,CTRL-016,OBL-0016,CLA-0016,AUTH-005,REG-006,STD-001,RSK-006,Hazardous chemical spill or improper storage,EHS,Hazmat & Chemical Safety,ROLE-010,Hazmat & Chemical Safety Site Team,EHS Manager (Regional),Monthly,Fixed,Monthly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-010,BLD-028,1,ZN-056,RM-056,Spill Kit & Chemical Spill Response Readiness Check,AST-017,First Aid & Spill Kit Station,CHK-005,Hazmat & Chemical Safety Checklist,SOP-CA-005-031,CHK-005,Photo,N,QR Code,Medium,25,Audit Evidence
+TSK-0032,Spill Kit & Chemical Spill Response Readiness Check - Quarterly Check,CA-005,CTRL-016,OBL-0016,CLA-0016,AUTH-005,REG-006,STD-001,RSK-006,Hazardous chemical spill or improper storage,EHS,Hazmat & Chemical Safety,ROLE-010,Hazmat & Chemical Safety Site Team,EHS Manager (Regional),Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-011,BLD-031,1,ZN-061,RM-061,Spill Kit & Chemical Spill Response Readiness Check,AST-017,First Aid & Spill Kit Station,CHK-015,Spill Response Readiness Log,SOP-CA-005-032,CHK-015,Photo,N,QR Code,Low,35,Pass/Fail
+TSK-0033,Waste Segregation & Storage Verification - Daily Check,CA-006,CTRL-017,OBL-0017,CLA-0017,AUTH-004,REG-005,STD-002,RSK-010,Waste accumulation increasing fire fuel load,Facilities Management,Waste Management,ROLE-011,Waste Management Site Team,Facilities Manager,Daily,Fixed,Daily per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),24 hours,Escalate to Facilities Manager if overdue by SLA window,LOC-012,BLD-033,1,ZN-066,RM-066,Waste Segregation & Storage Verification,AST-027,Waste Compactor,CHK-006,Waste Management Checklist,SOP-CA-006-033,CHK-006,Photo,N,QR Code,High,45,Observation
+TSK-0034,Waste Segregation & Storage Verification - Weekly Check,CA-006,CTRL-017,OBL-0017,CLA-0017,AUTH-004,REG-005,STD-002,RSK-010,Waste accumulation increasing fire fuel load,Facilities Management,Waste Management,ROLE-011,Waste Management Site Team,Facilities Manager,Weekly,Fixed,Weekly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Facilities Manager if overdue by SLA window,LOC-013,BLD-036,1,ZN-071,RM-071,Waste Segregation & Storage Verification,AST-027,Waste Compactor,CHK-016,Hazardous Waste Manifest Log,SOP-CA-006-034,CHK-016,Photo,N,QR Code,Medium,55,Deviation/NCR
+TSK-0035,Hazardous Waste Disposal & Manifest Verification - Monthly Check,CA-006,CTRL-018,OBL-0018,CLA-0018,AUTH-004,REG-004,STD-002,RSK-010,Waste accumulation increasing fire fuel load,Facilities Management,Waste Management,ROLE-011,Waste Management Site Team,Facilities Manager,Monthly,Fixed,Monthly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Facilities Manager if overdue by SLA window,LOC-014,BLD-038,1,ZN-076,RM-076,Hazardous Waste Disposal & Manifest Verification,AST-026,Hazardous Waste Storage Shed,CHK-006,Waste Management Checklist,SOP-CA-006-035,CHK-006,Photo,N,QR Code,Low,65,Audit Evidence
+TSK-0036,Hazardous Waste Disposal & Manifest Verification - Quarterly Check,CA-006,CTRL-018,OBL-0018,CLA-0018,AUTH-004,REG-004,STD-002,RSK-010,Waste accumulation increasing fire fuel load,Facilities Management,Waste Management,ROLE-011,Waste Management Site Team,Facilities Manager,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Facilities Manager if overdue by SLA window,LOC-016,BLD-041,1,ZN-081,RM-081,Hazardous Waste Disposal & Manifest Verification,AST-026,Hazardous Waste Storage Shed,CHK-016,Hazardous Waste Manifest Log,SOP-CA-006-036,CHK-016,Photo,N,QR Code,High,15,Pass/Fail
+TSK-0037,Electrical Panel & Transformer Preventive Maintenance - Quarterly Check,CA-007,CTRL-019,OBL-0019,CLA-0019,AUTH-003,REG-003,STD-003,RSK-007,Electrical fault / transformer fire,Facilities Management,FM Operations,ROLE-007,FM Operations Site Team,Facilities Manager,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Facilities Manager if overdue by SLA window,LOC-017,BLD-043,1,ZN-086,RM-086,Electrical Panel & Transformer Preventive Maintenance,AST-023,Transformer Unit,CHK-007,FM Preventive Maintenance Checklist,SOP-CA-007-037,CHK-007,Digital Signature,Y,Mobile,Medium,25,Observation
+TSK-0038,Electrical Panel & Transformer Preventive Maintenance - Half-Yearly Check,CA-007,CTRL-019,OBL-0019,CLA-0019,AUTH-003,REG-003,STD-003,RSK-007,Electrical fault / transformer fire,Facilities Management,FM Operations,ROLE-007,FM Operations Site Team,Facilities Manager,Half-Yearly,Fixed,Half-Yearly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Facilities Manager if overdue by SLA window,LOC-018,BLD-046,1,ZN-091,RM-091,Electrical Panel & Transformer Preventive Maintenance,AST-023,Transformer Unit,CHK-017,Utilities & Racking Inspection Log,SOP-CA-007-038,CHK-017,Digital Signature,Y,Mobile,Low,35,Deviation/NCR
+TSK-0039,HVAC / Ventilation System Preventive Maintenance - Monthly Check,CA-007,CTRL-020,OBL-0020,CLA-0020,AUTH-006,REG-009,STD-003,RSK-015,Power outage disrupting fire/life-safety systems,Facilities Management,FM Operations,ROLE-007,FM Operations Site Team,Facilities Manager,Monthly,Fixed,Monthly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Facilities Manager if overdue by SLA window,LOC-019,BLD-048,1,ZN-096,RM-096,HVAC / Ventilation System Preventive Maintenance,AST-031,HVAC / Air Handling Unit,CHK-007,FM Preventive Maintenance Checklist,SOP-CA-007-039,CHK-007,Digital Signature,Y,Mobile,High,45,Audit Evidence
+TSK-0040,HVAC / Ventilation System Preventive Maintenance - Quarterly Check,CA-007,CTRL-020,OBL-0020,CLA-0020,AUTH-006,REG-009,STD-003,RSK-015,Power outage disrupting fire/life-safety systems,Facilities Management,FM Operations,ROLE-007,FM Operations Site Team,Facilities Manager,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Facilities Manager if overdue by SLA window,LOC-001,BLD-001,1,ZN-001,RM-001,HVAC / Ventilation System Preventive Maintenance,AST-031,HVAC / Air Handling Unit,CHK-017,Utilities & Racking Inspection Log,SOP-CA-007-040,CHK-017,Digital Signature,Y,Mobile,Medium,55,Pass/Fail
+TSK-0041,Racking System Structural Safety Inspection - Quarterly Check,CA-007,CTRL-021,OBL-0021,CLA-0021,AUTH-001,REG-001,STD-001,RSK-008,Rack collapse due to overloading,Facilities Management,FM Operations,ROLE-007,FM Operations Site Team,Facilities Manager,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Facilities Manager if overdue by SLA window,LOC-001,BLD-003,1,ZN-006,RM-006,Racking System Structural Safety Inspection,AST-019,Pallet Racking System,CHK-007,FM Preventive Maintenance Checklist,SOP-CA-007-041,CHK-007,Digital Signature,Y,Mobile,Low,65,Observation
+TSK-0042,Racking System Structural Safety Inspection - Annual Check,CA-007,CTRL-021,OBL-0021,CLA-0021,AUTH-001,REG-001,STD-001,RSK-008,Rack collapse due to overloading,Facilities Management,FM Operations,ROLE-007,FM Operations Site Team,Facilities Manager,Annual,Fixed,Annual per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Facilities Manager if overdue by SLA window,LOC-002,BLD-006,1,ZN-011,RM-011,Racking System Structural Safety Inspection,AST-019,Pallet Racking System,CHK-017,Utilities & Racking Inspection Log,SOP-CA-007-042,CHK-017,Digital Signature,Y,Mobile,High,15,Deviation/NCR
+TSK-0043,Diesel Generator (DG) Set Operational Test - Weekly Check,CA-007,CTRL-022,OBL-0022,CLA-0022,AUTH-006,REG-008,STD-003,RSK-015,Power outage disrupting fire/life-safety systems,Facilities Management,FM Operations,ROLE-007,FM Operations Site Team,Facilities Manager,Weekly,Fixed,Weekly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Facilities Manager if overdue by SLA window,LOC-003,BLD-008,1,ZN-016,RM-016,Diesel Generator (DG) Set Operational Test,AST-024,Diesel Generator (DG) Backup Set,CHK-007,FM Preventive Maintenance Checklist,SOP-CA-007-043,CHK-007,Digital Signature,Y,Mobile,Medium,25,Audit Evidence
+TSK-0044,Diesel Generator (DG) Set Operational Test - Monthly Check,CA-007,CTRL-022,OBL-0022,CLA-0022,AUTH-006,REG-008,STD-003,RSK-015,Power outage disrupting fire/life-safety systems,Facilities Management,FM Operations,ROLE-007,FM Operations Site Team,Facilities Manager,Monthly,Fixed,Monthly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Facilities Manager if overdue by SLA window,LOC-004,BLD-011,1,ZN-021,RM-021,Diesel Generator (DG) Set Operational Test,AST-024,Diesel Generator (DG) Backup Set,CHK-017,Utilities & Racking Inspection Log,SOP-CA-007-044,CHK-017,Digital Signature,Y,Mobile,Low,35,Pass/Fail
+TSK-0045,Effluent / STP Discharge Quality Testing - Fortnightly Check,CA-008,CTRL-023,OBL-0023,CLA-0023,AUTH-008,REG-011,STD-002,RSK-014,Environmental discharge / emission non-compliance,EHS,Environmental Compliance,ROLE-010,Environmental Compliance Site Team,EHS Manager (Regional),Fortnightly,Fixed,Fortnightly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-005,BLD-013,1,ZN-026,RM-026,Effluent / STP Discharge Quality Testing,AST-025,Effluent / STP Treatment Plant,CHK-008,Environmental Monitoring Log,SOP-CA-008-045,CHK-008,Lab Report,N,IoT Sensor,High,45,Observation
+TSK-0046,Effluent / STP Discharge Quality Testing - Sensor Triggered Check,CA-008,CTRL-023,OBL-0023,CLA-0023,AUTH-008,REG-011,STD-002,RSK-014,Environmental discharge / emission non-compliance,EHS,Environmental Compliance,ROLE-010,Environmental Compliance Site Team,EHS Manager (Regional),Sensor Triggered,Triggered,Sensor Triggered per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-006,BLD-016,1,ZN-031,RM-031,Effluent / STP Discharge Quality Testing,AST-025,Effluent / STP Treatment Plant,CHK-018,Emission & Stack Monitoring Log,SOP-CA-008-046,CHK-018,Lab Report,N,IoT Sensor,Medium,55,Deviation/NCR
+TSK-0047,Air Emission & DG Stack Monitoring - Quarterly Check,CA-008,CTRL-024,OBL-0024,CLA-0024,AUTH-008,REG-011,STD-002,RSK-014,Environmental discharge / emission non-compliance,EHS,Environmental Compliance,ROLE-010,Environmental Compliance Site Team,EHS Manager (Regional),Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-006,BLD-018,1,ZN-036,RM-036,Air Emission & DG Stack Monitoring,AST-024,Diesel Generator (DG) Backup Set,CHK-008,Environmental Monitoring Log,SOP-CA-008-047,CHK-008,Lab Report,N,IoT Sensor,Low,65,Audit Evidence
+TSK-0048,Air Emission & DG Stack Monitoring - Half-Yearly Check,CA-008,CTRL-024,OBL-0024,CLA-0024,AUTH-008,REG-011,STD-002,RSK-014,Environmental discharge / emission non-compliance,EHS,Environmental Compliance,ROLE-010,Environmental Compliance Site Team,EHS Manager (Regional),Half-Yearly,Fixed,Half-Yearly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window,LOC-007,BLD-021,1,ZN-041,RM-041,Air Emission & DG Stack Monitoring,AST-024,Diesel Generator (DG) Backup Set,CHK-018,Emission & Stack Monitoring Log,SOP-CA-008-048,CHK-018,Lab Report,N,IoT Sensor,High,15,Pass/Fail
+TSK-0049,Fire Risk Assessment Review - Annual Check,CA-009,CTRL-025,OBL-0025,CLA-0025,AUTH-007,REG-007,STD-004,RSK-001,Fire outbreak in racking/storage area,Compliance,Compliance,ROLE-015,Compliance Site Team,Regional Compliance Head,Annual,Fixed,Annual per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Regional Compliance Head if overdue by SLA window,LOC-008,BLD-023,1,ZN-046,RM-046,Fire Risk Assessment Review,AST-013,Fire Alarm Control Panel,CHK-009,Hazard & Risk Assessment Review Form,SOP-CA-009-049,CHK-009,Form,N,Manual,Medium,25,Observation
+TSK-0050,Fire Risk Assessment Review - Risk Triggered Check,CA-009,CTRL-025,OBL-0025,CLA-0025,AUTH-007,REG-007,STD-004,RSK-001,Fire outbreak in racking/storage area,Compliance,Compliance,ROLE-015,Compliance Site Team,Regional Compliance Head,Risk Triggered,Triggered,Risk Triggered per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Regional Compliance Head if overdue by SLA window,LOC-009,BLD-026,1,ZN-051,RM-051,Fire Risk Assessment Review,AST-013,Fire Alarm Control Panel,CHK-019,Audit & CAPA Tracker,SOP-CA-009-050,CHK-019,Form,N,Manual,Low,35,Deviation/NCR
+TSK-0051,Internal Audit & Management Review - Half-Yearly Check,CA-009,CTRL-026,OBL-0026,CLA-0026,AUTH-002,REG-002,STD-006,RSK-011,Fire NOC / statutory certificate lapse,Compliance,Compliance,ROLE-015,Compliance Site Team,Regional Compliance Head,Half-Yearly,Fixed,Half-Yearly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Regional Compliance Head if overdue by SLA window,LOC-010,BLD-028,1,ZN-056,RM-056,Internal Audit & Management Review,AST-029,Access Control System,CHK-009,Hazard & Risk Assessment Review Form,SOP-CA-009-051,CHK-009,Form,N,Manual,High,45,Audit Evidence
+TSK-0052,Internal Audit & Management Review - Annual Check,CA-009,CTRL-026,OBL-0026,CLA-0026,AUTH-002,REG-002,STD-006,RSK-011,Fire NOC / statutory certificate lapse,Compliance,Compliance,ROLE-015,Compliance Site Team,Regional Compliance Head,Annual,Fixed,Annual per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Regional Compliance Head if overdue by SLA window,LOC-011,BLD-031,1,ZN-061,RM-061,Internal Audit & Management Review,AST-029,Access Control System,CHK-019,Audit & CAPA Tracker,SOP-CA-009-052,CHK-019,Form,N,Manual,Medium,55,Pass/Fail
+TSK-0053,Incident Investigation & CAPA Closure Verification - Event Based Check,CA-009,CTRL-027,OBL-0027,CLA-0027,AUTH-006,REG-009,STD-004,RSK-011,Fire NOC / statutory certificate lapse,Compliance,Compliance,ROLE-015,Compliance Site Team,Regional Compliance Head,Event Based,Triggered,Event Based per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Regional Compliance Head if overdue by SLA window,LOC-012,BLD-033,1,ZN-066,RM-066,Incident Investigation & CAPA Closure Verification,AST-028,CCTV Surveillance Camera,CHK-009,Hazard & Risk Assessment Review Form,SOP-CA-009-053,CHK-009,Form,N,Manual,Low,65,Observation
+TSK-0054,Incident Investigation & CAPA Closure Verification - AI Triggered Check,CA-009,CTRL-027,OBL-0027,CLA-0027,AUTH-006,REG-009,STD-004,RSK-011,Fire NOC / statutory certificate lapse,Compliance,Compliance,ROLE-015,Compliance Site Team,Regional Compliance Head,AI Triggered,Triggered,AI Triggered per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Regional Compliance Head if overdue by SLA window,LOC-013,BLD-036,1,ZN-071,RM-071,Incident Investigation & CAPA Closure Verification,AST-028,CCTV Surveillance Camera,CHK-019,Audit & CAPA Tracker,SOP-CA-009-054,CHK-019,Form,N,Manual,High,15,Deviation/NCR
+TSK-0055,Insurance Warranty Clause Compliance Check - Half-Yearly Check,CA-010,CTRL-028,OBL-0028,CLA-0028,AUTH-002,REG-002,STD-005,RSK-012,Insurance policy warranty non-conformance,Risk & Insurance,Risk Management,ROLE-014,Risk Management Site Team,Insurance & Risk Compliance Manager,Half-Yearly,Fixed,Half-Yearly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Insurance & Risk Compliance Manager if overdue by SLA window,LOC-014,BLD-038,1,ZN-076,RM-076,Insurance Warranty Clause Compliance Check,AST-030,Water Storage Tank (Fire Reserve),CHK-010,Insurance & Risk Compliance Verification Form,SOP-CA-010-055,CHK-010,Form,N,Manual,Medium,25,Audit Evidence
+TSK-0056,Insurance Warranty Clause Compliance Check - Annual Check,CA-010,CTRL-028,OBL-0028,CLA-0028,AUTH-002,REG-002,STD-005,RSK-012,Insurance policy warranty non-conformance,Risk & Insurance,Risk Management,ROLE-014,Risk Management Site Team,Insurance & Risk Compliance Manager,Annual,Fixed,Annual per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Insurance & Risk Compliance Manager if overdue by SLA window,LOC-016,BLD-041,1,ZN-081,RM-081,Insurance Warranty Clause Compliance Check,AST-030,Water Storage Tank (Fire Reserve),CHK-020,Fire NOC / Warranty Renewal Tracker,SOP-CA-010-056,CHK-020,Form,N,Manual,Low,35,Pass/Fail
+TSK-0057,Fire NOC / Statutory Certificate Renewal Tracking - Annual Check,CA-010,CTRL-029,OBL-0029,CLA-0029,AUTH-002,REG-002,STD-004,RSK-011,Fire NOC / statutory certificate lapse,Risk & Insurance,Risk Management,ROLE-014,Risk Management Site Team,Insurance & Risk Compliance Manager,Annual,Fixed,Annual per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Insurance & Risk Compliance Manager if overdue by SLA window,LOC-017,BLD-043,1,ZN-086,RM-086,Fire NOC / Statutory Certificate Renewal Tracking,AST-013,Fire Alarm Control Panel,CHK-010,Insurance & Risk Compliance Verification Form,SOP-CA-010-057,CHK-010,Form,N,Manual,High,45,Observation
+TSK-0058,Fire NOC / Statutory Certificate Renewal Tracking - Condition Based Check,CA-010,CTRL-029,OBL-0029,CLA-0029,AUTH-002,REG-002,STD-004,RSK-011,Fire NOC / statutory certificate lapse,Risk & Insurance,Risk Management,ROLE-014,Risk Management Site Team,Insurance & Risk Compliance Manager,Condition Based,Triggered,Condition Based per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Insurance & Risk Compliance Manager if overdue by SLA window,LOC-018,BLD-046,1,ZN-091,RM-091,Fire NOC / Statutory Certificate Renewal Tracking,AST-013,Fire Alarm Control Panel,CHK-020,Fire NOC / Warranty Renewal Tracker,SOP-CA-010-058,CHK-020,Form,N,Manual,Medium,55,Deviation/NCR
+TSK-0059,Risk Engineering Survey Recommendation Closure - Quarterly Check,CA-010,CTRL-030,OBL-0030,CLA-0030,AUTH-006,REG-010,STD-004,RSK-012,Insurance policy warranty non-conformance,Risk & Insurance,Risk Management,ROLE-014,Risk Management Site Team,Insurance & Risk Compliance Manager,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Insurance & Risk Compliance Manager if overdue by SLA window,LOC-019,BLD-048,1,ZN-096,RM-096,Risk Engineering Survey Recommendation Closure,AST-028,CCTV Surveillance Camera,CHK-010,Insurance & Risk Compliance Verification Form,SOP-CA-010-059,CHK-010,Form,N,Manual,Low,65,Audit Evidence
+TSK-0060,Risk Engineering Survey Recommendation Closure - Condition Based Check,CA-010,CTRL-030,OBL-0030,CLA-0030,AUTH-006,REG-010,STD-004,RSK-012,Insurance policy warranty non-conformance,Risk & Insurance,Risk Management,ROLE-014,Risk Management Site Team,Insurance & Risk Compliance Manager,Condition Based,Triggered,Condition Based per Calendar Generation Algorithm,Per Schedule Rules (Worksheet 13),5 business days,Escalate to Insurance & Risk Compliance Manager if overdue by SLA window,LOC-001,BLD-001,1,ZN-001,RM-001,Risk Engineering Survey Recommendation Closure,AST-028,CCTV Surveillance Camera,CHK-020,Fire NOC / Warranty Renewal Tracker,SOP-CA-010-060,CHK-020,Form,N,Manual,High,15,Pass/Fail
+
+
+--- WORKSHEET: 10_Organization_Mapping ---
+
+Company,Business Unit,Department,RoleID,Role Title,Approval Authority (Y/N)
+Vantage Industrial Parks & Logistics REIT,Warehouse Operations,Site Operations,ROLE-001,Warehouse Operations Manager,N
+Vantage Industrial Parks & Logistics REIT,Warehouse Operations,Site Operations,ROLE-002,Shift Warehouse Supervisor,N
+Vantage Industrial Parks & Logistics REIT,EHS,Safety,ROLE-003,EHS Officer (Site),N
+Vantage Industrial Parks & Logistics REIT,EHS,Safety,ROLE-004,EHS Manager (Regional),Y
+Vantage Industrial Parks & Logistics REIT,EHS,Fire & Life Safety,ROLE-005,Fire & Safety Officer,N
+Vantage Industrial Parks & Logistics REIT,EHS,Fire & Life Safety,ROLE-006,Fire & Safety Manager,Y
+Vantage Industrial Parks & Logistics REIT,Facilities Management,FM Operations,ROLE-007,Facilities Executive,N
+Vantage Industrial Parks & Logistics REIT,Facilities Management,FM Operations,ROLE-008,Facilities Manager,Y
+Vantage Industrial Parks & Logistics REIT,Facilities Management,Utilities,ROLE-009,MEP / Utilities Engineer,N
+Vantage Industrial Parks & Logistics REIT,EHS,Hazmat & Chemical Safety,ROLE-010,Hazardous Materials Coordinator,N
+Vantage Industrial Parks & Logistics REIT,Facilities Management,Waste Management,ROLE-011,Waste Management Coordinator,N
+Vantage Industrial Parks & Logistics REIT,EHS,Emergency Response,ROLE-012,Emergency Response Team Lead,Y
+Vantage Industrial Parks & Logistics REIT,Security,Site Security,ROLE-013,Security & Access Control Officer,N
+Vantage Industrial Parks & Logistics REIT,Risk & Insurance,Risk Management,ROLE-014,Insurance & Risk Compliance Manager,Y
+Vantage Industrial Parks & Logistics REIT,Compliance,Compliance,ROLE-015,Regional Compliance Head,Y
+Vantage Industrial Parks & Logistics REIT,Facilities Management,Vendor Management,ROLE-016,Fire Suppression Vendor Coordinator (AMC),N
+
+
+--- WORKSHEET: 11_Spatial_Mapping ---
+
+Company,SiteID,Site Name,BuildingID,Building Name,Floor,ZoneID,Zone Name,RoomID,Room Name
+Vantage Industrial Parks & Logistics REIT,LOC-001,Bengaluru Industrial & Logistics Park,BLD-001,Warehouse 1 - Bengaluru,1,ZN-001,Loading Dock & Yard,RM-001,Dock Area
+Vantage Industrial Parks & Logistics REIT,LOC-001,Bengaluru Industrial & Logistics Park,BLD-001,Warehouse 1 - Bengaluru,1,ZN-002,MEP / Utility Room,RM-002,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-001,Bengaluru Industrial & Logistics Park,BLD-002,Warehouse 2 - Bengaluru,1,ZN-003,MEP / Utility Room,RM-003,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-001,Bengaluru Industrial & Logistics Park,BLD-002,Warehouse 2 - Bengaluru,1,ZN-004,Battery Charging & MHE Yard,RM-004,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-001,Bengaluru Industrial & Logistics Park,BLD-003,Warehouse 3 - Bengaluru,1,ZN-005,Battery Charging & MHE Yard,RM-005,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-001,Bengaluru Industrial & Logistics Park,BLD-003,Warehouse 3 - Bengaluru,1,ZN-006,Fire Pump House,RM-006,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-002,Pune Industrial & Logistics Park,BLD-004,Warehouse 1 - Pune,1,ZN-007,Fire Pump House,RM-007,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-002,Pune Industrial & Logistics Park,BLD-004,Warehouse 1 - Pune,1,ZN-008,Racking & Storage Zone,RM-008,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-002,Pune Industrial & Logistics Park,BLD-005,Warehouse 2 - Pune,1,ZN-009,Racking & Storage Zone,RM-009,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-002,Pune Industrial & Logistics Park,BLD-005,Warehouse 2 - Pune,1,ZN-010,Loading Dock & Yard,RM-010,Dock Area
+Vantage Industrial Parks & Logistics REIT,LOC-002,Pune Industrial & Logistics Park,BLD-006,Warehouse 3 - Pune,1,ZN-011,Loading Dock & Yard,RM-011,Dock Area
+Vantage Industrial Parks & Logistics REIT,LOC-002,Pune Industrial & Logistics Park,BLD-006,Warehouse 3 - Pune,1,ZN-012,MEP / Utility Room,RM-012,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-003,Chennai Industrial & Logistics Park,BLD-007,Warehouse 1 - Chennai,1,ZN-013,MEP / Utility Room,RM-013,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-003,Chennai Industrial & Logistics Park,BLD-007,Warehouse 1 - Chennai,1,ZN-014,Battery Charging & MHE Yard,RM-014,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-003,Chennai Industrial & Logistics Park,BLD-008,Warehouse 2 - Chennai,1,ZN-015,Battery Charging & MHE Yard,RM-015,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-003,Chennai Industrial & Logistics Park,BLD-008,Warehouse 2 - Chennai,1,ZN-016,Fire Pump House,RM-016,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-003,Chennai Industrial & Logistics Park,BLD-009,Warehouse 3 - Chennai,1,ZN-017,Fire Pump House,RM-017,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-003,Chennai Industrial & Logistics Park,BLD-009,Warehouse 3 - Chennai,1,ZN-018,Racking & Storage Zone,RM-018,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-004,Gurugram Industrial & Logistics Park,BLD-010,Warehouse 1 - Gurugram,1,ZN-019,Racking & Storage Zone,RM-019,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-004,Gurugram Industrial & Logistics Park,BLD-010,Warehouse 1 - Gurugram,1,ZN-020,Loading Dock & Yard,RM-020,Dock Area
+Vantage Industrial Parks & Logistics REIT,LOC-004,Gurugram Industrial & Logistics Park,BLD-011,Warehouse 2 - Gurugram,1,ZN-021,Loading Dock & Yard,RM-021,Dock Area
+Vantage Industrial Parks & Logistics REIT,LOC-004,Gurugram Industrial & Logistics Park,BLD-011,Warehouse 2 - Gurugram,1,ZN-022,MEP / Utility Room,RM-022,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-004,Gurugram Industrial & Logistics Park,BLD-012,Warehouse 3 - Gurugram,1,ZN-023,MEP / Utility Room,RM-023,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-004,Gurugram Industrial & Logistics Park,BLD-012,Warehouse 3 - Gurugram,1,ZN-024,Battery Charging & MHE Yard,RM-024,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-005,Bhiwandi (Mumbai) Industrial & Logistics Park,BLD-013,Warehouse 1 - Bhiwandi (Mumbai),1,ZN-025,Battery Charging & MHE Yard,RM-025,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-005,Bhiwandi (Mumbai) Industrial & Logistics Park,BLD-013,Warehouse 1 - Bhiwandi (Mumbai),1,ZN-026,Fire Pump House,RM-026,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-005,Bhiwandi (Mumbai) Industrial & Logistics Park,BLD-014,Warehouse 2 - Bhiwandi (Mumbai),1,ZN-027,Fire Pump House,RM-027,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-005,Bhiwandi (Mumbai) Industrial & Logistics Park,BLD-014,Warehouse 2 - Bhiwandi (Mumbai),1,ZN-028,Racking & Storage Zone,RM-028,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-005,Bhiwandi (Mumbai) Industrial & Logistics Park,BLD-015,Warehouse 3 - Bhiwandi (Mumbai),1,ZN-029,Racking & Storage Zone,RM-029,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-005,Bhiwandi (Mumbai) Industrial & Logistics Park,BLD-015,Warehouse 3 - Bhiwandi (Mumbai),1,ZN-030,Loading Dock & Yard,RM-030,Dock Area
+Vantage Industrial Parks & Logistics REIT,LOC-006,Hyderabad Industrial & Logistics Park,BLD-016,Warehouse 1 - Hyderabad,1,ZN-031,Loading Dock & Yard,RM-031,Dock Area
+Vantage Industrial Parks & Logistics REIT,LOC-006,Hyderabad Industrial & Logistics Park,BLD-016,Warehouse 1 - Hyderabad,1,ZN-032,MEP / Utility Room,RM-032,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-006,Hyderabad Industrial & Logistics Park,BLD-017,Warehouse 2 - Hyderabad,1,ZN-033,MEP / Utility Room,RM-033,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-006,Hyderabad Industrial & Logistics Park,BLD-017,Warehouse 2 - Hyderabad,1,ZN-034,Battery Charging & MHE Yard,RM-034,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-006,Hyderabad Industrial & Logistics Park,BLD-018,Warehouse 3 - Hyderabad,1,ZN-035,Battery Charging & MHE Yard,RM-035,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-006,Hyderabad Industrial & Logistics Park,BLD-018,Warehouse 3 - Hyderabad,1,ZN-036,Fire Pump House,RM-036,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-007,Ahmedabad Industrial & Logistics Park,BLD-019,Warehouse 1 - Ahmedabad,1,ZN-037,Fire Pump House,RM-037,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-007,Ahmedabad Industrial & Logistics Park,BLD-019,Warehouse 1 - Ahmedabad,1,ZN-038,Racking & Storage Zone,RM-038,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-007,Ahmedabad Industrial & Logistics Park,BLD-020,Warehouse 2 - Ahmedabad,1,ZN-039,Racking & Storage Zone,RM-039,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-007,Ahmedabad Industrial & Logistics Park,BLD-020,Warehouse 2 - Ahmedabad,1,ZN-040,Loading Dock & Yard,RM-040,Dock Area
+Vantage Industrial Parks & Logistics REIT,LOC-007,Ahmedabad Industrial & Logistics Park,BLD-021,Warehouse 3 - Ahmedabad,1,ZN-041,Loading Dock & Yard,RM-041,Dock Area
+Vantage Industrial Parks & Logistics REIT,LOC-007,Ahmedabad Industrial & Logistics Park,BLD-021,Warehouse 3 - Ahmedabad,1,ZN-042,MEP / Utility Room,RM-042,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-008,Kolkata Industrial & Logistics Park,BLD-022,Warehouse 1 - Kolkata,1,ZN-043,MEP / Utility Room,RM-043,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-008,Kolkata Industrial & Logistics Park,BLD-022,Warehouse 1 - Kolkata,1,ZN-044,Battery Charging & MHE Yard,RM-044,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-008,Kolkata Industrial & Logistics Park,BLD-023,Warehouse 2 - Kolkata,1,ZN-045,Battery Charging & MHE Yard,RM-045,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-008,Kolkata Industrial & Logistics Park,BLD-023,Warehouse 2 - Kolkata,1,ZN-046,Fire Pump House,RM-046,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-008,Kolkata Industrial & Logistics Park,BLD-024,Warehouse 3 - Kolkata,1,ZN-047,Fire Pump House,RM-047,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-008,Kolkata Industrial & Logistics Park,BLD-024,Warehouse 3 - Kolkata,1,ZN-048,Racking & Storage Zone,RM-048,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-009,Jaipur Industrial & Logistics Park,BLD-025,Warehouse 1 - Jaipur,1,ZN-049,Racking & Storage Zone,RM-049,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-009,Jaipur Industrial & Logistics Park,BLD-025,Warehouse 1 - Jaipur,1,ZN-050,Loading Dock & Yard,RM-050,Dock Area
+Vantage Industrial Parks & Logistics REIT,LOC-009,Jaipur Industrial & Logistics Park,BLD-026,Warehouse 2 - Jaipur,1,ZN-051,Loading Dock & Yard,RM-051,Dock Area
+Vantage Industrial Parks & Logistics REIT,LOC-009,Jaipur Industrial & Logistics Park,BLD-026,Warehouse 2 - Jaipur,1,ZN-052,MEP / Utility Room,RM-052,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-009,Jaipur Industrial & Logistics Park,BLD-027,Warehouse 3 - Jaipur,1,ZN-053,MEP / Utility Room,RM-053,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-009,Jaipur Industrial & Logistics Park,BLD-027,Warehouse 3 - Jaipur,1,ZN-054,Battery Charging & MHE Yard,RM-054,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-010,Coimbatore Industrial & Logistics Park,BLD-028,Warehouse 1 - Coimbatore,1,ZN-055,Battery Charging & MHE Yard,RM-055,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-010,Coimbatore Industrial & Logistics Park,BLD-028,Warehouse 1 - Coimbatore,1,ZN-056,Fire Pump House,RM-056,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-010,Coimbatore Industrial & Logistics Park,BLD-029,Warehouse 2 - Coimbatore,1,ZN-057,Fire Pump House,RM-057,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-010,Coimbatore Industrial & Logistics Park,BLD-029,Warehouse 2 - Coimbatore,1,ZN-058,Racking & Storage Zone,RM-058,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-010,Coimbatore Industrial & Logistics Park,BLD-030,Warehouse 3 - Coimbatore,1,ZN-059,Racking & Storage Zone,RM-059,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-010,Coimbatore Industrial & Logistics Park,BLD-030,Warehouse 3 - Coimbatore,1,ZN-060,Loading Dock & Yard,RM-060,Dock Area
+Vantage Industrial Parks & Logistics REIT,LOC-011,Dartford (London) Industrial & Logistics Park,BLD-031,Warehouse 1 - Dartford (London),1,ZN-061,Loading Dock & Yard,RM-061,Dock Area
+Vantage Industrial Parks & Logistics REIT,LOC-011,Dartford (London) Industrial & Logistics Park,BLD-031,Warehouse 1 - Dartford (London),1,ZN-062,MEP / Utility Room,RM-062,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-011,Dartford (London) Industrial & Logistics Park,BLD-032,Warehouse 2 - Dartford (London),1,ZN-063,MEP / Utility Room,RM-063,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-011,Dartford (London) Industrial & Logistics Park,BLD-032,Warehouse 2 - Dartford (London),1,ZN-064,Battery Charging & MHE Yard,RM-064,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-012,Manchester Industrial & Logistics Park,BLD-033,Warehouse 1 - Manchester,1,ZN-065,Battery Charging & MHE Yard,RM-065,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-012,Manchester Industrial & Logistics Park,BLD-033,Warehouse 1 - Manchester,1,ZN-066,Fire Pump House,RM-066,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-012,Manchester Industrial & Logistics Park,BLD-034,Warehouse 2 - Manchester,1,ZN-067,Fire Pump House,RM-067,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-012,Manchester Industrial & Logistics Park,BLD-034,Warehouse 2 - Manchester,1,ZN-068,Racking & Storage Zone,RM-068,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-013,Birmingham Industrial & Logistics Park,BLD-035,Warehouse 1 - Birmingham,1,ZN-069,Racking & Storage Zone,RM-069,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-013,Birmingham Industrial & Logistics Park,BLD-035,Warehouse 1 - Birmingham,1,ZN-070,Loading Dock & Yard,RM-070,Dock Area
+Vantage Industrial Parks & Logistics REIT,LOC-013,Birmingham Industrial & Logistics Park,BLD-036,Warehouse 2 - Birmingham,1,ZN-071,Loading Dock & Yard,RM-071,Dock Area
+Vantage Industrial Parks & Logistics REIT,LOC-013,Birmingham Industrial & Logistics Park,BLD-036,Warehouse 2 - Birmingham,1,ZN-072,MEP / Utility Room,RM-072,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-014,Leeds Industrial & Logistics Park,BLD-037,Warehouse 1 - Leeds,1,ZN-073,MEP / Utility Room,RM-073,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-014,Leeds Industrial & Logistics Park,BLD-037,Warehouse 1 - Leeds,1,ZN-074,Battery Charging & MHE Yard,RM-074,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-014,Leeds Industrial & Logistics Park,BLD-038,Warehouse 2 - Leeds,1,ZN-075,Battery Charging & MHE Yard,RM-075,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-014,Leeds Industrial & Logistics Park,BLD-038,Warehouse 2 - Leeds,1,ZN-076,Fire Pump House,RM-076,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-015,Bristol Industrial & Logistics Park,BLD-039,Warehouse 1 - Bristol,1,ZN-077,Fire Pump House,RM-077,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-015,Bristol Industrial & Logistics Park,BLD-039,Warehouse 1 - Bristol,1,ZN-078,Racking & Storage Zone,RM-078,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-015,Bristol Industrial & Logistics Park,BLD-040,Warehouse 2 - Bristol,1,ZN-079,Racking & Storage Zone,RM-079,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-015,Bristol Industrial & Logistics Park,BLD-040,Warehouse 2 - Bristol,1,ZN-080,Loading Dock & Yard,RM-080,Dock Area
+Vantage Industrial Parks & Logistics REIT,LOC-016,Glasgow Industrial & Logistics Park,BLD-041,Warehouse 1 - Glasgow,1,ZN-081,Loading Dock & Yard,RM-081,Dock Area
+Vantage Industrial Parks & Logistics REIT,LOC-016,Glasgow Industrial & Logistics Park,BLD-041,Warehouse 1 - Glasgow,1,ZN-082,MEP / Utility Room,RM-082,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-016,Glasgow Industrial & Logistics Park,BLD-042,Warehouse 2 - Glasgow,1,ZN-083,MEP / Utility Room,RM-083,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-016,Glasgow Industrial & Logistics Park,BLD-042,Warehouse 2 - Glasgow,1,ZN-084,Battery Charging & MHE Yard,RM-084,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-017,Sheffield Industrial & Logistics Park,BLD-043,Warehouse 1 - Sheffield,1,ZN-085,Battery Charging & MHE Yard,RM-085,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-017,Sheffield Industrial & Logistics Park,BLD-043,Warehouse 1 - Sheffield,1,ZN-086,Fire Pump House,RM-086,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-017,Sheffield Industrial & Logistics Park,BLD-044,Warehouse 2 - Sheffield,1,ZN-087,Fire Pump House,RM-087,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-017,Sheffield Industrial & Logistics Park,BLD-044,Warehouse 2 - Sheffield,1,ZN-088,Racking & Storage Zone,RM-088,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-018,Nottingham Industrial & Logistics Park,BLD-045,Warehouse 1 - Nottingham,1,ZN-089,Racking & Storage Zone,RM-089,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-018,Nottingham Industrial & Logistics Park,BLD-045,Warehouse 1 - Nottingham,1,ZN-090,Loading Dock & Yard,RM-090,Dock Area
+Vantage Industrial Parks & Logistics REIT,LOC-018,Nottingham Industrial & Logistics Park,BLD-046,Warehouse 2 - Nottingham,1,ZN-091,Loading Dock & Yard,RM-091,Dock Area
+Vantage Industrial Parks & Logistics REIT,LOC-018,Nottingham Industrial & Logistics Park,BLD-046,Warehouse 2 - Nottingham,1,ZN-092,MEP / Utility Room,RM-092,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-019,Milton Keynes Industrial & Logistics Park,BLD-047,Warehouse 1 - Milton Keynes,1,ZN-093,MEP / Utility Room,RM-093,Electrical Panel Room
+Vantage Industrial Parks & Logistics REIT,LOC-019,Milton Keynes Industrial & Logistics Park,BLD-047,Warehouse 1 - Milton Keynes,1,ZN-094,Battery Charging & MHE Yard,RM-094,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-019,Milton Keynes Industrial & Logistics Park,BLD-048,Warehouse 2 - Milton Keynes,1,ZN-095,Battery Charging & MHE Yard,RM-095,Charging Bay
+Vantage Industrial Parks & Logistics REIT,LOC-019,Milton Keynes Industrial & Logistics Park,BLD-048,Warehouse 2 - Milton Keynes,1,ZN-096,Fire Pump House,RM-096,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-020,Warrington Industrial & Logistics Park,BLD-049,Warehouse 1 - Warrington,1,ZN-097,Fire Pump House,RM-097,Pump House
+Vantage Industrial Parks & Logistics REIT,LOC-020,Warrington Industrial & Logistics Park,BLD-049,Warehouse 1 - Warrington,1,ZN-098,Racking & Storage Zone,RM-098,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-020,Warrington Industrial & Logistics Park,BLD-050,Warehouse 2 - Warrington,1,ZN-099,Racking & Storage Zone,RM-099,Storage Bay A
+Vantage Industrial Parks & Logistics REIT,LOC-020,Warrington Industrial & Logistics Park,BLD-050,Warehouse 2 - Warrington,1,ZN-100,Loading Dock & Yard,RM-100,Dock Area
+
+
+--- WORKSHEET: 12_Checklist_Template_Mapping ---
+
+ChecklistID,Name,Type,ComplianceAreaID,Linked Task IDs
+CHK-001,Fire Detection & Alarm Test Log,Monitoring Log,CA-001,TSK-0001; TSK-0003; TSK-0005
+CHK-002,Fire Suppression Inspection Checklist,Inspection Form,CA-002,TSK-0007; TSK-0009; TSK-0011; TSK-0013
+CHK-003,Emergency Preparedness Drill Report,Report Template,CA-003,TSK-0015; TSK-0017; TSK-0019
+CHK-004,EHS/PPE/MHE Safety Checklist,Inspection Form,CA-004,TSK-0021; TSK-0023; TSK-0025
+CHK-005,Hazmat & Chemical Safety Checklist,Inspection Form,CA-005,TSK-0027; TSK-0029; TSK-0031
+CHK-006,Waste Management Checklist,Inspection Form,CA-006,TSK-0033; TSK-0035
+CHK-007,FM Preventive Maintenance Checklist,Maintenance Form,CA-007,TSK-0037; TSK-0039; TSK-0041; TSK-0043
+CHK-008,Environmental Monitoring Log,Lab Form,CA-008,TSK-0045; TSK-0047
+CHK-009,Hazard & Risk Assessment Review Form,Report Template,CA-009,TSK-0049; TSK-0051; TSK-0053
+CHK-010,Insurance & Risk Compliance Verification Form,Inspection Form,CA-010,TSK-0055; TSK-0057; TSK-0059
+CHK-011,Fire Alarm Zone Verification Log,Monitoring Log,CA-001,TSK-0002; TSK-0004; TSK-0006
+CHK-012,Fire Pump & Hydrant Test Log,Inspection Form,CA-002,TSK-0008; TSK-0010; TSK-0012; TSK-0014
+CHK-013,ERT Readiness & Mutual Aid Log,Report Template,CA-003,TSK-0016; TSK-0018; TSK-0020
+CHK-014,Permit-to-Work / Hot Work Register,Inspection Form,CA-004,TSK-0022; TSK-0024; TSK-0026
+CHK-015,Spill Response Readiness Log,Inspection Form,CA-005,TSK-0028; TSK-0030; TSK-0032
+CHK-016,Hazardous Waste Manifest Log,Inspection Form,CA-006,TSK-0034; TSK-0036
+CHK-017,Utilities & Racking Inspection Log,Maintenance Form,CA-007,TSK-0038; TSK-0040; TSK-0042; TSK-0044
+CHK-018,Emission & Stack Monitoring Log,Lab Form,CA-008,TSK-0046; TSK-0048
+CHK-019,Audit & CAPA Tracker,Report Template,CA-009,TSK-0050; TSK-0052; TSK-0054
+CHK-020,Fire NOC / Warranty Renewal Tracker,Report Template,CA-010,TSK-0056; TSK-0058; TSK-0060
+
+
+--- WORKSHEET: 13_Schedule_Rules ---
+
+TaskID,Frequency,Schedule Type,Calendar Rule,Anchor Week/Date,Trigger Condition,SLA,Escalation Rule
+TSK-0001,Monthly,Fixed,Monthly per Calendar Generation Algorithm,Week 01,N/A (fixed calendar schedule),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window
+TSK-0002,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Week 04,N/A (fixed calendar schedule),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window
+TSK-0003,Weekly,Fixed,Weekly per Calendar Generation Algorithm,Week 07,N/A (fixed calendar schedule),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window
+TSK-0004,Monthly,Fixed,Monthly per Calendar Generation Algorithm,Week 10,N/A (fixed calendar schedule),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window
+TSK-0005,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Week 13,N/A (fixed calendar schedule),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window
+TSK-0006,Half-Yearly,Fixed,Half-Yearly per Calendar Generation Algorithm,Week 16,N/A (fixed calendar schedule),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window
+TSK-0007,Monthly,Fixed,Monthly per Calendar Generation Algorithm,Week 19,N/A (fixed calendar schedule),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window
+TSK-0008,Sensor Triggered,Triggered,Sensor Triggered per Calendar Generation Algorithm,N/A (condition/event driven),Triggered by IoT sensor reading (pressure/temperature/flow) outside setpoint range,5 business days,Escalate to Fire & Safety Manager if overdue by SLA window
+TSK-0009,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Week 25,N/A (fixed calendar schedule),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window
+TSK-0010,Half-Yearly,Fixed,Half-Yearly per Calendar Generation Algorithm,Week 28,N/A (fixed calendar schedule),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window
+TSK-0011,Monthly,Fixed,Monthly per Calendar Generation Algorithm,Week 31,N/A (fixed calendar schedule),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window
+TSK-0012,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Week 34,N/A (fixed calendar schedule),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window
+TSK-0013,Weekly,Fixed,Weekly per Calendar Generation Algorithm,Week 37,N/A (fixed calendar schedule),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window
+TSK-0014,Monthly,Fixed,Monthly per Calendar Generation Algorithm,Week 40,N/A (fixed calendar schedule),5 business days,Escalate to Fire & Safety Manager if overdue by SLA window
+TSK-0015,Half-Yearly,Fixed,Half-Yearly per Calendar Generation Algorithm,Week 43,N/A (fixed calendar schedule),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0016,Annual,Fixed,Annual per Calendar Generation Algorithm,Week 46,N/A (fixed calendar schedule),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0017,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Week 49,N/A (fixed calendar schedule),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0018,Half-Yearly,Fixed,Half-Yearly per Calendar Generation Algorithm,Week 52,N/A (fixed calendar schedule),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0019,Annual,Fixed,Annual per Calendar Generation Algorithm,Week 03,N/A (fixed calendar schedule),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0020,Event Based,Triggered,Event Based per Calendar Generation Algorithm,N/A (condition/event driven),Triggered on scheduled maintenance/operational event completion,5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0021,Weekly,Fixed,Weekly per Calendar Generation Algorithm,Week 09,N/A (fixed calendar schedule),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0022,Monthly,Fixed,Monthly per Calendar Generation Algorithm,Week 12,N/A (fixed calendar schedule),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0023,Daily,Fixed,Daily per Calendar Generation Algorithm,Week 15,N/A (fixed calendar schedule),24 hours,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0024,Weekly,Fixed,Weekly per Calendar Generation Algorithm,Week 18,N/A (fixed calendar schedule),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0025,Event Based,Triggered,Event Based per Calendar Generation Algorithm,N/A (condition/event driven),Triggered on scheduled maintenance/operational event completion,5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0026,Condition Based,Triggered,Condition Based per Calendar Generation Algorithm,N/A (condition/event driven),Triggered when a monitored condition breaches a defined threshold,5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0027,Monthly,Fixed,Monthly per Calendar Generation Algorithm,Week 27,N/A (fixed calendar schedule),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0028,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Week 30,N/A (fixed calendar schedule),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0029,Weekly,Fixed,Weekly per Calendar Generation Algorithm,Week 33,N/A (fixed calendar schedule),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0030,Hourly,Fixed,Hourly per Calendar Generation Algorithm,Week 36,N/A (fixed calendar schedule),24 hours,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0031,Monthly,Fixed,Monthly per Calendar Generation Algorithm,Week 39,N/A (fixed calendar schedule),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0032,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Week 42,N/A (fixed calendar schedule),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0033,Daily,Fixed,Daily per Calendar Generation Algorithm,Week 45,N/A (fixed calendar schedule),24 hours,Escalate to Facilities Manager if overdue by SLA window
+TSK-0034,Weekly,Fixed,Weekly per Calendar Generation Algorithm,Week 48,N/A (fixed calendar schedule),5 business days,Escalate to Facilities Manager if overdue by SLA window
+TSK-0035,Monthly,Fixed,Monthly per Calendar Generation Algorithm,Week 51,N/A (fixed calendar schedule),5 business days,Escalate to Facilities Manager if overdue by SLA window
+TSK-0036,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Week 02,N/A (fixed calendar schedule),5 business days,Escalate to Facilities Manager if overdue by SLA window
+TSK-0037,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Week 05,N/A (fixed calendar schedule),5 business days,Escalate to Facilities Manager if overdue by SLA window
+TSK-0038,Half-Yearly,Fixed,Half-Yearly per Calendar Generation Algorithm,Week 08,N/A (fixed calendar schedule),5 business days,Escalate to Facilities Manager if overdue by SLA window
+TSK-0039,Monthly,Fixed,Monthly per Calendar Generation Algorithm,Week 11,N/A (fixed calendar schedule),5 business days,Escalate to Facilities Manager if overdue by SLA window
+TSK-0040,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Week 14,N/A (fixed calendar schedule),5 business days,Escalate to Facilities Manager if overdue by SLA window
+TSK-0041,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Week 17,N/A (fixed calendar schedule),5 business days,Escalate to Facilities Manager if overdue by SLA window
+TSK-0042,Annual,Fixed,Annual per Calendar Generation Algorithm,Week 20,N/A (fixed calendar schedule),5 business days,Escalate to Facilities Manager if overdue by SLA window
+TSK-0043,Weekly,Fixed,Weekly per Calendar Generation Algorithm,Week 23,N/A (fixed calendar schedule),5 business days,Escalate to Facilities Manager if overdue by SLA window
+TSK-0044,Monthly,Fixed,Monthly per Calendar Generation Algorithm,Week 26,N/A (fixed calendar schedule),5 business days,Escalate to Facilities Manager if overdue by SLA window
+TSK-0045,Fortnightly,Fixed,Fortnightly per Calendar Generation Algorithm,Week 29,N/A (fixed calendar schedule),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0046,Sensor Triggered,Triggered,Sensor Triggered per Calendar Generation Algorithm,N/A (condition/event driven),Triggered by IoT sensor reading (pressure/temperature/flow) outside setpoint range,5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0047,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Week 35,N/A (fixed calendar schedule),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0048,Half-Yearly,Fixed,Half-Yearly per Calendar Generation Algorithm,Week 38,N/A (fixed calendar schedule),5 business days,Escalate to EHS Manager (Regional) if overdue by SLA window
+TSK-0049,Annual,Fixed,Annual per Calendar Generation Algorithm,Week 41,N/A (fixed calendar schedule),5 business days,Escalate to Regional Compliance Head if overdue by SLA window
+TSK-0050,Risk Triggered,Triggered,Risk Triggered per Calendar Generation Algorithm,N/A (condition/event driven),Triggered by an elevated entry in the Risk Register (Worksheet 17),5 business days,Escalate to Regional Compliance Head if overdue by SLA window
+TSK-0051,Half-Yearly,Fixed,Half-Yearly per Calendar Generation Algorithm,Week 47,N/A (fixed calendar schedule),5 business days,Escalate to Regional Compliance Head if overdue by SLA window
+TSK-0052,Annual,Fixed,Annual per Calendar Generation Algorithm,Week 50,N/A (fixed calendar schedule),5 business days,Escalate to Regional Compliance Head if overdue by SLA window
+TSK-0053,Event Based,Triggered,Event Based per Calendar Generation Algorithm,N/A (condition/event driven),Triggered on scheduled maintenance/operational event completion,5 business days,Escalate to Regional Compliance Head if overdue by SLA window
+TSK-0054,AI Triggered,Triggered,AI Triggered per Calendar Generation Algorithm,N/A (condition/event driven),Triggered by AI/ML anomaly detection on the compliance knowledge graph,5 business days,Escalate to Regional Compliance Head if overdue by SLA window
+TSK-0055,Half-Yearly,Fixed,Half-Yearly per Calendar Generation Algorithm,Week 07,N/A (fixed calendar schedule),5 business days,Escalate to Insurance & Risk Compliance Manager if overdue by SLA window
+TSK-0056,Annual,Fixed,Annual per Calendar Generation Algorithm,Week 10,N/A (fixed calendar schedule),5 business days,Escalate to Insurance & Risk Compliance Manager if overdue by SLA window
+TSK-0057,Annual,Fixed,Annual per Calendar Generation Algorithm,Week 13,N/A (fixed calendar schedule),5 business days,Escalate to Insurance & Risk Compliance Manager if overdue by SLA window
+TSK-0058,Condition Based,Triggered,Condition Based per Calendar Generation Algorithm,N/A (condition/event driven),Triggered when a monitored condition breaches a defined threshold,5 business days,Escalate to Insurance & Risk Compliance Manager if overdue by SLA window
+TSK-0059,Quarterly,Fixed,Quarterly per Calendar Generation Algorithm,Week 19,N/A (fixed calendar schedule),5 business days,Escalate to Insurance & Risk Compliance Manager if overdue by SLA window
+TSK-0060,Condition Based,Triggered,Condition Based per Calendar Generation Algorithm,N/A (condition/event driven),Triggered when a monitored condition breaches a defined threshold,5 business days,Escalate to Insurance & Risk Compliance Manager if overdue by SLA window
+
+
+--- WORKSHEET: 14_52Wk_Calendar ---
+
+TaskID,Task Name,Frequency,Week01,Week02,Week03,Week04,Week05,Week06,Week07,Week08,Week09,Week10,Week11,Week12,Week13,Week14,Week15,Week16,Week17,Week18,Week19,Week20,Week21,Week22,Week23,Week24,Week25,Week26,Week27,Week28,Week29,Week30,Week31,Week32,Week33,Week34,Week35,Week36,Week37,Week38,Week39,Week40,Week41,Week42,Week43,Week44,Week45,Week46,Week47,Week48,Week49,Week50,Week51,Week52
+TSK-0001,Smoke & Heat Detector Functional Test - Monthly Check,Monthly,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,
+TSK-0002,Smoke & Heat Detector Functional Test - Quarterly Check,Quarterly,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,
+TSK-0003,Fire Alarm Panel & Zone Verification - Weekly Check,Weekly,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+TSK-0004,Fire Alarm Panel & Zone Verification - Monthly Check,Monthly,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,
+TSK-0005,PA / Voice Evacuation System Test - Quarterly Check,Quarterly,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y
+TSK-0006,PA / Voice Evacuation System Test - Half-Yearly Check,Half-Yearly,,,,,,,,,,,,,,,,Y,,,,,,,,,,,,,,,,,,,,,,,,,,Y,,,,,,,,,,
+TSK-0007,Fire Hydrant System Pressure Test - Monthly Check,Monthly,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,
+TSK-0008,Fire Hydrant System Pressure Test - Sensor Triggered Check,Sensor Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered
+TSK-0009,Sprinkler Riser & ESFR Head Inspection - Quarterly Check,Quarterly,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,
+TSK-0010,Sprinkler Riser & ESFR Head Inspection - Half-Yearly Check,Half-Yearly,,Y,,,,,,,,,,,,,,,,,,,,,,,,,,Y,,,,,,,,,,,,,,,,,,,,,,,,
+TSK-0011,Fire Extinguisher Inspection & Recharge Check - Monthly Check,Monthly,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,
+TSK-0012,Fire Extinguisher Inspection & Recharge Check - Quarterly Check,Quarterly,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,
+TSK-0013,Fire Pump House Operational Test - Weekly Check,Weekly,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+TSK-0014,Fire Pump House Operational Test - Monthly Check,Monthly,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y
+TSK-0015,Fire & Emergency Evacuation Drill - Half-Yearly Check,Half-Yearly,,,,,,,,,,,,,,,,,Y,,,,,,,,,,,,,,,,,,,,,,,,,,Y,,,,,,,,,
+TSK-0016,Fire & Emergency Evacuation Drill - Annual Check,Annual,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Y,,,,,,
+TSK-0017,Emergency Response Team Readiness Check - Quarterly Check,Quarterly,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,
+TSK-0018,Emergency Response Team Readiness Check - Half-Yearly Check,Half-Yearly,,,,,,,,,,,,,,,,,,,,,,,,,,Y,,,,,,,,,,,,,,,,,,,,,,,,,,Y
+TSK-0019,Mock Drill - Mutual Aid & External Agency Coordination - Annual Check,Annual,,,Y,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+TSK-0020,Mock Drill - Mutual Aid & External Agency Coordination - Event Based Check,Event Based,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered
+TSK-0021,PPE Compliance Inspection - Weekly Check,Weekly,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+TSK-0022,PPE Compliance Inspection - Monthly Check,Monthly,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y
+TSK-0023,MHE / Forklift Safety Inspection - Daily Check,Daily,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+TSK-0024,MHE / Forklift Safety Inspection - Weekly Check,Weekly,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+TSK-0025,Permit-to-Work & Hot Work Compliance Check - Event Based Check,Event Based,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered
+TSK-0026,Permit-to-Work & Hot Work Compliance Check - Condition Based Check,Condition Based,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered
+TSK-0027,Hazardous Chemical Storage Compliance Check - Monthly Check,Monthly,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,
+TSK-0028,Hazardous Chemical Storage Compliance Check - Quarterly Check,Quarterly,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,
+TSK-0029,Battery Charging Area Safety Inspection - Weekly Check,Weekly,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+TSK-0030,Battery Charging Area Safety Inspection - Hourly Check,Hourly,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+TSK-0031,Spill Kit & Chemical Spill Response Readiness Check - Monthly Check,Monthly,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,
+TSK-0032,Spill Kit & Chemical Spill Response Readiness Check - Quarterly Check,Quarterly,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,
+TSK-0033,Waste Segregation & Storage Verification - Daily Check,Daily,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+TSK-0034,Waste Segregation & Storage Verification - Weekly Check,Weekly,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+TSK-0035,Hazardous Waste Disposal & Manifest Verification - Monthly Check,Monthly,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,
+TSK-0036,Hazardous Waste Disposal & Manifest Verification - Quarterly Check,Quarterly,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,
+TSK-0037,Electrical Panel & Transformer Preventive Maintenance - Quarterly Check,Quarterly,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,
+TSK-0038,Electrical Panel & Transformer Preventive Maintenance - Half-Yearly Check,Half-Yearly,,,,,,,,Y,,,,,,,,,,,,,,,,,,,,,,,,,,Y,,,,,,,,,,,,,,,,,,
+TSK-0039,HVAC / Ventilation System Preventive Maintenance - Monthly Check,Monthly,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,
+TSK-0040,HVAC / Ventilation System Preventive Maintenance - Quarterly Check,Quarterly,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,
+TSK-0041,Racking System Structural Safety Inspection - Quarterly Check,Quarterly,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,
+TSK-0042,Racking System Structural Safety Inspection - Annual Check,Annual,,,,,,,,,,,,,,,,,,,,Y,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+TSK-0043,Diesel Generator (DG) Set Operational Test - Weekly Check,Weekly,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+TSK-0044,Diesel Generator (DG) Set Operational Test - Monthly Check,Monthly,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,,,Y,,
+TSK-0045,Effluent / STP Discharge Quality Testing - Fortnightly Check,Fortnightly,Y,,Y,,Y,,Y,,Y,,Y,,Y,,Y,,Y,,Y,,Y,,Y,,Y,,Y,,Y,,Y,,Y,,Y,,Y,,Y,,Y,,Y,,Y,,Y,,Y,,Y,
+TSK-0046,Effluent / STP Discharge Quality Testing - Sensor Triggered Check,Sensor Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered
+TSK-0047,Air Emission & DG Stack Monitoring - Quarterly Check,Quarterly,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,
+TSK-0048,Air Emission & DG Stack Monitoring - Half-Yearly Check,Half-Yearly,,,,,,,,,,,,Y,,,,,,,,,,,,,,,,,,,,,,,,,,Y,,,,,,,,,,,,,,
+TSK-0049,Fire Risk Assessment Review - Annual Check,Annual,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Y,,,,,,,,,,,
+TSK-0050,Fire Risk Assessment Review - Risk Triggered Check,Risk Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered
+TSK-0051,Internal Audit & Management Review - Half-Yearly Check,Half-Yearly,,,,,,,,,,,,,,,,,,,,,Y,,,,,,,,,,,,,,,,,,,,,,,,,,Y,,,,,
+TSK-0052,Internal Audit & Management Review - Annual Check,Annual,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Y,,
+TSK-0053,Incident Investigation & CAPA Closure Verification - Event Based Check,Event Based,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered
+TSK-0054,Incident Investigation & CAPA Closure Verification - AI Triggered Check,AI Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered
+TSK-0055,Insurance Warranty Clause Compliance Check - Half-Yearly Check,Half-Yearly,,,,,,,Y,,,,,,,,,,,,,,,,,,,,,,,,,,Y,,,,,,,,,,,,,,,,,,,
+TSK-0056,Insurance Warranty Clause Compliance Check - Annual Check,Annual,,,,,,,,,,Y,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+TSK-0057,Fire NOC / Statutory Certificate Renewal Tracking - Annual Check,Annual,,,,,,,,,,,,,Y,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+TSK-0058,Fire NOC / Statutory Certificate Renewal Tracking - Condition Based Check,Condition Based,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered
+TSK-0059,Risk Engineering Survey Recommendation Closure - Quarterly Check,Quarterly,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,,,,,,,Y,,,,,,,
+TSK-0060,Risk Engineering Survey Recommendation Closure - Condition Based Check,Condition Based,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered,Triggered
+
+
+--- WORKSHEET: 15_Traceability_Matrix ---
+
+TaskID,ControlID,ObligationID,ClauseID,StandardID,RegulationID,AuthorityID,ComplianceAreaID,RiskID
+TSK-0001,CTRL-001,OBL-0001,CLA-0001,STD-008,REG-001,AUTH-002,CA-001,RSK-007
+TSK-0002,CTRL-001,OBL-0001,CLA-0001,STD-008,REG-001,AUTH-002,CA-001,RSK-007
+TSK-0003,CTRL-002,OBL-0002,CLA-0002,STD-008,REG-008,AUTH-007,CA-001,RSK-007
+TSK-0004,CTRL-002,OBL-0002,CLA-0002,STD-008,REG-008,AUTH-007,CA-001,RSK-007
+TSK-0005,CTRL-003,OBL-0003,CLA-0003,STD-008,REG-007,AUTH-007,CA-001,RSK-009
+TSK-0006,CTRL-003,OBL-0003,CLA-0003,STD-008,REG-007,AUTH-007,CA-001,RSK-009
+TSK-0007,CTRL-004,OBL-0004,CLA-0004,STD-010,REG-002,AUTH-002,CA-002,RSK-013
+TSK-0008,CTRL-004,OBL-0004,CLA-0004,STD-010,REG-002,AUTH-002,CA-002,RSK-013
+TSK-0009,CTRL-005,OBL-0005,CLA-0005,STD-007,REG-001,AUTH-002,CA-002,RSK-002
+TSK-0010,CTRL-005,OBL-0005,CLA-0005,STD-007,REG-001,AUTH-002,CA-002,RSK-002
+TSK-0011,CTRL-006,OBL-0006,CLA-0006,STD-007,REG-002,AUTH-002,CA-002,RSK-001
+TSK-0012,CTRL-006,OBL-0006,CLA-0006,STD-007,REG-002,AUTH-002,CA-002,RSK-001
+TSK-0013,CTRL-007,OBL-0007,CLA-0007,STD-007,REG-008,AUTH-007,CA-002,RSK-013
+TSK-0014,CTRL-007,OBL-0007,CLA-0007,STD-007,REG-008,AUTH-007,CA-002,RSK-013
+TSK-0015,CTRL-008,OBL-0008,CLA-0008,STD-005,REG-001,AUTH-002,CA-003,RSK-009
+TSK-0016,CTRL-008,OBL-0008,CLA-0008,STD-005,REG-001,AUTH-002,CA-003,RSK-009
+TSK-0017,CTRL-009,OBL-0009,CLA-0009,STD-005,REG-009,AUTH-006,CA-003,RSK-009
+TSK-0018,CTRL-009,OBL-0009,CLA-0009,STD-005,REG-009,AUTH-006,CA-003,RSK-009
+TSK-0019,CTRL-010,OBL-0010,CLA-0010,STD-005,REG-007,AUTH-007,CA-003,RSK-009
+TSK-0020,CTRL-010,OBL-0010,CLA-0010,STD-005,REG-007,AUTH-007,CA-003,RSK-009
+TSK-0021,CTRL-011,OBL-0011,CLA-0011,STD-001,REG-003,AUTH-003,CA-004,RSK-004
+TSK-0022,CTRL-011,OBL-0011,CLA-0011,STD-001,REG-003,AUTH-003,CA-004,RSK-004
+TSK-0023,CTRL-012,OBL-0012,CLA-0012,STD-001,REG-009,AUTH-006,CA-004,RSK-004
+TSK-0024,CTRL-012,OBL-0012,CLA-0012,STD-001,REG-009,AUTH-006,CA-004,RSK-004
+TSK-0025,CTRL-013,OBL-0013,CLA-0013,STD-001,REG-003,AUTH-003,CA-004,RSK-007
+TSK-0026,CTRL-013,OBL-0013,CLA-0013,STD-001,REG-003,AUTH-003,CA-004,RSK-007
+TSK-0027,CTRL-014,OBL-0014,CLA-0014,STD-002,REG-006,AUTH-005,CA-005,RSK-006
+TSK-0028,CTRL-014,OBL-0014,CLA-0014,STD-002,REG-006,AUTH-005,CA-005,RSK-006
+TSK-0029,CTRL-015,OBL-0015,CLA-0015,STD-004,REG-010,AUTH-006,CA-005,RSK-005
+TSK-0030,CTRL-015,OBL-0015,CLA-0015,STD-004,REG-010,AUTH-006,CA-005,RSK-005
+TSK-0031,CTRL-016,OBL-0016,CLA-0016,STD-001,REG-006,AUTH-005,CA-005,RSK-006
+TSK-0032,CTRL-016,OBL-0016,CLA-0016,STD-001,REG-006,AUTH-005,CA-005,RSK-006
+TSK-0033,CTRL-017,OBL-0017,CLA-0017,STD-002,REG-005,AUTH-004,CA-006,RSK-010
+TSK-0034,CTRL-017,OBL-0017,CLA-0017,STD-002,REG-005,AUTH-004,CA-006,RSK-010
+TSK-0035,CTRL-018,OBL-0018,CLA-0018,STD-002,REG-004,AUTH-004,CA-006,RSK-010
+TSK-0036,CTRL-018,OBL-0018,CLA-0018,STD-002,REG-004,AUTH-004,CA-006,RSK-010
+TSK-0037,CTRL-019,OBL-0019,CLA-0019,STD-003,REG-003,AUTH-003,CA-007,RSK-007
+TSK-0038,CTRL-019,OBL-0019,CLA-0019,STD-003,REG-003,AUTH-003,CA-007,RSK-007
+TSK-0039,CTRL-020,OBL-0020,CLA-0020,STD-003,REG-009,AUTH-006,CA-007,RSK-015
+TSK-0040,CTRL-020,OBL-0020,CLA-0020,STD-003,REG-009,AUTH-006,CA-007,RSK-015
+TSK-0041,CTRL-021,OBL-0021,CLA-0021,STD-001,REG-001,AUTH-001,CA-007,RSK-008
+TSK-0042,CTRL-021,OBL-0021,CLA-0021,STD-001,REG-001,AUTH-001,CA-007,RSK-008
+TSK-0043,CTRL-022,OBL-0022,CLA-0022,STD-003,REG-008,AUTH-006,CA-007,RSK-015
+TSK-0044,CTRL-022,OBL-0022,CLA-0022,STD-003,REG-008,AUTH-006,CA-007,RSK-015
+TSK-0045,CTRL-023,OBL-0023,CLA-0023,STD-002,REG-011,AUTH-008,CA-008,RSK-014
+TSK-0046,CTRL-023,OBL-0023,CLA-0023,STD-002,REG-011,AUTH-008,CA-008,RSK-014
+TSK-0047,CTRL-024,OBL-0024,CLA-0024,STD-002,REG-011,AUTH-008,CA-008,RSK-014
+TSK-0048,CTRL-024,OBL-0024,CLA-0024,STD-002,REG-011,AUTH-008,CA-008,RSK-014
+TSK-0049,CTRL-025,OBL-0025,CLA-0025,STD-004,REG-007,AUTH-007,CA-009,RSK-001
+TSK-0050,CTRL-025,OBL-0025,CLA-0025,STD-004,REG-007,AUTH-007,CA-009,RSK-001
+TSK-0051,CTRL-026,OBL-0026,CLA-0026,STD-006,REG-002,AUTH-002,CA-009,RSK-011
+TSK-0052,CTRL-026,OBL-0026,CLA-0026,STD-006,REG-002,AUTH-002,CA-009,RSK-011
+TSK-0053,CTRL-027,OBL-0027,CLA-0027,STD-004,REG-009,AUTH-006,CA-009,RSK-011
+TSK-0054,CTRL-027,OBL-0027,CLA-0027,STD-004,REG-009,AUTH-006,CA-009,RSK-011
+TSK-0055,CTRL-028,OBL-0028,CLA-0028,STD-005,REG-002,AUTH-002,CA-010,RSK-012
+TSK-0056,CTRL-028,OBL-0028,CLA-0028,STD-005,REG-002,AUTH-002,CA-010,RSK-012
+TSK-0057,CTRL-029,OBL-0029,CLA-0029,STD-004,REG-002,AUTH-002,CA-010,RSK-011
+TSK-0058,CTRL-029,OBL-0029,CLA-0029,STD-004,REG-002,AUTH-002,CA-010,RSK-011
+TSK-0059,CTRL-030,OBL-0030,CLA-0030,STD-004,REG-010,AUTH-006,CA-010,RSK-012
+TSK-0060,CTRL-030,OBL-0030,CLA-0030,STD-004,REG-010,AUTH-006,CA-010,RSK-012
+
+
+--- WORKSHEET: 16_Relationship_Matrix ---
+
+From_ID,From_Type,Relationship,To_ID,To_Type,Relationship_Category,Cardinality
+AUTH-001,Authority,issues,REG-001,Regulation,Traceability,1:N
+AUTH-002,Authority,issues,REG-002,Regulation,Traceability,1:N
+AUTH-003,Authority,issues,REG-003,Regulation,Traceability,1:N
+AUTH-004,Authority,issues,REG-004,Regulation,Traceability,1:N
+AUTH-004,Authority,issues,REG-005,Regulation,Traceability,1:N
+AUTH-005,Authority,issues,REG-006,Regulation,Traceability,1:N
+AUTH-007,Authority,issues,REG-007,Regulation,Traceability,1:N
+AUTH-006,Authority,issues,REG-008,Regulation,Traceability,1:N
+AUTH-006,Authority,issues,REG-009,Regulation,Traceability,1:N
+AUTH-006,Authority,issues,REG-010,Regulation,Traceability,1:N
+AUTH-008,Authority,issues,REG-011,Regulation,Traceability,1:N
+STD-008,STD,defines,CLA-0001,Clause,Traceability,1:N
+STD-008,STD,defines,CLA-0002,Clause,Traceability,1:N
+STD-008,STD,defines,CLA-0003,Clause,Traceability,1:N
+STD-010,STD,defines,CLA-0004,Clause,Traceability,1:N
+STD-007,STD,defines,CLA-0005,Clause,Traceability,1:N
+REG-002,REG,defines,CLA-0006,Clause,Traceability,1:N
+STD-007,STD,defines,CLA-0007,Clause,Traceability,1:N
+REG-001,REG,defines,CLA-0008,Clause,Traceability,1:N
+STD-005,STD,defines,CLA-0009,Clause,Traceability,1:N
+REG-007,REG,defines,CLA-0010,Clause,Traceability,1:N
+STD-001,STD,defines,CLA-0011,Clause,Traceability,1:N
+STD-001,STD,defines,CLA-0012,Clause,Traceability,1:N
+REG-003,REG,defines,CLA-0013,Clause,Traceability,1:N
+REG-006,REG,defines,CLA-0014,Clause,Traceability,1:N
+REG-010,REG,defines,CLA-0015,Clause,Traceability,1:N
+STD-001,STD,defines,CLA-0016,Clause,Traceability,1:N
+REG-005,REG,defines,CLA-0017,Clause,Traceability,1:N
+REG-004,REG,defines,CLA-0018,Clause,Traceability,1:N
+STD-003,STD,defines,CLA-0019,Clause,Traceability,1:N
+STD-003,STD,defines,CLA-0020,Clause,Traceability,1:N
+REG-001,REG,defines,CLA-0021,Clause,Traceability,1:N
+STD-003,STD,defines,CLA-0022,Clause,Traceability,1:N
+REG-011,REG,defines,CLA-0023,Clause,Traceability,1:N
+REG-011,REG,defines,CLA-0024,Clause,Traceability,1:N
+REG-007,REG,defines,CLA-0025,Clause,Traceability,1:N
+STD-006,STD,defines,CLA-0026,Clause,Traceability,1:N
+STD-004,STD,defines,CLA-0027,Clause,Traceability,1:N
+STD-005,STD,defines,CLA-0028,Clause,Traceability,1:N
+REG-002,REG,defines,CLA-0029,Clause,Traceability,1:N
+STD-004,STD,defines,CLA-0030,Clause,Traceability,1:N
+STD-001,STD,defines,CLA-0031,Clause,Traceability,1:N
+STD-002,STD,defines,CLA-0032,Clause,Traceability,1:N
+REG-009,REG,defines,CLA-0033,Clause,Traceability,1:N
+REG-008,REG,defines,CLA-0034,Clause,Traceability,1:N
+CLA-0001,Clause,creates,OBL-0001,Obligation,Traceability,1:1
+CLA-0002,Clause,creates,OBL-0002,Obligation,Traceability,1:1
+CLA-0003,Clause,creates,OBL-0003,Obligation,Traceability,1:1
+CLA-0004,Clause,creates,OBL-0004,Obligation,Traceability,1:1
+CLA-0005,Clause,creates,OBL-0005,Obligation,Traceability,1:1
+CLA-0006,Clause,creates,OBL-0006,Obligation,Traceability,1:1
+CLA-0007,Clause,creates,OBL-0007,Obligation,Traceability,1:1
+CLA-0008,Clause,creates,OBL-0008,Obligation,Traceability,1:1
+CLA-0009,Clause,creates,OBL-0009,Obligation,Traceability,1:1
+CLA-0010,Clause,creates,OBL-0010,Obligation,Traceability,1:1
+CLA-0011,Clause,creates,OBL-0011,Obligation,Traceability,1:1
+CLA-0012,Clause,creates,OBL-0012,Obligation,Traceability,1:1
+CLA-0013,Clause,creates,OBL-0013,Obligation,Traceability,1:1
+CLA-0014,Clause,creates,OBL-0014,Obligation,Traceability,1:1
+CLA-0015,Clause,creates,OBL-0015,Obligation,Traceability,1:1
+CLA-0016,Clause,creates,OBL-0016,Obligation,Traceability,1:1
+CLA-0017,Clause,creates,OBL-0017,Obligation,Traceability,1:1
+CLA-0018,Clause,creates,OBL-0018,Obligation,Traceability,1:1
+CLA-0019,Clause,creates,OBL-0019,Obligation,Traceability,1:1
+CLA-0020,Clause,creates,OBL-0020,Obligation,Traceability,1:1
+CLA-0021,Clause,creates,OBL-0021,Obligation,Traceability,1:1
+CLA-0022,Clause,creates,OBL-0022,Obligation,Traceability,1:1
+CLA-0023,Clause,creates,OBL-0023,Obligation,Traceability,1:1
+CLA-0024,Clause,creates,OBL-0024,Obligation,Traceability,1:1
+CLA-0025,Clause,creates,OBL-0025,Obligation,Traceability,1:1
+CLA-0026,Clause,creates,OBL-0026,Obligation,Traceability,1:1
+CLA-0027,Clause,creates,OBL-0027,Obligation,Traceability,1:1
+CLA-0028,Clause,creates,OBL-0028,Obligation,Traceability,1:1
+CLA-0029,Clause,creates,OBL-0029,Obligation,Traceability,1:1
+CLA-0030,Clause,creates,OBL-0030,Obligation,Traceability,1:1
+CLA-0031,Clause,creates,OBL-0031,Obligation,Traceability,1:1
+CLA-0032,Clause,creates,OBL-0032,Obligation,Traceability,1:1
+CLA-0033,Clause,creates,OBL-0033,Obligation,Traceability,1:1
+CLA-0034,Clause,creates,OBL-0034,Obligation,Traceability,1:1
+OBL-0001,Obligation,satisfied_by,CTRL-001,Control,Traceability,1:N
+CA-001,ComplianceArea,governs,CTRL-001,Control,Traceability,1:N
+RSK-007,Risk,mitigated_by,CTRL-001,Control,Traceability,1:N
+STD-008,Standard,referenced_by,CTRL-001,Control,Traceability,1:N
+REG-001,Regulation,referenced_by,CTRL-001,Control,Traceability,1:N
+AUTH-002,Authority,oversees,CTRL-001,Control,Traceability,1:N
+OBL-0002,Obligation,satisfied_by,CTRL-002,Control,Traceability,1:N
+CA-001,ComplianceArea,governs,CTRL-002,Control,Traceability,1:N
+RSK-007,Risk,mitigated_by,CTRL-002,Control,Traceability,1:N
+STD-008,Standard,referenced_by,CTRL-002,Control,Traceability,1:N
+REG-008,Regulation,referenced_by,CTRL-002,Control,Traceability,1:N
+AUTH-007,Authority,oversees,CTRL-002,Control,Traceability,1:N
+OBL-0003,Obligation,satisfied_by,CTRL-003,Control,Traceability,1:N
+CA-001,ComplianceArea,governs,CTRL-003,Control,Traceability,1:N
+RSK-009,Risk,mitigated_by,CTRL-003,Control,Traceability,1:N
+STD-008,Standard,referenced_by,CTRL-003,Control,Traceability,1:N
+REG-007,Regulation,referenced_by,CTRL-003,Control,Traceability,1:N
+AUTH-007,Authority,oversees,CTRL-003,Control,Traceability,1:N
+OBL-0004,Obligation,satisfied_by,CTRL-004,Control,Traceability,1:N
+CA-002,ComplianceArea,governs,CTRL-004,Control,Traceability,1:N
+RSK-013,Risk,mitigated_by,CTRL-004,Control,Traceability,1:N
+STD-010,Standard,referenced_by,CTRL-004,Control,Traceability,1:N
+REG-002,Regulation,referenced_by,CTRL-004,Control,Traceability,1:N
+AUTH-002,Authority,oversees,CTRL-004,Control,Traceability,1:N
+OBL-0005,Obligation,satisfied_by,CTRL-005,Control,Traceability,1:N
+CA-002,ComplianceArea,governs,CTRL-005,Control,Traceability,1:N
+RSK-002,Risk,mitigated_by,CTRL-005,Control,Traceability,1:N
+STD-007,Standard,referenced_by,CTRL-005,Control,Traceability,1:N
+REG-001,Regulation,referenced_by,CTRL-005,Control,Traceability,1:N
+AUTH-002,Authority,oversees,CTRL-005,Control,Traceability,1:N
+OBL-0006,Obligation,satisfied_by,CTRL-006,Control,Traceability,1:N
+CA-002,ComplianceArea,governs,CTRL-006,Control,Traceability,1:N
+RSK-001,Risk,mitigated_by,CTRL-006,Control,Traceability,1:N
+STD-007,Standard,referenced_by,CTRL-006,Control,Traceability,1:N
+REG-002,Regulation,referenced_by,CTRL-006,Control,Traceability,1:N
+AUTH-002,Authority,oversees,CTRL-006,Control,Traceability,1:N
+OBL-0007,Obligation,satisfied_by,CTRL-007,Control,Traceability,1:N
+CA-002,ComplianceArea,governs,CTRL-007,Control,Traceability,1:N
+RSK-013,Risk,mitigated_by,CTRL-007,Control,Traceability,1:N
+STD-007,Standard,referenced_by,CTRL-007,Control,Traceability,1:N
+REG-008,Regulation,referenced_by,CTRL-007,Control,Traceability,1:N
+AUTH-007,Authority,oversees,CTRL-007,Control,Traceability,1:N
+OBL-0008,Obligation,satisfied_by,CTRL-008,Control,Traceability,1:N
+CA-003,ComplianceArea,governs,CTRL-008,Control,Traceability,1:N
+RSK-009,Risk,mitigated_by,CTRL-008,Control,Traceability,1:N
+STD-005,Standard,referenced_by,CTRL-008,Control,Traceability,1:N
+REG-001,Regulation,referenced_by,CTRL-008,Control,Traceability,1:N
+AUTH-002,Authority,oversees,CTRL-008,Control,Traceability,1:N
+OBL-0009,Obligation,satisfied_by,CTRL-009,Control,Traceability,1:N
+CA-003,ComplianceArea,governs,CTRL-009,Control,Traceability,1:N
+RSK-009,Risk,mitigated_by,CTRL-009,Control,Traceability,1:N
+STD-005,Standard,referenced_by,CTRL-009,Control,Traceability,1:N
+REG-009,Regulation,referenced_by,CTRL-009,Control,Traceability,1:N
+AUTH-006,Authority,oversees,CTRL-009,Control,Traceability,1:N
+OBL-0010,Obligation,satisfied_by,CTRL-010,Control,Traceability,1:N
+CA-003,ComplianceArea,governs,CTRL-010,Control,Traceability,1:N
+RSK-009,Risk,mitigated_by,CTRL-010,Control,Traceability,1:N
+STD-005,Standard,referenced_by,CTRL-010,Control,Traceability,1:N
+REG-007,Regulation,referenced_by,CTRL-010,Control,Traceability,1:N
+AUTH-007,Authority,oversees,CTRL-010,Control,Traceability,1:N
+OBL-0011,Obligation,satisfied_by,CTRL-011,Control,Traceability,1:N
+CA-004,ComplianceArea,governs,CTRL-011,Control,Traceability,1:N
+RSK-004,Risk,mitigated_by,CTRL-011,Control,Traceability,1:N
+STD-001,Standard,referenced_by,CTRL-011,Control,Traceability,1:N
+REG-003,Regulation,referenced_by,CTRL-011,Control,Traceability,1:N
+AUTH-003,Authority,oversees,CTRL-011,Control,Traceability,1:N
+OBL-0012,Obligation,satisfied_by,CTRL-012,Control,Traceability,1:N
+CA-004,ComplianceArea,governs,CTRL-012,Control,Traceability,1:N
+RSK-004,Risk,mitigated_by,CTRL-012,Control,Traceability,1:N
+STD-001,Standard,referenced_by,CTRL-012,Control,Traceability,1:N
+REG-009,Regulation,referenced_by,CTRL-012,Control,Traceability,1:N
+AUTH-006,Authority,oversees,CTRL-012,Control,Traceability,1:N
+OBL-0013,Obligation,satisfied_by,CTRL-013,Control,Traceability,1:N
+CA-004,ComplianceArea,governs,CTRL-013,Control,Traceability,1:N
+RSK-007,Risk,mitigated_by,CTRL-013,Control,Traceability,1:N
+STD-001,Standard,referenced_by,CTRL-013,Control,Traceability,1:N
+REG-003,Regulation,referenced_by,CTRL-013,Control,Traceability,1:N
+AUTH-003,Authority,oversees,CTRL-013,Control,Traceability,1:N
+OBL-0014,Obligation,satisfied_by,CTRL-014,Control,Traceability,1:N
+CA-005,ComplianceArea,governs,CTRL-014,Control,Traceability,1:N
+RSK-006,Risk,mitigated_by,CTRL-014,Control,Traceability,1:N
+STD-002,Standard,referenced_by,CTRL-014,Control,Traceability,1:N
+REG-006,Regulation,referenced_by,CTRL-014,Control,Traceability,1:N
+AUTH-005,Authority,oversees,CTRL-014,Control,Traceability,1:N
+OBL-0015,Obligation,satisfied_by,CTRL-015,Control,Traceability,1:N
+CA-005,ComplianceArea,governs,CTRL-015,Control,Traceability,1:N
+RSK-005,Risk,mitigated_by,CTRL-015,Control,Traceability,1:N
+STD-004,Standard,referenced_by,CTRL-015,Control,Traceability,1:N
+REG-010,Regulation,referenced_by,CTRL-015,Control,Traceability,1:N
+AUTH-006,Authority,oversees,CTRL-015,Control,Traceability,1:N
+OBL-0016,Obligation,satisfied_by,CTRL-016,Control,Traceability,1:N
+CA-005,ComplianceArea,governs,CTRL-016,Control,Traceability,1:N
+RSK-006,Risk,mitigated_by,CTRL-016,Control,Traceability,1:N
+STD-001,Standard,referenced_by,CTRL-016,Control,Traceability,1:N
+REG-006,Regulation,referenced_by,CTRL-016,Control,Traceability,1:N
+AUTH-005,Authority,oversees,CTRL-016,Control,Traceability,1:N
+OBL-0017,Obligation,satisfied_by,CTRL-017,Control,Traceability,1:N
+CA-006,ComplianceArea,governs,CTRL-017,Control,Traceability,1:N
+RSK-010,Risk,mitigated_by,CTRL-017,Control,Traceability,1:N
+STD-002,Standard,referenced_by,CTRL-017,Control,Traceability,1:N
+REG-005,Regulation,referenced_by,CTRL-017,Control,Traceability,1:N
+AUTH-004,Authority,oversees,CTRL-017,Control,Traceability,1:N
+OBL-0018,Obligation,satisfied_by,CTRL-018,Control,Traceability,1:N
+CA-006,ComplianceArea,governs,CTRL-018,Control,Traceability,1:N
+RSK-010,Risk,mitigated_by,CTRL-018,Control,Traceability,1:N
+STD-002,Standard,referenced_by,CTRL-018,Control,Traceability,1:N
+REG-004,Regulation,referenced_by,CTRL-018,Control,Traceability,1:N
+AUTH-004,Authority,oversees,CTRL-018,Control,Traceability,1:N
+OBL-0019,Obligation,satisfied_by,CTRL-019,Control,Traceability,1:N
+CA-007,ComplianceArea,governs,CTRL-019,Control,Traceability,1:N
+RSK-007,Risk,mitigated_by,CTRL-019,Control,Traceability,1:N
+STD-003,Standard,referenced_by,CTRL-019,Control,Traceability,1:N
+REG-003,Regulation,referenced_by,CTRL-019,Control,Traceability,1:N
+AUTH-003,Authority,oversees,CTRL-019,Control,Traceability,1:N
+OBL-0020,Obligation,satisfied_by,CTRL-020,Control,Traceability,1:N
+CA-007,ComplianceArea,governs,CTRL-020,Control,Traceability,1:N
+RSK-015,Risk,mitigated_by,CTRL-020,Control,Traceability,1:N
+STD-003,Standard,referenced_by,CTRL-020,Control,Traceability,1:N
+REG-009,Regulation,referenced_by,CTRL-020,Control,Traceability,1:N
+AUTH-006,Authority,oversees,CTRL-020,Control,Traceability,1:N
+OBL-0021,Obligation,satisfied_by,CTRL-021,Control,Traceability,1:N
+CA-007,ComplianceArea,governs,CTRL-021,Control,Traceability,1:N
+RSK-008,Risk,mitigated_by,CTRL-021,Control,Traceability,1:N
+STD-001,Standard,referenced_by,CTRL-021,Control,Traceability,1:N
+REG-001,Regulation,referenced_by,CTRL-021,Control,Traceability,1:N
+AUTH-001,Authority,oversees,CTRL-021,Control,Traceability,1:N
+OBL-0022,Obligation,satisfied_by,CTRL-022,Control,Traceability,1:N
+CA-007,ComplianceArea,governs,CTRL-022,Control,Traceability,1:N
+RSK-015,Risk,mitigated_by,CTRL-022,Control,Traceability,1:N
+STD-003,Standard,referenced_by,CTRL-022,Control,Traceability,1:N
+REG-008,Regulation,referenced_by,CTRL-022,Control,Traceability,1:N
+AUTH-006,Authority,oversees,CTRL-022,Control,Traceability,1:N
+OBL-0023,Obligation,satisfied_by,CTRL-023,Control,Traceability,1:N
+CA-008,ComplianceArea,governs,CTRL-023,Control,Traceability,1:N
+RSK-014,Risk,mitigated_by,CTRL-023,Control,Traceability,1:N
+STD-002,Standard,referenced_by,CTRL-023,Control,Traceability,1:N
+REG-011,Regulation,referenced_by,CTRL-023,Control,Traceability,1:N
+AUTH-008,Authority,oversees,CTRL-023,Control,Traceability,1:N
+OBL-0024,Obligation,satisfied_by,CTRL-024,Control,Traceability,1:N
+CA-008,ComplianceArea,governs,CTRL-024,Control,Traceability,1:N
+RSK-014,Risk,mitigated_by,CTRL-024,Control,Traceability,1:N
+STD-002,Standard,referenced_by,CTRL-024,Control,Traceability,1:N
+REG-011,Regulation,referenced_by,CTRL-024,Control,Traceability,1:N
+AUTH-008,Authority,oversees,CTRL-024,Control,Traceability,1:N
+OBL-0025,Obligation,satisfied_by,CTRL-025,Control,Traceability,1:N
+CA-009,ComplianceArea,governs,CTRL-025,Control,Traceability,1:N
+RSK-001,Risk,mitigated_by,CTRL-025,Control,Traceability,1:N
+STD-004,Standard,referenced_by,CTRL-025,Control,Traceability,1:N
+REG-007,Regulation,referenced_by,CTRL-025,Control,Traceability,1:N
+AUTH-007,Authority,oversees,CTRL-025,Control,Traceability,1:N
+OBL-0026,Obligation,satisfied_by,CTRL-026,Control,Traceability,1:N
+CA-009,ComplianceArea,governs,CTRL-026,Control,Traceability,1:N
+RSK-011,Risk,mitigated_by,CTRL-026,Control,Traceability,1:N
+STD-006,Standard,referenced_by,CTRL-026,Control,Traceability,1:N
+REG-002,Regulation,referenced_by,CTRL-026,Control,Traceability,1:N
+AUTH-002,Authority,oversees,CTRL-026,Control,Traceability,1:N
+OBL-0027,Obligation,satisfied_by,CTRL-027,Control,Traceability,1:N
+CA-009,ComplianceArea,governs,CTRL-027,Control,Traceability,1:N
+RSK-011,Risk,mitigated_by,CTRL-027,Control,Traceability,1:N
+STD-004,Standard,referenced_by,CTRL-027,Control,Traceability,1:N
+REG-009,Regulation,referenced_by,CTRL-027,Control,Traceability,1:N
+AUTH-006,Authority,oversees,CTRL-027,Control,Traceability,1:N
+OBL-0028,Obligation,satisfied_by,CTRL-028,Control,Traceability,1:N
+CA-010,ComplianceArea,governs,CTRL-028,Control,Traceability,1:N
+RSK-012,Risk,mitigated_by,CTRL-028,Control,Traceability,1:N
+STD-005,Standard,referenced_by,CTRL-028,Control,Traceability,1:N
+REG-002,Regulation,referenced_by,CTRL-028,Control,Traceability,1:N
+AUTH-002,Authority,oversees,CTRL-028,Control,Traceability,1:N
+OBL-0029,Obligation,satisfied_by,CTRL-029,Control,Traceability,1:N
+CA-010,ComplianceArea,governs,CTRL-029,Control,Traceability,1:N
+RSK-011,Risk,mitigated_by,CTRL-029,Control,Traceability,1:N
+STD-004,Standard,referenced_by,CTRL-029,Control,Traceability,1:N
+REG-002,Regulation,referenced_by,CTRL-029,Control,Traceability,1:N
+AUTH-002,Authority,oversees,CTRL-029,Control,Traceability,1:N
+OBL-0030,Obligation,satisfied_by,CTRL-030,Control,Traceability,1:N
+CA-010,ComplianceArea,governs,CTRL-030,Control,Traceability,1:N
+RSK-012,Risk,mitigated_by,CTRL-030,Control,Traceability,1:N
+STD-004,Standard,referenced_by,CTRL-030,Control,Traceability,1:N
+REG-010,Regulation,referenced_by,CTRL-030,Control,Traceability,1:N
+AUTH-006,Authority,oversees,CTRL-030,Control,Traceability,1:N
+CTRL-001,Control,implemented_by,TSK-0001,Task,Traceability,1:N
+TSK-0001,Task,performed_at,LOC-001,Site,Spatial,N:1
+TSK-0001,Task,performed_in,BLD-003,Building,Spatial,N:1
+TSK-0001,Task,uses_asset,AST-011,Asset,Operational,N:1
+ROLE-005,Role,responsible_for,TSK-0001,Task,Organizational,1:N
+TSK-0001,Task,evidenced_by,CHK-001,Checklist,Operational,N:1
+CTRL-001,Control,implemented_by,TSK-0002,Task,Traceability,1:N
+TSK-0002,Task,performed_at,LOC-002,Site,Spatial,N:1
+TSK-0002,Task,performed_in,BLD-006,Building,Spatial,N:1
+TSK-0002,Task,uses_asset,AST-011,Asset,Operational,N:1
+ROLE-005,Role,responsible_for,TSK-0002,Task,Organizational,1:N
+TSK-0002,Task,evidenced_by,CHK-011,Checklist,Operational,N:1
+CTRL-002,Control,implemented_by,TSK-0003,Task,Traceability,1:N
+TSK-0003,Task,performed_at,LOC-003,Site,Spatial,N:1
+TSK-0003,Task,performed_in,BLD-008,Building,Spatial,N:1
+TSK-0003,Task,uses_asset,AST-013,Asset,Operational,N:1
+ROLE-005,Role,responsible_for,TSK-0003,Task,Organizational,1:N
+TSK-0003,Task,evidenced_by,CHK-001,Checklist,Operational,N:1
+CTRL-002,Control,implemented_by,TSK-0004,Task,Traceability,1:N
+TSK-0004,Task,performed_at,LOC-004,Site,Spatial,N:1
+TSK-0004,Task,performed_in,BLD-011,Building,Spatial,N:1
+TSK-0004,Task,uses_asset,AST-013,Asset,Operational,N:1
+ROLE-005,Role,responsible_for,TSK-0004,Task,Organizational,1:N
+TSK-0004,Task,evidenced_by,CHK-011,Checklist,Operational,N:1
+CTRL-003,Control,implemented_by,TSK-0005,Task,Traceability,1:N
+TSK-0005,Task,performed_at,LOC-005,Site,Spatial,N:1
+TSK-0005,Task,performed_in,BLD-013,Building,Spatial,N:1
+TSK-0005,Task,uses_asset,AST-014,Asset,Operational,N:1
+ROLE-005,Role,responsible_for,TSK-0005,Task,Organizational,1:N
+TSK-0005,Task,evidenced_by,CHK-001,Checklist,Operational,N:1
+CTRL-003,Control,implemented_by,TSK-0006,Task,Traceability,1:N
+TSK-0006,Task,performed_at,LOC-006,Site,Spatial,N:1
+TSK-0006,Task,performed_in,BLD-016,Building,Spatial,N:1
+TSK-0006,Task,uses_asset,AST-014,Asset,Operational,N:1
+ROLE-005,Role,responsible_for,TSK-0006,Task,Organizational,1:N
+TSK-0006,Task,evidenced_by,CHK-011,Checklist,Operational,N:1
+CTRL-004,Control,implemented_by,TSK-0007,Task,Traceability,1:N
+TSK-0007,Task,performed_at,LOC-006,Site,Spatial,N:1
+TSK-0007,Task,performed_in,BLD-018,Building,Spatial,N:1
+TSK-0007,Task,uses_asset,AST-001,Asset,Operational,N:1
+ROLE-005,Role,responsible_for,TSK-0007,Task,Organizational,1:N
+TSK-0007,Task,evidenced_by,CHK-002,Checklist,Operational,N:1
+CTRL-004,Control,implemented_by,TSK-0008,Task,Traceability,1:N
+TSK-0008,Task,performed_at,LOC-007,Site,Spatial,N:1
+TSK-0008,Task,performed_in,BLD-021,Building,Spatial,N:1
+TSK-0008,Task,uses_asset,AST-001,Asset,Operational,N:1
+ROLE-005,Role,responsible_for,TSK-0008,Task,Organizational,1:N
+TSK-0008,Task,evidenced_by,CHK-012,Checklist,Operational,N:1
+CTRL-005,Control,implemented_by,TSK-0009,Task,Traceability,1:N
+TSK-0009,Task,performed_at,LOC-008,Site,Spatial,N:1
+TSK-0009,Task,performed_in,BLD-023,Building,Spatial,N:1
+TSK-0009,Task,uses_asset,AST-003,Asset,Operational,N:1
+ROLE-005,Role,responsible_for,TSK-0009,Task,Organizational,1:N
+TSK-0009,Task,evidenced_by,CHK-002,Checklist,Operational,N:1
+CTRL-005,Control,implemented_by,TSK-0010,Task,Traceability,1:N
+TSK-0010,Task,performed_at,LOC-009,Site,Spatial,N:1
+TSK-0010,Task,performed_in,BLD-026,Building,Spatial,N:1
+TSK-0010,Task,uses_asset,AST-003,Asset,Operational,N:1
+ROLE-005,Role,responsible_for,TSK-0010,Task,Organizational,1:N
+TSK-0010,Task,evidenced_by,CHK-012,Checklist,Operational,N:1
+CTRL-006,Control,implemented_by,TSK-0011,Task,Traceability,1:N
+TSK-0011,Task,performed_at,LOC-010,Site,Spatial,N:1
+TSK-0011,Task,performed_in,BLD-028,Building,Spatial,N:1
+TSK-0011,Task,uses_asset,AST-008,Asset,Operational,N:1
+ROLE-005,Role,responsible_for,TSK-0011,Task,Organizational,1:N
+TSK-0011,Task,evidenced_by,CHK-002,Checklist,Operational,N:1
+CTRL-006,Control,implemented_by,TSK-0012,Task,Traceability,1:N
+TSK-0012,Task,performed_at,LOC-011,Site,Spatial,N:1
+TSK-0012,Task,performed_in,BLD-031,Building,Spatial,N:1
+TSK-0012,Task,uses_asset,AST-008,Asset,Operational,N:1
+ROLE-005,Role,responsible_for,TSK-0012,Task,Organizational,1:N
+TSK-0012,Task,evidenced_by,CHK-012,Checklist,Operational,N:1
+CTRL-007,Control,implemented_by,TSK-0013,Task,Traceability,1:N
+TSK-0013,Task,performed_at,LOC-012,Site,Spatial,N:1
+TSK-0013,Task,performed_in,BLD-033,Building,Spatial,N:1
+TSK-0013,Task,uses_asset,AST-005,Asset,Operational,N:1
+ROLE-005,Role,responsible_for,TSK-0013,Task,Organizational,1:N
+TSK-0013,Task,evidenced_by,CHK-002,Checklist,Operational,N:1
+CTRL-007,Control,implemented_by,TSK-0014,Task,Traceability,1:N
+TSK-0014,Task,performed_at,LOC-013,Site,Spatial,N:1
+TSK-0014,Task,performed_in,BLD-036,Building,Spatial,N:1
+TSK-0014,Task,uses_asset,AST-005,Asset,Operational,N:1
+ROLE-005,Role,responsible_for,TSK-0014,Task,Organizational,1:N
+TSK-0014,Task,evidenced_by,CHK-012,Checklist,Operational,N:1
+CTRL-008,Control,implemented_by,TSK-0015,Task,Traceability,1:N
+TSK-0015,Task,performed_at,LOC-014,Site,Spatial,N:1
+TSK-0015,Task,performed_in,BLD-038,Building,Spatial,N:1
+TSK-0015,Task,uses_asset,AST-016,Asset,Operational,N:1
+ROLE-012,Role,responsible_for,TSK-0015,Task,Organizational,1:N
+TSK-0015,Task,evidenced_by,CHK-003,Checklist,Operational,N:1
+CTRL-008,Control,implemented_by,TSK-0016,Task,Traceability,1:N
+TSK-0016,Task,performed_at,LOC-016,Site,Spatial,N:1
+TSK-0016,Task,performed_in,BLD-041,Building,Spatial,N:1
+TSK-0016,Task,uses_asset,AST-016,Asset,Operational,N:1
+ROLE-012,Role,responsible_for,TSK-0016,Task,Organizational,1:N
+TSK-0016,Task,evidenced_by,CHK-013,Checklist,Operational,N:1
+CTRL-009,Control,implemented_by,TSK-0017,Task,Traceability,1:N
+TSK-0017,Task,performed_at,LOC-017,Site,Spatial,N:1
+TSK-0017,Task,performed_in,BLD-043,Building,Spatial,N:1
+TSK-0017,Task,uses_asset,AST-017,Asset,Operational,N:1
+ROLE-012,Role,responsible_for,TSK-0017,Task,Organizational,1:N
+TSK-0017,Task,evidenced_by,CHK-003,Checklist,Operational,N:1
+CTRL-009,Control,implemented_by,TSK-0018,Task,Traceability,1:N
+TSK-0018,Task,performed_at,LOC-018,Site,Spatial,N:1
+TSK-0018,Task,performed_in,BLD-046,Building,Spatial,N:1
+TSK-0018,Task,uses_asset,AST-017,Asset,Operational,N:1
+ROLE-012,Role,responsible_for,TSK-0018,Task,Organizational,1:N
+TSK-0018,Task,evidenced_by,CHK-013,Checklist,Operational,N:1
+CTRL-010,Control,implemented_by,TSK-0019,Task,Traceability,1:N
+TSK-0019,Task,performed_at,LOC-019,Site,Spatial,N:1
+TSK-0019,Task,performed_in,BLD-048,Building,Spatial,N:1
+TSK-0019,Task,uses_asset,AST-015,Asset,Operational,N:1
+ROLE-012,Role,responsible_for,TSK-0019,Task,Organizational,1:N
+TSK-0019,Task,evidenced_by,CHK-003,Checklist,Operational,N:1
+CTRL-010,Control,implemented_by,TSK-0020,Task,Traceability,1:N
+TSK-0020,Task,performed_at,LOC-001,Site,Spatial,N:1
+TSK-0020,Task,performed_in,BLD-001,Building,Spatial,N:1
+TSK-0020,Task,uses_asset,AST-015,Asset,Operational,N:1
+ROLE-012,Role,responsible_for,TSK-0020,Task,Organizational,1:N
+TSK-0020,Task,evidenced_by,CHK-013,Checklist,Operational,N:1
+CTRL-011,Control,implemented_by,TSK-0021,Task,Traceability,1:N
+TSK-0021,Task,performed_at,LOC-001,Site,Spatial,N:1
+TSK-0021,Task,performed_in,BLD-003,Building,Spatial,N:1
+TSK-0021,Task,uses_asset,AST-018,Asset,Operational,N:1
+ROLE-003,Role,responsible_for,TSK-0021,Task,Organizational,1:N
+TSK-0021,Task,evidenced_by,CHK-004,Checklist,Operational,N:1
+CTRL-011,Control,implemented_by,TSK-0022,Task,Traceability,1:N
+TSK-0022,Task,performed_at,LOC-002,Site,Spatial,N:1
+TSK-0022,Task,performed_in,BLD-006,Building,Spatial,N:1
+TSK-0022,Task,uses_asset,AST-018,Asset,Operational,N:1
+ROLE-003,Role,responsible_for,TSK-0022,Task,Organizational,1:N
+TSK-0022,Task,evidenced_by,CHK-014,Checklist,Operational,N:1
+CTRL-012,Control,implemented_by,TSK-0023,Task,Traceability,1:N
+TSK-0023,Task,performed_at,LOC-003,Site,Spatial,N:1
+TSK-0023,Task,performed_in,BLD-008,Building,Spatial,N:1
+TSK-0023,Task,uses_asset,AST-018,Asset,Operational,N:1
+ROLE-003,Role,responsible_for,TSK-0023,Task,Organizational,1:N
+TSK-0023,Task,evidenced_by,CHK-004,Checklist,Operational,N:1
+CTRL-012,Control,implemented_by,TSK-0024,Task,Traceability,1:N
+TSK-0024,Task,performed_at,LOC-004,Site,Spatial,N:1
+TSK-0024,Task,performed_in,BLD-011,Building,Spatial,N:1
+TSK-0024,Task,uses_asset,AST-018,Asset,Operational,N:1
+ROLE-003,Role,responsible_for,TSK-0024,Task,Organizational,1:N
+TSK-0024,Task,evidenced_by,CHK-014,Checklist,Operational,N:1
+CTRL-013,Control,implemented_by,TSK-0025,Task,Traceability,1:N
+TSK-0025,Task,performed_at,LOC-005,Site,Spatial,N:1
+TSK-0025,Task,performed_in,BLD-013,Building,Spatial,N:1
+TSK-0025,Task,uses_asset,AST-022,Asset,Operational,N:1
+ROLE-003,Role,responsible_for,TSK-0025,Task,Organizational,1:N
+TSK-0025,Task,evidenced_by,CHK-004,Checklist,Operational,N:1
+CTRL-013,Control,implemented_by,TSK-0026,Task,Traceability,1:N
+TSK-0026,Task,performed_at,LOC-006,Site,Spatial,N:1
+TSK-0026,Task,performed_in,BLD-016,Building,Spatial,N:1
+TSK-0026,Task,uses_asset,AST-022,Asset,Operational,N:1
+ROLE-003,Role,responsible_for,TSK-0026,Task,Organizational,1:N
+TSK-0026,Task,evidenced_by,CHK-014,Checklist,Operational,N:1
+CTRL-014,Control,implemented_by,TSK-0027,Task,Traceability,1:N
+TSK-0027,Task,performed_at,LOC-006,Site,Spatial,N:1
+TSK-0027,Task,performed_in,BLD-018,Building,Spatial,N:1
+TSK-0027,Task,uses_asset,AST-026,Asset,Operational,N:1
+ROLE-010,Role,responsible_for,TSK-0027,Task,Organizational,1:N
+TSK-0027,Task,evidenced_by,CHK-005,Checklist,Operational,N:1
+CTRL-014,Control,implemented_by,TSK-0028,Task,Traceability,1:N
+TSK-0028,Task,performed_at,LOC-007,Site,Spatial,N:1
+TSK-0028,Task,performed_in,BLD-021,Building,Spatial,N:1
+TSK-0028,Task,uses_asset,AST-026,Asset,Operational,N:1
+ROLE-010,Role,responsible_for,TSK-0028,Task,Organizational,1:N
+TSK-0028,Task,evidenced_by,CHK-015,Checklist,Operational,N:1
+CTRL-015,Control,implemented_by,TSK-0029,Task,Traceability,1:N
+TSK-0029,Task,performed_at,LOC-008,Site,Spatial,N:1
+TSK-0029,Task,performed_in,BLD-023,Building,Spatial,N:1
+TSK-0029,Task,uses_asset,AST-021,Asset,Operational,N:1
+ROLE-010,Role,responsible_for,TSK-0029,Task,Organizational,1:N
+TSK-0029,Task,evidenced_by,CHK-005,Checklist,Operational,N:1
+CTRL-015,Control,implemented_by,TSK-0030,Task,Traceability,1:N
+TSK-0030,Task,performed_at,LOC-009,Site,Spatial,N:1
+TSK-0030,Task,performed_in,BLD-026,Building,Spatial,N:1
+TSK-0030,Task,uses_asset,AST-021,Asset,Operational,N:1
+ROLE-010,Role,responsible_for,TSK-0030,Task,Organizational,1:N
+TSK-0030,Task,evidenced_by,CHK-015,Checklist,Operational,N:1
+CTRL-016,Control,implemented_by,TSK-0031,Task,Traceability,1:N
+TSK-0031,Task,performed_at,LOC-010,Site,Spatial,N:1
+TSK-0031,Task,performed_in,BLD-028,Building,Spatial,N:1
+TSK-0031,Task,uses_asset,AST-017,Asset,Operational,N:1
+ROLE-010,Role,responsible_for,TSK-0031,Task,Organizational,1:N
+TSK-0031,Task,evidenced_by,CHK-005,Checklist,Operational,N:1
+CTRL-016,Control,implemented_by,TSK-0032,Task,Traceability,1:N
+TSK-0032,Task,performed_at,LOC-011,Site,Spatial,N:1
+TSK-0032,Task,performed_in,BLD-031,Building,Spatial,N:1
+TSK-0032,Task,uses_asset,AST-017,Asset,Operational,N:1
+ROLE-010,Role,responsible_for,TSK-0032,Task,Organizational,1:N
+TSK-0032,Task,evidenced_by,CHK-015,Checklist,Operational,N:1
+CTRL-017,Control,implemented_by,TSK-0033,Task,Traceability,1:N
+TSK-0033,Task,performed_at,LOC-012,Site,Spatial,N:1
+TSK-0033,Task,performed_in,BLD-033,Building,Spatial,N:1
+TSK-0033,Task,uses_asset,AST-027,Asset,Operational,N:1
+ROLE-011,Role,responsible_for,TSK-0033,Task,Organizational,1:N
+TSK-0033,Task,evidenced_by,CHK-006,Checklist,Operational,N:1
+CTRL-017,Control,implemented_by,TSK-0034,Task,Traceability,1:N
+TSK-0034,Task,performed_at,LOC-013,Site,Spatial,N:1
+TSK-0034,Task,performed_in,BLD-036,Building,Spatial,N:1
+TSK-0034,Task,uses_asset,AST-027,Asset,Operational,N:1
+ROLE-011,Role,responsible_for,TSK-0034,Task,Organizational,1:N
+TSK-0034,Task,evidenced_by,CHK-016,Checklist,Operational,N:1
+CTRL-018,Control,implemented_by,TSK-0035,Task,Traceability,1:N
+TSK-0035,Task,performed_at,LOC-014,Site,Spatial,N:1
+TSK-0035,Task,performed_in,BLD-038,Building,Spatial,N:1
+TSK-0035,Task,uses_asset,AST-026,Asset,Operational,N:1
+ROLE-011,Role,responsible_for,TSK-0035,Task,Organizational,1:N
+TSK-0035,Task,evidenced_by,CHK-006,Checklist,Operational,N:1
+CTRL-018,Control,implemented_by,TSK-0036,Task,Traceability,1:N
+TSK-0036,Task,performed_at,LOC-016,Site,Spatial,N:1
+TSK-0036,Task,performed_in,BLD-041,Building,Spatial,N:1
+TSK-0036,Task,uses_asset,AST-026,Asset,Operational,N:1
+ROLE-011,Role,responsible_for,TSK-0036,Task,Organizational,1:N
+TSK-0036,Task,evidenced_by,CHK-016,Checklist,Operational,N:1
+CTRL-019,Control,implemented_by,TSK-0037,Task,Traceability,1:N
+TSK-0037,Task,performed_at,LOC-017,Site,Spatial,N:1
+TSK-0037,Task,performed_in,BLD-043,Building,Spatial,N:1
+TSK-0037,Task,uses_asset,AST-023,Asset,Operational,N:1
+ROLE-007,Role,responsible_for,TSK-0037,Task,Organizational,1:N
+TSK-0037,Task,evidenced_by,CHK-007,Checklist,Operational,N:1
+CTRL-019,Control,implemented_by,TSK-0038,Task,Traceability,1:N
+TSK-0038,Task,performed_at,LOC-018,Site,Spatial,N:1
+TSK-0038,Task,performed_in,BLD-046,Building,Spatial,N:1
+TSK-0038,Task,uses_asset,AST-023,Asset,Operational,N:1
+ROLE-007,Role,responsible_for,TSK-0038,Task,Organizational,1:N
+TSK-0038,Task,evidenced_by,CHK-017,Checklist,Operational,N:1
+CTRL-020,Control,implemented_by,TSK-0039,Task,Traceability,1:N
+TSK-0039,Task,performed_at,LOC-019,Site,Spatial,N:1
+TSK-0039,Task,performed_in,BLD-048,Building,Spatial,N:1
+TSK-0039,Task,uses_asset,AST-031,Asset,Operational,N:1
+ROLE-007,Role,responsible_for,TSK-0039,Task,Organizational,1:N
+TSK-0039,Task,evidenced_by,CHK-007,Checklist,Operational,N:1
+CTRL-020,Control,implemented_by,TSK-0040,Task,Traceability,1:N
+TSK-0040,Task,performed_at,LOC-001,Site,Spatial,N:1
+TSK-0040,Task,performed_in,BLD-001,Building,Spatial,N:1
+TSK-0040,Task,uses_asset,AST-031,Asset,Operational,N:1
+ROLE-007,Role,responsible_for,TSK-0040,Task,Organizational,1:N
+TSK-0040,Task,evidenced_by,CHK-017,Checklist,Operational,N:1
+CTRL-021,Control,implemented_by,TSK-0041,Task,Traceability,1:N
+TSK-0041,Task,performed_at,LOC-001,Site,Spatial,N:1
+TSK-0041,Task,performed_in,BLD-003,Building,Spatial,N:1
+TSK-0041,Task,uses_asset,AST-019,Asset,Operational,N:1
+ROLE-007,Role,responsible_for,TSK-0041,Task,Organizational,1:N
+TSK-0041,Task,evidenced_by,CHK-007,Checklist,Operational,N:1
+CTRL-021,Control,implemented_by,TSK-0042,Task,Traceability,1:N
+TSK-0042,Task,performed_at,LOC-002,Site,Spatial,N:1
+TSK-0042,Task,performed_in,BLD-006,Building,Spatial,N:1
+TSK-0042,Task,uses_asset,AST-019,Asset,Operational,N:1
+ROLE-007,Role,responsible_for,TSK-0042,Task,Organizational,1:N
+TSK-0042,Task,evidenced_by,CHK-017,Checklist,Operational,N:1
+CTRL-022,Control,implemented_by,TSK-0043,Task,Traceability,1:N
+TSK-0043,Task,performed_at,LOC-003,Site,Spatial,N:1
+TSK-0043,Task,performed_in,BLD-008,Building,Spatial,N:1
+TSK-0043,Task,uses_asset,AST-024,Asset,Operational,N:1
+ROLE-007,Role,responsible_for,TSK-0043,Task,Organizational,1:N
+TSK-0043,Task,evidenced_by,CHK-007,Checklist,Operational,N:1
+CTRL-022,Control,implemented_by,TSK-0044,Task,Traceability,1:N
+TSK-0044,Task,performed_at,LOC-004,Site,Spatial,N:1
+TSK-0044,Task,performed_in,BLD-011,Building,Spatial,N:1
+TSK-0044,Task,uses_asset,AST-024,Asset,Operational,N:1
+ROLE-007,Role,responsible_for,TSK-0044,Task,Organizational,1:N
+TSK-0044,Task,evidenced_by,CHK-017,Checklist,Operational,N:1
+CTRL-023,Control,implemented_by,TSK-0045,Task,Traceability,1:N
+TSK-0045,Task,performed_at,LOC-005,Site,Spatial,N:1
+TSK-0045,Task,performed_in,BLD-013,Building,Spatial,N:1
+TSK-0045,Task,uses_asset,AST-025,Asset,Operational,N:1
+ROLE-010,Role,responsible_for,TSK-0045,Task,Organizational,1:N
+TSK-0045,Task,evidenced_by,CHK-008,Checklist,Operational,N:1
+CTRL-023,Control,implemented_by,TSK-0046,Task,Traceability,1:N
+TSK-0046,Task,performed_at,LOC-006,Site,Spatial,N:1
+TSK-0046,Task,performed_in,BLD-016,Building,Spatial,N:1
+TSK-0046,Task,uses_asset,AST-025,Asset,Operational,N:1
+ROLE-010,Role,responsible_for,TSK-0046,Task,Organizational,1:N
+TSK-0046,Task,evidenced_by,CHK-018,Checklist,Operational,N:1
+CTRL-024,Control,implemented_by,TSK-0047,Task,Traceability,1:N
+TSK-0047,Task,performed_at,LOC-006,Site,Spatial,N:1
+TSK-0047,Task,performed_in,BLD-018,Building,Spatial,N:1
+TSK-0047,Task,uses_asset,AST-024,Asset,Operational,N:1
+ROLE-010,Role,responsible_for,TSK-0047,Task,Organizational,1:N
+TSK-0047,Task,evidenced_by,CHK-008,Checklist,Operational,N:1
+CTRL-024,Control,implemented_by,TSK-0048,Task,Traceability,1:N
+TSK-0048,Task,performed_at,LOC-007,Site,Spatial,N:1
+TSK-0048,Task,performed_in,BLD-021,Building,Spatial,N:1
+TSK-0048,Task,uses_asset,AST-024,Asset,Operational,N:1
+ROLE-010,Role,responsible_for,TSK-0048,Task,Organizational,1:N
+TSK-0048,Task,evidenced_by,CHK-018,Checklist,Operational,N:1
+CTRL-025,Control,implemented_by,TSK-0049,Task,Traceability,1:N
+TSK-0049,Task,performed_at,LOC-008,Site,Spatial,N:1
+TSK-0049,Task,performed_in,BLD-023,Building,Spatial,N:1
+TSK-0049,Task,uses_asset,AST-013,Asset,Operational,N:1
+ROLE-015,Role,responsible_for,TSK-0049,Task,Organizational,1:N
+TSK-0049,Task,evidenced_by,CHK-009,Checklist,Operational,N:1
+CTRL-025,Control,implemented_by,TSK-0050,Task,Traceability,1:N
+TSK-0050,Task,performed_at,LOC-009,Site,Spatial,N:1
+TSK-0050,Task,performed_in,BLD-026,Building,Spatial,N:1
+TSK-0050,Task,uses_asset,AST-013,Asset,Operational,N:1
+ROLE-015,Role,responsible_for,TSK-0050,Task,Organizational,1:N
+TSK-0050,Task,evidenced_by,CHK-019,Checklist,Operational,N:1
+CTRL-026,Control,implemented_by,TSK-0051,Task,Traceability,1:N
+TSK-0051,Task,performed_at,LOC-010,Site,Spatial,N:1
+TSK-0051,Task,performed_in,BLD-028,Building,Spatial,N:1
+TSK-0051,Task,uses_asset,AST-029,Asset,Operational,N:1
+ROLE-015,Role,responsible_for,TSK-0051,Task,Organizational,1:N
+TSK-0051,Task,evidenced_by,CHK-009,Checklist,Operational,N:1
+CTRL-026,Control,implemented_by,TSK-0052,Task,Traceability,1:N
+TSK-0052,Task,performed_at,LOC-011,Site,Spatial,N:1
+TSK-0052,Task,performed_in,BLD-031,Building,Spatial,N:1
+TSK-0052,Task,uses_asset,AST-029,Asset,Operational,N:1
+ROLE-015,Role,responsible_for,TSK-0052,Task,Organizational,1:N
+TSK-0052,Task,evidenced_by,CHK-019,Checklist,Operational,N:1
+CTRL-027,Control,implemented_by,TSK-0053,Task,Traceability,1:N
+TSK-0053,Task,performed_at,LOC-012,Site,Spatial,N:1
+TSK-0053,Task,performed_in,BLD-033,Building,Spatial,N:1
+TSK-0053,Task,uses_asset,AST-028,Asset,Operational,N:1
+ROLE-015,Role,responsible_for,TSK-0053,Task,Organizational,1:N
+TSK-0053,Task,evidenced_by,CHK-009,Checklist,Operational,N:1
+CTRL-027,Control,implemented_by,TSK-0054,Task,Traceability,1:N
+TSK-0054,Task,performed_at,LOC-013,Site,Spatial,N:1
+TSK-0054,Task,performed_in,BLD-036,Building,Spatial,N:1
+TSK-0054,Task,uses_asset,AST-028,Asset,Operational,N:1
+ROLE-015,Role,responsible_for,TSK-0054,Task,Organizational,1:N
+TSK-0054,Task,evidenced_by,CHK-019,Checklist,Operational,N:1
+CTRL-028,Control,implemented_by,TSK-0055,Task,Traceability,1:N
+TSK-0055,Task,performed_at,LOC-014,Site,Spatial,N:1
+TSK-0055,Task,performed_in,BLD-038,Building,Spatial,N:1
+TSK-0055,Task,uses_asset,AST-030,Asset,Operational,N:1
+ROLE-014,Role,responsible_for,TSK-0055,Task,Organizational,1:N
+TSK-0055,Task,evidenced_by,CHK-010,Checklist,Operational,N:1
+CTRL-028,Control,implemented_by,TSK-0056,Task,Traceability,1:N
+TSK-0056,Task,performed_at,LOC-016,Site,Spatial,N:1
+TSK-0056,Task,performed_in,BLD-041,Building,Spatial,N:1
+TSK-0056,Task,uses_asset,AST-030,Asset,Operational,N:1
+ROLE-014,Role,responsible_for,TSK-0056,Task,Organizational,1:N
+TSK-0056,Task,evidenced_by,CHK-020,Checklist,Operational,N:1
+CTRL-029,Control,implemented_by,TSK-0057,Task,Traceability,1:N
+TSK-0057,Task,performed_at,LOC-017,Site,Spatial,N:1
+TSK-0057,Task,performed_in,BLD-043,Building,Spatial,N:1
+TSK-0057,Task,uses_asset,AST-013,Asset,Operational,N:1
+ROLE-014,Role,responsible_for,TSK-0057,Task,Organizational,1:N
+TSK-0057,Task,evidenced_by,CHK-010,Checklist,Operational,N:1
+CTRL-029,Control,implemented_by,TSK-0058,Task,Traceability,1:N
+TSK-0058,Task,performed_at,LOC-018,Site,Spatial,N:1
+TSK-0058,Task,performed_in,BLD-046,Building,Spatial,N:1
+TSK-0058,Task,uses_asset,AST-013,Asset,Operational,N:1
+ROLE-014,Role,responsible_for,TSK-0058,Task,Organizational,1:N
+TSK-0058,Task,evidenced_by,CHK-020,Checklist,Operational,N:1
+CTRL-030,Control,implemented_by,TSK-0059,Task,Traceability,1:N
+TSK-0059,Task,performed_at,LOC-019,Site,Spatial,N:1
+TSK-0059,Task,performed_in,BLD-048,Building,Spatial,N:1
+TSK-0059,Task,uses_asset,AST-028,Asset,Operational,N:1
+ROLE-014,Role,responsible_for,TSK-0059,Task,Organizational,1:N
+TSK-0059,Task,evidenced_by,CHK-010,Checklist,Operational,N:1
+CTRL-030,Control,implemented_by,TSK-0060,Task,Traceability,1:N
+TSK-0060,Task,performed_at,LOC-001,Site,Spatial,N:1
+TSK-0060,Task,performed_in,BLD-001,Building,Spatial,N:1
+TSK-0060,Task,uses_asset,AST-028,Asset,Operational,N:1
+ROLE-014,Role,responsible_for,TSK-0060,Task,Organizational,1:N
+TSK-0060,Task,evidenced_by,CHK-020,Checklist,Operational,N:1
+Warehouse Operations,BusinessUnit,contains,ROLE-001,Role,Organizational,1:N
+Warehouse Operations,BusinessUnit,contains,ROLE-002,Role,Organizational,1:N
+EHS,BusinessUnit,contains,ROLE-003,Role,Organizational,1:N
+EHS,BusinessUnit,contains,ROLE-004,Role,Organizational,1:N
+EHS,BusinessUnit,contains,ROLE-005,Role,Organizational,1:N
+EHS,BusinessUnit,contains,ROLE-006,Role,Organizational,1:N
+Facilities Management,BusinessUnit,contains,ROLE-007,Role,Organizational,1:N
+Facilities Management,BusinessUnit,contains,ROLE-008,Role,Organizational,1:N
+Facilities Management,BusinessUnit,contains,ROLE-009,Role,Organizational,1:N
+EHS,BusinessUnit,contains,ROLE-010,Role,Organizational,1:N
+Facilities Management,BusinessUnit,contains,ROLE-011,Role,Organizational,1:N
+EHS,BusinessUnit,contains,ROLE-012,Role,Organizational,1:N
+Security,BusinessUnit,contains,ROLE-013,Role,Organizational,1:N
+Risk & Insurance,BusinessUnit,contains,ROLE-014,Role,Organizational,1:N
+Compliance,BusinessUnit,contains,ROLE-015,Role,Organizational,1:N
+Facilities Management,BusinessUnit,contains,ROLE-016,Role,Organizational,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-001,Site,Spatial,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-002,Site,Spatial,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-003,Site,Spatial,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-004,Site,Spatial,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-005,Site,Spatial,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-006,Site,Spatial,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-007,Site,Spatial,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-008,Site,Spatial,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-009,Site,Spatial,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-010,Site,Spatial,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-011,Site,Spatial,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-012,Site,Spatial,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-013,Site,Spatial,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-014,Site,Spatial,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-015,Site,Spatial,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-016,Site,Spatial,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-017,Site,Spatial,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-018,Site,Spatial,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-019,Site,Spatial,1:N
+Vantage Industrial Parks & Logistics REIT,Company,operates,LOC-020,Site,Spatial,1:N
+LOC-001,Site,contains,BLD-001,Building,Spatial,1:N
+LOC-001,Site,contains,BLD-002,Building,Spatial,1:N
+LOC-001,Site,contains,BLD-003,Building,Spatial,1:N
+LOC-002,Site,contains,BLD-004,Building,Spatial,1:N
+LOC-002,Site,contains,BLD-005,Building,Spatial,1:N
+LOC-002,Site,contains,BLD-006,Building,Spatial,1:N
+LOC-003,Site,contains,BLD-007,Building,Spatial,1:N
+LOC-003,Site,contains,BLD-008,Building,Spatial,1:N
+LOC-003,Site,contains,BLD-009,Building,Spatial,1:N
+LOC-004,Site,contains,BLD-010,Building,Spatial,1:N
+LOC-004,Site,contains,BLD-011,Building,Spatial,1:N
+LOC-004,Site,contains,BLD-012,Building,Spatial,1:N
+LOC-005,Site,contains,BLD-013,Building,Spatial,1:N
+LOC-005,Site,contains,BLD-014,Building,Spatial,1:N
+LOC-005,Site,contains,BLD-015,Building,Spatial,1:N
+LOC-006,Site,contains,BLD-016,Building,Spatial,1:N
+LOC-006,Site,contains,BLD-017,Building,Spatial,1:N
+LOC-006,Site,contains,BLD-018,Building,Spatial,1:N
+LOC-007,Site,contains,BLD-019,Building,Spatial,1:N
+LOC-007,Site,contains,BLD-020,Building,Spatial,1:N
+LOC-007,Site,contains,BLD-021,Building,Spatial,1:N
+LOC-008,Site,contains,BLD-022,Building,Spatial,1:N
+LOC-008,Site,contains,BLD-023,Building,Spatial,1:N
+LOC-008,Site,contains,BLD-024,Building,Spatial,1:N
+LOC-009,Site,contains,BLD-025,Building,Spatial,1:N
+LOC-009,Site,contains,BLD-026,Building,Spatial,1:N
+LOC-009,Site,contains,BLD-027,Building,Spatial,1:N
+LOC-010,Site,contains,BLD-028,Building,Spatial,1:N
+LOC-010,Site,contains,BLD-029,Building,Spatial,1:N
+LOC-010,Site,contains,BLD-030,Building,Spatial,1:N
+LOC-011,Site,contains,BLD-031,Building,Spatial,1:N
+LOC-011,Site,contains,BLD-032,Building,Spatial,1:N
+LOC-012,Site,contains,BLD-033,Building,Spatial,1:N
+LOC-012,Site,contains,BLD-034,Building,Spatial,1:N
+LOC-013,Site,contains,BLD-035,Building,Spatial,1:N
+LOC-013,Site,contains,BLD-036,Building,Spatial,1:N
+LOC-014,Site,contains,BLD-037,Building,Spatial,1:N
+LOC-014,Site,contains,BLD-038,Building,Spatial,1:N
+LOC-015,Site,contains,BLD-039,Building,Spatial,1:N
+LOC-015,Site,contains,BLD-040,Building,Spatial,1:N
+LOC-016,Site,contains,BLD-041,Building,Spatial,1:N
+LOC-016,Site,contains,BLD-042,Building,Spatial,1:N
+LOC-017,Site,contains,BLD-043,Building,Spatial,1:N
+LOC-017,Site,contains,BLD-044,Building,Spatial,1:N
+LOC-018,Site,contains,BLD-045,Building,Spatial,1:N
+LOC-018,Site,contains,BLD-046,Building,Spatial,1:N
+LOC-019,Site,contains,BLD-047,Building,Spatial,1:N
+LOC-019,Site,contains,BLD-048,Building,Spatial,1:N
+LOC-020,Site,contains,BLD-049,Building,Spatial,1:N
+LOC-020,Site,contains,BLD-050,Building,Spatial,1:N
+LOC-001,Site,hosts_asset,AST-001,Asset,Spatial,1:N
+LOC-002,Site,hosts_asset,AST-002,Asset,Spatial,1:N
+LOC-002,Site,hosts_asset,AST-003,Asset,Spatial,1:N
+LOC-003,Site,hosts_asset,AST-004,Asset,Spatial,1:N
+LOC-003,Site,hosts_asset,AST-005,Asset,Spatial,1:N
+LOC-004,Site,hosts_asset,AST-006,Asset,Spatial,1:N
+LOC-004,Site,hosts_asset,AST-007,Asset,Spatial,1:N
+LOC-005,Site,hosts_asset,AST-008,Asset,Spatial,1:N
+LOC-005,Site,hosts_asset,AST-009,Asset,Spatial,1:N
+LOC-006,Site,hosts_asset,AST-010,Asset,Spatial,1:N
+LOC-006,Site,hosts_asset,AST-011,Asset,Spatial,1:N
+LOC-007,Site,hosts_asset,AST-012,Asset,Spatial,1:N
+LOC-007,Site,hosts_asset,AST-013,Asset,Spatial,1:N
+LOC-008,Site,hosts_asset,AST-014,Asset,Spatial,1:N
+LOC-008,Site,hosts_asset,AST-015,Asset,Spatial,1:N
+LOC-009,Site,hosts_asset,AST-016,Asset,Spatial,1:N
+LOC-009,Site,hosts_asset,AST-017,Asset,Spatial,1:N
+LOC-010,Site,hosts_asset,AST-018,Asset,Spatial,1:N
+LOC-010,Site,hosts_asset,AST-019,Asset,Spatial,1:N
+LOC-011,Site,hosts_asset,AST-020,Asset,Spatial,1:N
+LOC-011,Site,hosts_asset,AST-021,Asset,Spatial,1:N
+LOC-012,Site,hosts_asset,AST-022,Asset,Spatial,1:N
+LOC-013,Site,hosts_asset,AST-023,Asset,Spatial,1:N
+LOC-014,Site,hosts_asset,AST-024,Asset,Spatial,1:N
+LOC-014,Site,hosts_asset,AST-025,Asset,Spatial,1:N
+LOC-015,Site,hosts_asset,AST-026,Asset,Spatial,1:N
+LOC-016,Site,hosts_asset,AST-027,Asset,Spatial,1:N
+LOC-017,Site,hosts_asset,AST-028,Asset,Spatial,1:N
+LOC-017,Site,hosts_asset,AST-029,Asset,Spatial,1:N
+LOC-018,Site,hosts_asset,AST-030,Asset,Spatial,1:N
+LOC-019,Site,hosts_asset,AST-031,Asset,Spatial,1:N
+VEN-001,Vendor,services,ROLE-016,Role,Operational,N:1
+VEN-002,Vendor,services,ROLE-016,Role,Operational,N:1
+VEN-003,Vendor,services,ROLE-016,Role,Operational,N:1
+VEN-004,Vendor,services,ROLE-016,Role,Operational,N:1
+VEN-005,Vendor,services,ROLE-013,Role,Operational,N:1
+VEN-006,Vendor,services,ROLE-011,Role,Operational,N:1
+VEN-007,Vendor,services,ROLE-011,Role,Operational,N:1
+VEN-008,Vendor,services,ROLE-009,Role,Operational,N:1
+VEN-009,Vendor,services,ROLE-009,Role,Operational,N:1
+VEN-010,Vendor,services,ROLE-007,Role,Operational,N:1
+VEN-011,Vendor,services,ROLE-010,Role,Operational,N:1
+VEN-012,Vendor,services,ROLE-014,Role,Operational,N:1
+RSK-002,Risk,governed_by_clause,INSC-001,InsuranceClause,Operational,1:N
+CTRL-005,Control,supports_clause,INSC-001,InsuranceClause,Operational,N:1
+RSK-013,Risk,governed_by_clause,INSC-002,InsuranceClause,Operational,1:N
+CTRL-004,Control,supports_clause,INSC-002,InsuranceClause,Operational,N:1
+RSK-001,Risk,governed_by_clause,INSC-003,InsuranceClause,Operational,1:N
+CTRL-021,Control,supports_clause,INSC-003,InsuranceClause,Operational,N:1
+RSK-007,Risk,governed_by_clause,INSC-004,InsuranceClause,Operational,1:N
+CTRL-013,Control,supports_clause,INSC-004,InsuranceClause,Operational,N:1
+RSK-005,Risk,governed_by_clause,INSC-005,InsuranceClause,Operational,1:N
+CTRL-015,Control,supports_clause,INSC-005,InsuranceClause,Operational,N:1
+RSK-006,Risk,governed_by_clause,INSC-006,InsuranceClause,Operational,1:N
+CTRL-014,Control,supports_clause,INSC-006,InsuranceClause,Operational,N:1
+RSK-015,Risk,governed_by_clause,INSC-007,InsuranceClause,Operational,1:N
+CTRL-013,Control,supports_clause,INSC-007,InsuranceClause,Operational,N:1
+RSK-011,Risk,governed_by_clause,INSC-008,InsuranceClause,Operational,1:N
+CTRL-029,Control,supports_clause,INSC-008,InsuranceClause,Operational,N:1
+RSK-012,Risk,governed_by_clause,INSC-009,InsuranceClause,Operational,1:N
+CTRL-030,Control,supports_clause,INSC-009,InsuranceClause,Operational,N:1
+RSK-016,Risk,governed_by_clause,INSC-010,InsuranceClause,Operational,1:N
+CTRL-004,Control,supports_clause,INSC-010,InsuranceClause,Operational,N:1
+RSK-010,Risk,governed_by_clause,INSC-011,InsuranceClause,Operational,1:N
+CTRL-017,Control,supports_clause,INSC-011,InsuranceClause,Operational,N:1
+RSK-014,Risk,governed_by_clause,INSC-012,InsuranceClause,Operational,1:N
+CTRL-023,Control,supports_clause,INSC-012,InsuranceClause,Operational,N:1
+RSK-004,Risk,governed_by_clause,INSC-013,InsuranceClause,Operational,1:N
+CTRL-012,Control,supports_clause,INSC-013,InsuranceClause,Operational,N:1
+RSK-009,Risk,governed_by_clause,INSC-014,InsuranceClause,Operational,1:N
+CTRL-008,Control,supports_clause,INSC-014,InsuranceClause,Operational,N:1
+RSK-008,Risk,governed_by_clause,INSC-015,InsuranceClause,Operational,1:N
+CTRL-021,Control,supports_clause,INSC-015,InsuranceClause,Operational,N:1
+
+
+--- WORKSHEET: 17_Risk_Register ---
+
+RiskID,Name,Category,Likelihood,Impact,Risk Level
+RSK-001,Fire outbreak in racking/storage area,Fire Safety,Possible,Severe,Critical
+RSK-002,Failure of fire suppression system on demand,Fire Safety,Unlikely,Severe,High
+RSK-003,Blocked or obstructed means of escape,Fire Safety,Possible,Major,High
+RSK-004,Forklift/MHE collision causing injury,Health & Safety,Likely,Major,High
+RSK-005,Battery charging area thermal runaway,Health & Safety,Unlikely,Severe,High
+RSK-006,Hazardous chemical spill or improper storage,Environmental,Possible,Major,High
+RSK-007,Electrical fault / transformer fire,Fire Safety,Possible,Severe,Critical
+RSK-008,Rack collapse due to overloading,Health & Safety,Unlikely,Major,Medium
+RSK-009,Inadequate emergency evacuation,Health & Safety,Rare,Severe,Medium
+RSK-010,Waste accumulation increasing fire fuel load,Fire Safety,Possible,Moderate,Medium
+RSK-011,Fire NOC / statutory certificate lapse,Compliance,Possible,Major,High
+RSK-012,Insurance policy warranty non-conformance,Compliance,Possible,Major,High
+RSK-013,Inadequate fire water supply / pump pressure,Fire Safety,Unlikely,Severe,High
+RSK-014,Environmental discharge / emission non-compliance,Environmental,Unlikely,Major,Medium
+RSK-015,Power outage disrupting fire/life-safety systems,Operational,Possible,Major,High
+RSK-016,Vendor/AMC non-performance on critical fire assets,Operational,Possible,Moderate,Medium
+
+
+--- WORKSHEET: 18_Roles_Master ---
+
+RoleID,Title,Business Unit,Department,Approval Authority (Y/N)
+ROLE-001,Warehouse Operations Manager,Warehouse Operations,Site Operations,N
+ROLE-002,Shift Warehouse Supervisor,Warehouse Operations,Site Operations,N
+ROLE-003,EHS Officer (Site),EHS,Safety,N
+ROLE-004,EHS Manager (Regional),EHS,Safety,Y
+ROLE-005,Fire & Safety Officer,EHS,Fire & Life Safety,N
+ROLE-006,Fire & Safety Manager,EHS,Fire & Life Safety,Y
+ROLE-007,Facilities Executive,Facilities Management,FM Operations,N
+ROLE-008,Facilities Manager,Facilities Management,FM Operations,Y
+ROLE-009,MEP / Utilities Engineer,Facilities Management,Utilities,N
+ROLE-010,Hazardous Materials Coordinator,EHS,Hazmat & Chemical Safety,N
+ROLE-011,Waste Management Coordinator,Facilities Management,Waste Management,N
+ROLE-012,Emergency Response Team Lead,EHS,Emergency Response,Y
+ROLE-013,Security & Access Control Officer,Security,Site Security,N
+ROLE-014,Insurance & Risk Compliance Manager,Risk & Insurance,Risk Management,Y
+ROLE-015,Regional Compliance Head,Compliance,Compliance,Y
+ROLE-016,Fire Suppression Vendor Coordinator (AMC),Facilities Management,Vendor Management,N
+
+
+--- WORKSHEET: 19_Asset_Equipment_Master ---
+
+AssetID,Name,Category,Type,SiteID,BuildingID,ZoneID,RoomID
+AST-001,Fire Hydrant System,Fire Suppression,Asset,LOC-001,BLD-002,ZN-004,RM-004
+AST-002,Fire Hose Reel Cabinet,Fire Suppression,Asset,LOC-002,BLD-004,ZN-007,RM-007
+AST-003,Sprinkler Riser Assembly,Fire Suppression,Asset,LOC-002,BLD-005,ZN-010,RM-010
+AST-004,ESFR Sprinkler Head Array,Fire Suppression,Asset,LOC-003,BLD-007,ZN-013,RM-013
+AST-005,Fire Pump - Diesel Engine Driven,Fire Suppression,Equipment,LOC-003,BLD-008,ZN-016,RM-016
+AST-006,Fire Pump - Electric Motor Driven,Fire Suppression,Equipment,LOC-004,BLD-010,ZN-019,RM-019
+AST-007,Jockey Pump Assembly,Fire Suppression,Equipment,LOC-004,BLD-011,ZN-022,RM-022
+AST-008,Fire Extinguisher - ABC Dry Powder,Fire Suppression,Equipment,LOC-005,BLD-013,ZN-025,RM-025
+AST-009,Fire Extinguisher - CO2 Type,Fire Suppression,Equipment,LOC-005,BLD-014,ZN-028,RM-028
+AST-010,FM200 Clean Agent System (Server/Panel Room),Fire Suppression,Equipment,LOC-006,BLD-016,ZN-031,RM-031
+AST-011,Smoke Detector Panel,Fire Detection,Equipment,LOC-006,BLD-017,ZN-034,RM-034
+AST-012,Heat Detector Array,Fire Detection,Equipment,LOC-007,BLD-019,ZN-037,RM-037
+AST-013,Fire Alarm Control Panel,Fire Detection,Equipment,LOC-007,BLD-020,ZN-040,RM-040
+AST-014,PA / Voice Evacuation System,Fire Detection,Equipment,LOC-008,BLD-022,ZN-043,RM-043
+AST-015,Emergency Lighting & Exit Signage,Emergency Response,Asset,LOC-008,BLD-023,ZN-046,RM-046
+AST-016,Assembly Point Signage & Muster Station,Emergency Response,Asset,LOC-009,BLD-025,ZN-049,RM-049
+AST-017,First Aid & Spill Kit Station,Emergency Response,Asset,LOC-009,BLD-026,ZN-052,RM-052
+AST-018,Forklift / MHE Unit,EHS Operations,Asset,LOC-010,BLD-028,ZN-055,RM-055
+AST-019,Pallet Racking System,Facilities,Asset,LOC-010,BLD-029,ZN-058,RM-058
+AST-020,Loading Dock Leveler,Facilities,Asset,LOC-011,BLD-031,ZN-061,RM-061
+AST-021,Battery Charging Station (MHE),EHS Operations,Asset,LOC-011,BLD-032,ZN-064,RM-064
+AST-022,Electrical Distribution Panel,Utilities,Equipment,LOC-012,BLD-034,ZN-067,RM-067
+AST-023,Transformer Unit,Utilities,Equipment,LOC-013,BLD-035,ZN-070,RM-070
+AST-024,Diesel Generator (DG) Backup Set,Utilities,Equipment,LOC-014,BLD-037,ZN-073,RM-073
+AST-025,Effluent / STP Treatment Plant,Environmental,Asset,LOC-014,BLD-038,ZN-076,RM-076
+AST-026,Hazardous Waste Storage Shed,Waste Management,Asset,LOC-015,BLD-040,ZN-079,RM-079
+AST-027,Waste Compactor,Waste Management,Equipment,LOC-016,BLD-041,ZN-082,RM-082
+AST-028,CCTV Surveillance Camera,Security,Asset,LOC-017,BLD-043,ZN-085,RM-085
+AST-029,Access Control System,Security,Asset,LOC-017,BLD-044,ZN-088,RM-088
+AST-030,Water Storage Tank (Fire Reserve),Fire Suppression,Asset,LOC-018,BLD-046,ZN-091,RM-091
+AST-031,HVAC / Air Handling Unit,Utilities,Equipment,LOC-019,BLD-047,ZN-094,RM-094
+
+
+--- WORKSHEET: 20_Vendor_Master ---
+
+VendorID,Vendor Name,Service Type,Sites Covered,Contract Reference,SLA (Response Time),AMC Start Date,AMC Expiry Date,Internal Coordinator (RoleID)
+VEN-001,FirePro Suppression Systems Pvt Ltd,Fire Suppression AMC (Hydrant/Sprinkler/Pump),India Sites (LOC-001 to LOC-010),AMC-FS-IND-2026-01,4 hours (critical fault),2026-01-01,2027-12-31,ROLE-016
+VEN-002,Chubb Fire & Security Ltd,Fire Detection & Alarm AMC,UK Sites (LOC-011 to LOC-020),AMC-FA-UK-2026-02,4 hours (critical fault),2026-01-01,2027-12-31,ROLE-016
+VEN-003,Kidde India Fire Protection,"Fire Extinguisher Supply, Inspection & Recharge",India Sites (LOC-001 to LOC-010),AMC-FE-IND-2026-03,48 hours (routine),2026-01-01,2026-12-31,ROLE-016
+VEN-004,Wormald UK Fire Solutions,Fire Extinguisher & Hose Reel Servicing,UK Sites (LOC-011 to LOC-020),AMC-FE-UK-2026-04,48 hours (routine),2026-01-01,2026-12-31,ROLE-016
+VEN-005,SecureGuard Integrated Security Services,"CCTV, Access Control & Manned Guarding",All Sites (LOC-001 to LOC-020),SEC-ALL-2026-05,2 hours (breach/alarm),2026-01-01,2027-06-30,ROLE-013
+VEN-006,GreenCycle Waste Management Ltd,General & Hazardous Waste Collection and Disposal,India Sites (LOC-001 to LOC-010),WM-IND-2026-06,24 hours (collection),2026-01-01,2026-12-31,ROLE-011
+VEN-007,Veolia UK Environmental Services,"Hazardous Waste Collection, Manifest & Disposal",UK Sites (LOC-011 to LOC-020),WM-UK-2026-07,24 hours (collection),2026-01-01,2026-12-31,ROLE-011
+VEN-008,PowerServe Generator & Electrical Services,"DG Set, Transformer & Electrical Panel AMC",All Sites (LOC-001 to LOC-020),MEP-ALL-2026-08,6 hours (critical fault),2026-01-01,2027-12-31,ROLE-009
+VEN-009,ClimaTech HVAC Solutions,HVAC / Ventilation Preventive Maintenance,All Sites (LOC-001 to LOC-020),HVAC-ALL-2026-09,24 hours (routine),2026-01-01,2026-12-31,ROLE-009
+VEN-010,SafeStack Racking Inspection Services,Racking Structural Safety Inspection (SEMA/RSI Certified),All Sites (LOC-001 to LOC-020),RACK-ALL-2026-10,10 business days (scheduled),2026-01-01,2026-12-31,ROLE-007
+VEN-011,EnviroLab Testing Services,"Effluent, STP & Air Emission Testing Laboratory",All Sites (LOC-001 to LOC-020),LAB-ALL-2026-11,5 business days (report turnaround),2026-01-01,2026-12-31,ROLE-010
+VEN-012,Marsh Risk Engineering & Loss Control,Insurance Risk Engineering Survey & Warranty Advisory,All Sites (LOC-001 to LOC-020),INS-ALL-2026-12,30 days (survey cycle),2026-01-01,2026-12-31,ROLE-014
+
+
+--- WORKSHEET: 21_Insurance_Risk_Clauses ---
+
+ClauseRefID,Linked RiskID,Insurer Requirement / Warranty,Policy / Clause Reference,Linked ControlID,Compliance Basis,Premium Impact if Non-Conformant
+INSC-001,RSK-002,Automatic Sprinkler Installation Warranty (ESFR/in-rack per NFPA 13),Property Damage / Business Interruption Policy - Clause 7.2,CTRL-005,Non-conformance voids fire damage cover for affected zone,High - up to 15% loading if warranty breached
+INSC-002,RSK-013,Fire Pump & Hydrant Impairment Notification Clause,Property Policy - Clause 7.4,CTRL-004,Insurer must be notified within 24 hours of any impairment exceeding 10 hours,Medium - impairment surcharge if unreported
+INSC-003,RSK-001,Housekeeping & Storage Height Warranty (clear space below sprinkler deflectors),Property Policy - Clause 7.6,CTRL-021,Non-conformance is a common cause of claim repudiation,High - repudiation risk on claim
+INSC-004,RSK-007,Hot Work Permit Warranty,Property Policy - Clause 7.9,CTRL-013,All hot work must follow a documented permit-to-work system,Medium - 5-10% loading if uncontrolled hot work found
+INSC-005,RSK-005,Battery Charging / Li-ion Storage Declaration Clause,Property Policy - Special Condition 3,CTRL-015,Undeclared battery charging areas may be excluded from cover,High - potential exclusion of loss
+INSC-006,RSK-006,COSHH / Hazardous Substance Declaration Clause,Public & Products Liability Policy - Clause 4.1,CTRL-014,Insured must declare all hazardous substances above threshold quantities,Medium - premium reassessment on non-declaration
+INSC-007,RSK-015,Security & Unattended Premises Warranty (alarm response),Property Policy - Clause 8.1,CTRL-013,Alarm systems must be maintained and monitored per agreed response SLA,Medium - theft/malicious damage cover impact
+INSC-008,RSK-011,Statutory Compliance Warranty (Fire NOC / Building Consent current),Property & Liability Master Policy - Clause 2.3,CTRL-029,Lapse in statutory fire certification may void cover for the affected site,Critical - full cover risk at lapsed site
+INSC-009,RSK-012,Risk Improvement Recommendation Closure Clause,Property Policy - Clause 9.1,CTRL-030,Outstanding risk engineering recommendations beyond agreed timeline trigger premium review,High - renewal premium loading
+INSC-010,RSK-016,Third-Party Maintenance Warranty (Fire System AMC Currency),Property Policy - Clause 7.3,CTRL-004,Fire suppression/detection AMC must remain current with a competent contractor,Medium - claim repudiation risk if AMC lapsed
+INSC-011,RSK-010,Waste Accumulation / Fire Load Management Clause,Property Policy - Clause 7.7,CTRL-017,Combustible waste must not accumulate beyond agreed fire-load limits,Medium - premium loading on repeated breach
+INSC-012,RSK-014,Environmental Impairment Liability Declaration Clause,Environmental Liability Policy - Clause 3.2,CTRL-023,Effluent/emission non-compliance must be disclosed at each renewal,Medium - separate EIL premium adjustment
+INSC-013,RSK-004,Employers' Liability / MHE Operator Certification Warranty,Employers Liability Policy - Clause 5.1,CTRL-012,All MHE operators must hold current certification on file,Medium - claims defensibility impact
+INSC-014,RSK-009,Business Continuity Plan Currency Warranty,Business Interruption Policy - Clause 6.4,CTRL-008,BCP and evacuation plans must be reviewed and drilled at least annually,Low-Medium - indemnity period assumptions
+INSC-015,RSK-008,Racking Inspection Certification Warranty (SEMA/RSI),Property Policy - Clause 7.8,CTRL-021,Independent racking inspection certificate must be renewed annually,Medium - stock/property damage cover impact
+
+
+--- WORKSHEET: 22_Data_Dictionary ---
+
+Field Name,Worksheet(s),Data Type,Description,Allowed Values,Relationship Purpose
+TaskID,09_Task_Master,Text (TSK-nnnn),Unique identifier for an operational task,"Prefixed, zero-padded, unique","Primary key for Worksheet 09; foreign key in 13, 14, 15, 16"
+Task Name,09_Task_Master,Text,Human-readable name of the task,Free text,Display label
+Compliance Area,09_Task_Master,Text (FK),Compliance domain the task belongs to,CA-nnn,Foreign key to Worksheet 07
+Control ID,09_Task_Master,Text (FK),Operational control the task implements,CTRL-nnn,Foreign key to Worksheet 08
+Obligation ID,09_Task_Master,Text (FK),Regulatory obligation satisfied by the task,OBL-nnnn,Foreign key to Worksheet 06
+Clause ID,09_Task_Master,Text (FK),Clause underpinning the obligation,CLA-nnnn,Foreign key to Worksheet 05
+Authority ID,09_Task_Master,Text (FK),Regulatory authority of record,AUTH-nnn,Foreign key to Worksheet 02
+Regulation ID,09_Task_Master,Text (FK),Regulation of record,REG-nnn,Foreign key to Worksheet 03
+Standard ID,09_Task_Master,Text (FK),Standard of record,STD-nnn,Foreign key to Worksheet 04
+Risk ID,09_Task_Master,Text (FK),Risk mitigated by the task,RSK-nnn,Foreign key to Worksheet 17
+Hazard,09_Task_Master,Text,Hazard description associated with the risk,Free text,Descriptive
+Business Unit,09_Task_Master,Text (FK),Owning business unit,Controlled list,Foreign key to Worksheet 10
+Department,09_Task_Master,Text (FK),Owning department,Controlled list,Foreign key to Worksheet 10
+Responsible Role ID,09_Task_Master,Text (FK),Role accountable for execution,ROLE-nnn,Foreign key to Worksheet 18
+Assigned User,09_Task_Master,Text,Team/user assigned at runtime,Free text,Runtime assignment placeholder
+Approval Authority,09_Task_Master,Text,Role that approves/signs off the task output,Free text / role title,Sign-off authority
+Frequency,09_Task_Master / 13_Schedule_Rules,Text (Enum),Recurrence of the task,"Hourly, Daily, Weekly, Fortnightly, Monthly, Quarterly, Half-Yearly, Annual, Event Based, Condition Based, Sensor Triggered, Risk Triggered, AI Triggered",Drives Worksheet 14 calendar generation
+Schedule Type,09_Task_Master / 13_Schedule_Rules,Text (Enum),Whether the schedule is fixed-calendar or condition-triggered,"Fixed, Triggered",Derived from Frequency
+Calendar Rule,09_Task_Master / 13_Schedule_Rules,Text,Rule applied to mark Worksheet 14,Free text,Documents the Calendar Generation Algorithm applied
+Due Date,09_Task_Master,Text,Reference to schedule-derived due date,Free text,Resolved via Worksheet 13
+SLA,09_Task_Master,Text,Service level for closing out the task,Free text (duration),Escalation trigger basis
+Escalation Rule,09_Task_Master,Text,Rule for escalating an overdue/failed task,Free text,References Approval Authority
+Site,09_Task_Master / 11_Spatial_Mapping,Text (FK),Industrial Park site where task is performed,LOC-nnn,Foreign key to Worksheet 11
+Building,09_Task_Master / 11_Spatial_Mapping,Text (FK),Warehouse building within the site,BLD-nnn,Foreign key to Worksheet 11
+Floor,09_Task_Master / 11_Spatial_Mapping,Text,Floor level,Free text/number,Spatial hierarchy attribute
+Zone,09_Task_Master / 11_Spatial_Mapping,Text (FK),Zone within the building,ZN-nnn,Foreign key to Worksheet 11
+Area,09_Task_Master / 11_Spatial_Mapping,Text,Named area/room,Free text,Spatial hierarchy attribute
+Process,09_Task_Master,Text,Business process the task supports,Free text,Descriptive
+Asset ID,09_Task_Master / 19_Asset_Equipment_Master,Text (FK),Asset/equipment involved,AST-nnn,Foreign key to Worksheet 19
+Equipment,09_Task_Master / 19_Asset_Equipment_Master,Text,Equipment name,Free text,"Descriptive, denormalized from Worksheet 19"
+Checklist ID,09_Task_Master / 12_Checklist_Template_Mapping,Text (FK),Checklist/template used for evidence capture,CHK-nnn,Foreign key to Worksheet 12
+Inspection Form,09_Task_Master,Text,Name of the inspection form used,Free text,Denormalized from Worksheet 12
+SOP Reference,09_Task_Master,Text,Standard Operating Procedure reference code,SOP-CA-nnn-nnn,Descriptive
+Template ID,09_Task_Master,Text (FK),Evidence template identifier,CHK-nnn,Foreign key to Worksheet 12
+Evidence Type,09_Task_Master,Text (Enum),Type of evidence captured on completion,"Photo, Digital Signature, Sensor Reading, Lab Report, Form",Drives evidence capture UI
+Digital Signature Required (Y/N),09_Task_Master,Boolean (Y/N),Whether closing the task requires a digital signature,"Y, N",Controlled vocabulary
+Execution Method,09_Task_Master,Text (Enum),How the task is executed in the field,"Manual, Mobile, Tablet, QR Code, Barcode, IoT Sensor, API, AI Vision, Digital Twin",Controlled vocabulary
+Priority,09_Task_Master,Text (Enum),Task priority,"High, Medium, Low",Controlled vocabulary; drives dropdown
+Duration,09_Task_Master,Number (minutes),Expected duration to complete the task,Positive integer,Planning estimate
+Output Type,09_Task_Master,Text (Enum),Category of the recorded outcome,"Pass/Fail, Observation, Deviation/NCR, CAPA, Escalation, Audit Evidence",Controlled vocabulary; drives dropdown
+Week01...Week52,14_52Wk_Calendar,Text (Y / Triggered / blank),Whether the task is scheduled in that ISO calendar week,"Y, Triggered, blank",Generated per the Calendar Generation Algorithm
+Anchor Week/Date,13_Schedule_Rules,Text,Reference week/date the schedule is calculated from,Week nn or N/A for triggered,Makes calendar regeneration reproducible
+Trigger Condition,13_Schedule_Rules,Text,Condition that fires a triggered-frequency task,Free text,Required for Event/Condition/Sensor/Risk/AI Triggered
+From_ID / To_ID,16_Relationship_Matrix,Text (FK),Endpoints of a directed relationship between two entities,Any entity ID,Generic graph edge representation
+Relationship_Category,16_Relationship_Matrix,Text (Enum),Class of relationship,"Traceability, Organizational, Spatial, Operational",Controlled vocabulary
+Cardinality,16_Relationship_Matrix,Text (Enum),Cardinality of the relationship,"1:1, 1:N, N:N",Controlled vocabulary
+Risk Level,17_Risk_Register,Text (Enum),Derived risk rating,"Low, Medium, High, Critical",Derived from Likelihood x Impact
+Approval Authority (Roles Master),18_Roles_Master,Boolean (Y/N),Whether the role holds sign-off authority,"Y, N",Controlled vocabulary
+VendorID,20_Vendor_Master,Text (VEN-nnn),Unique identifier for a service/AMC vendor,"Prefixed, zero-padded, unique",Primary key for Worksheet 20
+SLA (Response Time),20_Vendor_Master,Text,Contracted vendor response time for faults/service requests,Free text (duration),Escalation basis for vendor non-performance
+ClauseRefID,21_Insurance_Risk_Clauses,Text (INSC-nnn),Unique identifier for an insurance warranty/clause entry,"Prefixed, zero-padded, unique",Primary key for Worksheet 21
+Premium Impact if Non-Conformant,21_Insurance_Risk_Clauses,Text,Qualitative/illustrative impact on insurance premium or cover if the clause is breached,Free text,Supports risk-based renewal negotiation

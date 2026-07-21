@@ -9,7 +9,7 @@ const db = () => DB.get(config.db.twin.database, {
 
 export const fetchRequirements = async (regulationId?: string) => {
     const cypher = regulationId
-        ? `MATCH (reg:Regulation {id: $id})-[:CONTAINS]->(:Clause)-[:DEFINES]->(req:Requirement) RETURN properties(req) AS requirement`
+        ? `MATCH (reg:Regulation {id: $id})<-[:BELONGS_TO]-(:Clause)<-[:DEFINED_BY]-(req:Requirement) RETURN properties(req) AS requirement`
         : `MATCH (req:Requirement) RETURN properties(req) AS requirement LIMIT 100`;
     const args = regulationId ? { id: regulationId } : {};
     // TODO: execute and return results
@@ -27,7 +27,7 @@ export const fetchControlsForRequirement = async (requirementId: string) => {
 
 export const traceForward = async (regulationId: string) => {
     const cypher = `
-        MATCH path = (:Regulation {id: $id})-[:CONTAINS]->(:Clause)-[:DEFINES]->(:Requirement)<-[:IMPLEMENTS]-(:Control)
+        MATCH path = (:Regulation {id: $id})<-[:BELONGS_TO]-(:Clause)<-[:DEFINED_BY]-(:Requirement)<-[:IMPLEMENTS]-(:Control)
         RETURN path LIMIT 50
     `;
     // TODO: execute and return path
