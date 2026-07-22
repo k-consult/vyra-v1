@@ -28,26 +28,66 @@ export const v2: Contract = {
             rels: [],
         },
 
+        Authority: {
+            label: 'Authority',
+            graph: Graph.Knowledge,
+            props: { ...baseProps, abbreviation: 'abbreviation', authorityType: 'authorityType', jurisdictionId: 'jurisdictionId' },
+            axes: [Axis.Regulatory],
+            rels: [{ type: 'OPERATES_IN', targetLabel: 'Jurisdiction', sourceField: 'jurisdictionId' }],
+        },
+
         Regulation: {
             label: 'Regulation',
             graph: Graph.Knowledge,
-            props: { ...baseProps, referenceDoc: 'referenceDoc', effectiveDate: 'effectiveDate', jurisdictionId: 'jurisdictionId' },
+            props: {
+                ...baseProps,
+                referenceDoc: 'referenceDoc',
+                effectiveDate: 'effectiveDate',
+                jurisdictionId: 'jurisdictionId',
+                authorityId: 'authorityId',
+                catalogVersion: 'catalogVersion',
+                effectiveFrom: 'effectiveFrom',
+                supersededBy: 'supersededBy',
+            },
             axes: [Axis.Regulatory],
-            rels: [{ type: 'IN_JURISDICTION', targetLabel: 'Jurisdiction', sourceField: 'jurisdictionId' }],
+            rels: [
+                { type: 'IN_JURISDICTION', targetLabel: 'Jurisdiction', sourceField: 'jurisdictionId' },
+                { type: 'ISSUED_BY', targetLabel: 'Authority', sourceField: 'authorityId' },
+            ],
         },
 
         Clause: {
             label: 'Clause',
             graph: Graph.Knowledge,
-            props: { ...baseProps, clauseRef: 'clauseRef', text: 'text', regulationId: 'regulationId' },
+            props: {
+                ...baseProps,
+                clauseRef: 'clauseRef',
+                text: 'text',
+                regulationId: 'regulationId',
+                standardId: 'standardId',
+                catalogVersion: 'catalogVersion',
+                effectiveFrom: 'effectiveFrom',
+                supersededBy: 'supersededBy',
+            },
             axes: [Axis.Regulatory],
-            rels: [{ type: 'BELONGS_TO', targetLabel: 'Regulation', sourceField: 'regulationId' }],
+            rels: [
+                { type: 'BELONGS_TO', targetLabel: 'Regulation', sourceField: 'regulationId' },
+                { type: 'BELONGS_TO', targetLabel: 'Standard', sourceField: 'standardId' },
+            ],
         },
 
         Requirement: {
             label: 'Requirement',
             graph: Graph.Knowledge,
-            props: { ...baseProps, obligationType: 'obligationType', clauseId: 'clauseId' },
+            props: {
+                ...baseProps,
+                obligationType: 'obligationType',
+                clauseId: 'clauseId',
+                mandatory: 'mandatory',
+                catalogVersion: 'catalogVersion',
+                effectiveFrom: 'effectiveFrom',
+                supersededBy: 'supersededBy',
+            },
             axes: [Axis.Regulatory],
             rels: [{ type: 'DEFINED_BY', targetLabel: 'Clause', sourceField: 'clauseId' }],
         },
@@ -115,6 +155,14 @@ export const v2: Contract = {
             props: { ...baseProps, outcome: 'outcome', verifiedAt: 'verifiedAt', verifiedBy: 'verifiedBy', capaId: 'capaId' },
             axes: [Axis.Process],
             rels: [],
+        },
+
+        Schedule: {
+            label: 'Schedule',
+            graph: Graph.Execution,
+            props: { ...baseProps, cadenceUnit: 'cadenceUnit', cadenceInterval: 'cadenceInterval', anchorDate: 'anchorDate', requirementId: 'requirementId' },
+            axes: [Axis.Process, Axis.Time],
+            rels: [{ type: 'APPLIES_TO', targetLabel: 'Requirement', sourceField: 'requirementId' }],
         },
 
         // ── Operational Graph ────────────────────────────────────────────

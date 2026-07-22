@@ -1,0 +1,9 @@
+id,name,abbreviation,authorityType,jurisdictionId,description
+AUTH-001,Bureau of Indian Standards,BIS,National Standards Body,JUR-INDIA,Publishes the National Building Code of India (NBC) and IS fire/safety codes referenced in building and fire design.
+AUTH-002,State Fire and Emergency Services Department,State Fire Dept.,State Fire Authority,JUR-INDIA,State-level authority issuing Fire NOC (No Objection Certificate) and enforcing state Fire Prevention and Life Safety Acts/Rules.
+AUTH-003,Directorate/Chief Inspectorate of Factories and Boilers,DISH/Factories Inspectorate,State Regulator,JUR-INDIA,State authority enforcing the Factories Act and workplace occupational safety compliance for warehousing/industrial premises.
+AUTH-004,Central Pollution Control Board / State Pollution Control Board,CPCB/SPCB,Environmental Regulator,JUR-INDIA,"National/state body regulating hazardous waste, solid waste, effluent, and emission compliance."
+AUTH-005,Petroleum and Explosives Safety Organisation,PESO,National Regulator,JUR-INDIA,"National regulator for storage and handling of petroleum products, compressed gases, and hazardous/flammable materials."
+AUTH-006,Health and Safety Executive,HSE,National Regulator,JUR-UK,"UK national regulator for workplace health, safety, and major accident hazard compliance."
+AUTH-007,Local Fire and Rescue Authority (Home Office oversight),FRA,Fire Authority,JUR-UK,Local Fire and Rescue Authority enforcing the Regulatory Reform (Fire Safety) Order 2005 and carrying out fire safety audits.
+AUTH-008,Environment Agency,EA,Environmental Regulator,JUR-UK,"UK regulator for environmental permitting, waste management, and pollution control."

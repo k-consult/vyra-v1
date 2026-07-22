@@ -36,12 +36,16 @@ export const project = (ir: GraphIR): ProjectionResult => {
     const nodesByLabel: Record<string, GraphNode[]> = {};
     for (const n of ir.nodes) (nodesByLabel[n.label] ??= []).push(n);
 
+    // Group by relType + sourceLabel + targetLabel — a relType alone isn't a unique batch key
+    // when the same name is legitimately reused across different node-type pairs (e.g. Clause
+    // -[:BELONGS_TO]-> Regulation and Clause -[:BELONGS_TO]-> Standard).
+    const batchKey = (e: GraphEdge) => `${e.relType}::${e.sourceLabel}::${e.targetLabel}`;
     const edgesByRel: Record<string, GraphEdge[]> = {};
-    for (const e of ir.edges) (edgesByRel[e.relType] ??= []).push(e);
-    for (const rel of Object.keys(edgesByRel)) {
-        edgesByRel[rel] = R.uniqWith(
+    for (const e of ir.edges) (edgesByRel[batchKey(e)] ??= []).push(e);
+    for (const key of Object.keys(edgesByRel)) {
+        edgesByRel[key] = R.uniqWith(
             (a: GraphEdge, b: GraphEdge) => a.sourceId === b.sourceId && a.targetId === b.targetId,
-            edgesByRel[rel]
+            edgesByRel[key]
         );
     }
 
@@ -62,12 +66,12 @@ export const project = (ir: GraphIR): ProjectionResult => {
     }
 
     // ── Edge batches + debug CSVs ─────────────────────────────────────────
-    for (const [relType, edges] of Object.entries(edgesByRel)) {
+    for (const edges of Object.values(edgesByRel)) {
         const pairs = edges.map(e => ({ sourceId: e.sourceId, targetId: e.targetId }));
-        const { sourceLabel, targetLabel } = edges[0];
+        const { relType, sourceLabel, targetLabel } = edges[0];
         edgeBatches.push({ relType, sourceLabel, targetLabel, pairs });
 
-        const csvPath = path.join(outDir, `edges-${relType}.csv`);
+        const csvPath = path.join(outDir, `edges-${relType}-${sourceLabel}-${targetLabel}.csv`);
         writeCSV(csvPath, pairs);
         edgeCSVs.push(csvPath);
     }

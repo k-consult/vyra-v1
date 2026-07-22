@@ -11,8 +11,9 @@ import operational from './modules/operational';
 import intelligence from './modules/intelligence';
 import assurance from './modules/assurance';
 import dashboard from './modules/dashboard';
+import catalog from './modules/catalog';
 
-const modules = [knowledge, execution, operational, intelligence, assurance, dashboard];
+const modules = [knowledge, execution, operational, intelligence, assurance, dashboard, catalog];
 
 async function start() {
     try {

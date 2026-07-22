@@ -2,8 +2,9 @@ import { ProjectionResult } from '../projection';
 import { execCypherFile, loadNodes, loadEdges } from './repo';
 import log from '../../lib/log';
 
-export const run = async (projection: ProjectionResult): Promise<void> => {
+export const run = async (projection: ProjectionResult, options: { originLabel?: string } = {}): Promise<void> => {
     const { cypherFiles, nodeBatches, edgeBatches } = projection;
+    const extraLabels = options.originLabel ? [options.originLabel] : [];
 
     // ── 1. Constraints ────────────────────────────────────────────────────
     log.info(`[runtime] creating constraints...`);
@@ -16,8 +17,8 @@ export const run = async (projection: ProjectionResult): Promise<void> => {
     // ── 3. Nodes via UNWIND (parameterized — no file I/O) ─────────────────
     log.info(`[runtime] loading ${nodeBatches.length} node types...`);
     for (const batch of nodeBatches) {
-        const count = await loadNodes(batch.label, batch.rows);
-        log.info(`[runtime]   ${batch.label}: +${count} nodes`);
+        const count = await loadNodes(batch.label, batch.rows, extraLabels);
+        log.info(`[runtime]   ${batch.label}${options.originLabel ? `:${options.originLabel}` : ''}: +${count} nodes`);
     }
 
     // ── 4. Edges via UNWIND ───────────────────────────────────────────────

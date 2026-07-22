@@ -1,0 +1,35 @@
+id,name,obligationType,clauseId,mandatory,catalogVersion
+OBL-0001,Conduct periodic functional testing of smoke and heat detectors across all zones,Mandatory,CLA-0001,Y,1.0
+OBL-0002,Verify fire alarm control panel status and zone-wise detector mapping integrity,Mandatory,CLA-0002,Y,1.0
+OBL-0003,Test emergency voice/PA evacuation announcement system for audibility and coverage,Mandatory,CLA-0003,Y,1.0
+OBL-0004,Conduct hydrant and hose reel pressure test and record flow/pressure readings,Mandatory,CLA-0004,Y,1.0
+OBL-0005,"Visually inspect sprinkler risers, ESFR heads, and control valves for obstruction or damage",Mandatory,CLA-0005,Y,1.0
+OBL-0006,Inspect and tag portable fire extinguishers; recharge or replace as required,Mandatory,CLA-0006,Y,1.0
+OBL-0007,Run diesel/electric/jockey fire pump operational test and record start pressure and duration,Mandatory,CLA-0007,Y,1.0
+OBL-0008,Conduct scheduled fire and emergency evacuation drills and document attendance/timing,Mandatory,CLA-0008,Y,1.0
+OBL-0009,"Verify Emergency Response Team roster, training currency, and equipment readiness",Mandatory,CLA-0009,Y,1.0
+OBL-0010,Coordinate periodic mutual-aid exercise with local fire and rescue authority,Recommended,CLA-0010,N,1.0
+OBL-0011,"Verify PPE issuance, condition, and usage compliance across warehouse floor personnel",Mandatory,CLA-0011,Y,1.0
+OBL-0012,Inspect MHE/forklift pre-use checklist compliance and operator certification currency,Mandatory,CLA-0012,Y,1.0
+OBL-0013,Verify permit-to-work and hot work authorization records prior to maintenance activity,Mandatory,CLA-0013,Y,1.0
+OBL-0014,"Verify hazardous/flammable material storage licence, segregation, and labelling compliance",Mandatory,CLA-0014,Y,1.0
+OBL-0015,"Inspect battery charging area ventilation, spill containment, and thermal monitoring",Mandatory,CLA-0015,Y,1.0
+OBL-0016,"Verify spill kit availability, staff training, and chemical spill response readiness",Mandatory,CLA-0016,Y,1.0
+OBL-0017,"Verify segregation, labelling, and secure storage of general/dry waste at source",Recommended,CLA-0017,N,1.0
+OBL-0018,Record and retain hazardous waste manifests and authorized disposal vendor evidence,Mandatory,CLA-0018,Y,1.0
+OBL-0019,Perform preventive maintenance and thermal scanning of electrical panels and transformers,Mandatory,CLA-0019,Y,1.0
+OBL-0020,Perform preventive maintenance of HVAC/ventilation systems serving occupied and storage areas,Mandatory,CLA-0020,Y,1.0
+OBL-0021,"Inspect racking system structural integrity, load signage, and beam damage",Mandatory,CLA-0021,Y,1.0
+OBL-0022,Test standby DG set for load-bearing readiness and automatic transfer switch function,Mandatory,CLA-0022,Y,1.0
+OBL-0023,Conduct effluent/STP discharge sampling and verify limits against permit conditions,Mandatory,CLA-0023,Y,1.0
+OBL-0024,Monitor DG stack emissions and record against permitted limits,Mandatory,CLA-0024,Y,1.0
+OBL-0025,Review and revalidate site fire risk assessment following any material change,Mandatory,CLA-0025,Y,1.0
+OBL-0026,Conduct internal audit and management review of the compliance program,Mandatory,CLA-0026,Y,1.0
+OBL-0027,Investigate incidents/near-misses and verify closure of corrective and preventive actions,Mandatory,CLA-0027,Y,1.0
+OBL-0028,Verify conformance with insurer risk-engineering warranty clauses ahead of policy renewal,Mandatory,CLA-0028,Y,1.0
+OBL-0029,Track Fire NOC and statutory certificate validity and initiate timely renewal,Mandatory,CLA-0029,Y,1.0
+OBL-0030,Track and close out risk engineering survey recommendations within committed timelines,Mandatory,CLA-0030,Y,1.0
+OBL-0031,Establish and maintain documented procedure to satisfy understanding of organizational context for OH&S,Mandatory,CLA-0031,Y,1.0
+OBL-0032,Establish and maintain documented procedure to satisfy understanding of organizational context for environmental aspects,Mandatory,CLA-0032,Y,1.0
+OBL-0033,Ensure general duty of care towards employee and visitor safety across site operations,Mandatory,CLA-0033,Y,1.0
+OBL-0034,Verify means of escape routes and fire compartmentation remain unobstructed and conformant,Mandatory,CLA-0034,Y,1.0

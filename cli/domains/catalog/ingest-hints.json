@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0",
+  "idColumn": "id",
+  "nameColumn": "name",
+  "feedMap": {
+    "catalog/jurisdictions.csv": "Jurisdiction",
+    "catalog/authorities.csv":   "Authority",
+    "catalog/regulations.csv":   "Regulation",
+    "catalog/standards.csv":     "Standard",
+    "catalog/clauses.csv":       "Clause",
+    "catalog/requirements.csv":  "Requirement"
+  },
+  "edgeMap": {}
+}

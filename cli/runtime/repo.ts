@@ -23,12 +23,13 @@ export const execCypherFile = async (cypherFile: string): Promise<void> => {
 };
 
 // Load nodes via UNWIND — no file I/O, parameterized
-export const loadNodes = async (label: string, rows: Record<string, any>[]): Promise<number> => {
+export const loadNodes = async (label: string, rows: Record<string, any>[], extraLabels: string[] = []): Promise<number> => {
     if (!rows.length) return 0;
 
+    const labelClause = [label, ...extraLabels].map(l => `\`${l}\``).join(':');
     const cypher = `
         UNWIND $args.rows AS row
-        MERGE (n:\`${label}\` {id: row.id})
+        MERGE (n:${labelClause} {id: row.id})
         ON CREATE SET n += row, n.createdAt = datetime()
         ON MATCH  SET n += row, n.updatedAt = datetime()
         RETURN count(n) AS total

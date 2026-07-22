@@ -1,0 +1,11 @@
+id,name,body,version,description
+STD-001,ISO 45001:2018,ISO,2018,Occupational health and safety management systems - requirements with guidance for use.
+STD-002,ISO 14001:2015,ISO,2015,Environmental management systems - requirements with guidance for use.
+STD-003,ISO 41001:2018,ISO,2018,Facility management - management systems - requirements with guidance for use.
+STD-004,ISO 31000:2018,ISO,2018,Risk management - guidelines for principles and generic framework.
+STD-005,ISO 22301:2019,ISO,2019,Security and resilience - business continuity management systems - requirements.
+STD-006,ISO 9001:2015,ISO,2015,"Quality management systems - requirements, applied to FM process control and documentation."
+STD-007,NFPA 25,National Fire Protection Association,2023 Ed.,"Standard for the inspection, testing, and maintenance of water-based fire protection systems."
+STD-008,NFPA 72,National Fire Protection Association,2022 Ed.,"National Fire Alarm and Signaling Code - detection, alarm, and emergency communication systems."
+STD-009,BS 9999:2017,British Standards Institution,2017,"Code of practice for fire safety in the design, management and use of buildings (UK)."
+STD-010,IS 3844:1989 / SP 7 (NBC),Bureau of Indian Standards,Reaffirmed,"Code of practice for fire hydrant, fire hose reel, and internal fire fighting installations (India)."

@@ -1,8 +1,12 @@
 # Vyra Graph Model
 
-**Version:** 1.1  
-**Status:** Canonical — reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`) per `roadmap.md` Phase 0, 2026-07-21.  
-**Source data:** `Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx` (7 incidents, 31-column denormalized)
+**Version:** 1.2  
+**Status:** Canonical — reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`) per `roadmap.md` Phase 0, 2026-07-21. Extended with the Global Compliance Catalog (Phase 0.5 + Phase 1), 2026-07-22.  
+**Source data:** `Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx` (7 incidents, enterprise seed) + `.design/synthetic-data/data.csv` (Industrial Parks/Warehouse/3PL vertical, catalog seed — `Authority`/`Jurisdiction`/`Regulation`/`Standard`/`Clause`/`Requirement`, `:Catalog`-labeled)
+
+## The `:Catalog` Label Convention
+
+Every node written by `cli/orchestration/catalog-sync.ts` carries its domain label plus `:Catalog` (e.g. `(:Regulation:Catalog)`), per `roadmap.md` Phase 0.5. This scopes the catalog sync job's writes and lets callers distinguish centrally-synced reference data from enterprise-authored data of the same label — e.g. `MATCH (n:Regulation:Catalog)` returns only the 11 catalog-seeded regulations, not the 16 unlabeled ones the original enterprise pipeline (`cli/orchestration/index.ts`) seeded directly into `regulations.csv` before the catalog sync existed. The 16 legacy nodes are a known follow-up, not yet relabeled.
 
 This is the primary graph model for Vyra's Compliance Digital Twin. All schema, Cypher, and agent design decisions must align with this document.
 
@@ -117,8 +121,39 @@ Regulatory frameworks and standards that apply to the organization.
 | version | string | `1.0` |
 | status | string | `active` |
 
-**Seed data (16 regulations):**  
+**Seed data (16 regulations, enterprise pipeline, unlabeled):**  
 OSHA, NBC India, ISO 45001, US FDA GMP, EU GMP Annex 1, ISO 13485, FSMA, HACCP, FSSAI Schedule 4, USP, FDA Water Systems Guidance, ISO 22000, ISO 17025, FSSAI Packaging Rules, IEC 62443, NIST CSF
+
+**Plus 11 catalog regulations (`:Catalog` label, `cli/orchestration/catalog-sync.ts`)** — Industrial Parks/Warehouse/3PL vertical, India + UK. New props: `authorityId`, `catalogVersion`, `effectiveFrom`, `supersededBy` (self-referential — a repealed regulation is superseded, never deleted).
+
+---
+
+#### `Authority`
+Regulatory body that issues or enforces a `Regulation` (Knowledge, `:Catalog`).
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `AUTH-001` |
+| name | string | `Bureau of Indian Standards` |
+| abbreviation | string | `BIS` |
+| authorityType | string | `National Standards Body` |
+| jurisdictionId | string | `JUR-INDIA` |
+
+**8 authorities**, seeded from `.design/synthetic-data/data.csv`'s `02_Regulatory_Authorities` worksheet.
+
+---
+
+#### `Standard`
+Industry/international standard (Knowledge, `:Catalog`) — a `Clause`'s source document, alongside `Regulation`.
+
+**10 standards** (ISO 45001, ISO 14001, NFPA 25, BS 9999, …), seeded from `04_Standards`. Props unchanged from the original `v2.ts` shape (`body`, `referenceDoc`, `version`).
+
+---
+
+#### `Clause` / `Requirement`
+`Clause` (Knowledge, `:Catalog`) belongs to exactly one of `Regulation` or `Standard` (`regulationId` XOR `standardId` populated per row — never both, per `05_Clauses`' `Source Type`/`Source ID` columns). `Requirement` (Knowledge, `:Catalog`) is `06_Obligations` mapped 1:1 — `ObligationID → id`, `Mandatory (Y/N) → mandatory` — reusing the existing `Requirement` type rather than adding a second node type for the same concept.
+
+**34 clauses, 34 requirements.**
 
 ---
 
@@ -189,6 +224,11 @@ Confirmation that a CAPA was executed and effective.
 | status | string | `closed` |
 
 **13 verifications** across 7 incidents.
+
+---
+
+#### `Schedule` — declared, not fed
+Cadence for a `Requirement` (`Schedule -[:APPLIES_TO]-> Requirement`). Props: `cadenceUnit` (`day`/`week`/`month`), `cadenceInterval`, `anchorDate`, `requirementId`. No seed data — see "Declared, Not Yet Fed" below for why. `api/modules/catalog/repo.ts`'s `computeWindow({cadenceUnit, cadenceInterval, anchorDate}, horizonWeeks)` is a pure function computing occurrence dates directly from these fields, so the window projection is usable ahead of any `Schedule` node existing.
 
 ---
 
@@ -376,6 +416,11 @@ All relationships below are **live** — they are written by every `./ingest.sh`
 | `GOVERNED_BY` | Incident → Regulation | Incident is subject to this regulation |
 | `IMPLEMENTS` | Control → Requirement | Control satisfies a requirement |
 | `FAILED_AGAINST` | Incident → Control | Control failed during this incident |
+| `IN_JURISDICTION` | Regulation → Jurisdiction | Regulation applies within this jurisdiction |
+| `ISSUED_BY` | Regulation → Authority | Regulation is issued/enforced by this authority |
+| `OPERATES_IN` | Authority → Jurisdiction | Authority's jurisdiction of operation |
+| `BELONGS_TO` | Clause → Regulation **or** Clause → Standard | Clause's source document (polymorphic — a clause has exactly one parent, never both) |
+| `DEFINED_BY` | Requirement → Clause | Requirement is defined by this clause |
 
 ### Execution Graph
 | Relationship | From → To | Meaning |
@@ -410,20 +455,18 @@ All relationships below are **live** — they are written by every `./ingest.sh`
 
 ## Declared, Not Yet Fed
 
-`v2.ts` declares 27 node types across the five graphs; only the 13 above have a live CSV feed (`ingest-hints.json`'s `feedMap`). The rest — `Jurisdiction`, `Clause`, `Requirement`, `Policy`, `Standard`, `Program`, `Workflow`, `Signal`, `Decision`, `EvidencePackage`, `Attestation`, `AssuranceStatement`, `Audit`, `Exception` — have no seed data yet (`roadmap.md` Phase 1/2). Their relationships are declared in `v2.ts` but never fire today, since `cli/runtime/repo.ts`'s edge loader does `MATCH` (not `MERGE`) on both endpoints — no target node, no edge:
+`v2.ts` declares 29 node types across the five graphs (27 original + `Authority` + `Schedule`, added with the Global Compliance Catalog). 18 now have a live CSV feed: the original 13 (`ingest-hints.json`'s `feedMap`) plus `Jurisdiction`, `Authority`, `Standard`, `Clause`, `Requirement` (`cli/domains/catalog/ingest-hints.json`'s `feedMap`, loaded by `cli/orchestration/catalog-sync.ts`). The rest — `Policy`, `Program`, `Workflow`, `Signal`, `Decision`, `EvidencePackage`, `Attestation`, `AssuranceStatement`, `Audit`, `Exception`, `Schedule` — have no seed data yet. Their relationships are declared in `v2.ts` but never fire today, since `cli/runtime/repo.ts`'s edge loader does `MATCH` (not `MERGE`) on both endpoints — no target node, no edge:
 
 | Relationship | From → To | Fed by |
 |---|---|---|
-| `IN_JURISDICTION` | Regulation → Jurisdiction | Phase 1 |
-| `BELONGS_TO` | Clause → Regulation | Phase 1 |
-| `DEFINED_BY` | Requirement → Clause | Phase 1 |
 | `PART_OF` | Task → Workflow, Workflow → Program | Phase 1/2 |
 | `EMITTED_BY` | Signal → Asset | Phase 3 |
+| `APPLIES_TO` | Schedule → Requirement | deferred — `13_Schedule_Rules` is keyed by `TaskID`, not `RequirementID`; seeding this would fabricate a link the source data doesn't support. `api/modules/catalog/repo.ts`'s `computeWindow` is a pure function taking `{cadenceUnit, cadenceInterval, anchorDate}` directly, usable ahead of any `Schedule` node existing. |
 | `BACKED_BY` | Attestation → EvidencePackage | — |
 | `DERIVED_FROM` | AssuranceStatement → Attestation | — |
 | `WAIVES` | Exception → Requirement | — |
 
-`api/modules/knowledge/repo.ts`'s `traceForward`/`traceReverse` and `api/modules/execution/repo.ts`'s `listTasks(workflowId)` are already written against this dormant schema (`BELONGS_TO`/`DEFINED_BY`/`PART_OF`) so they'll start returning data the moment Phase 1/2 seed `Clause`/`Requirement`/`Workflow` — no query rewrite needed then.
+`api/modules/execution/repo.ts`'s `listTasks(workflowId)` is already written against `PART_OF` so it'll start returning data the moment Phase 2 seeds `Workflow` — no query rewrite needed then. `api/modules/knowledge/repo.ts`'s `traceForward`/`traceReverse` and `api/modules/catalog/repo.ts`'s `traceRequirements` are **live now** — `BELONGS_TO`/`DEFINED_BY`/`IN_JURISDICTION`/`ISSUED_BY`/`OPERATES_IN` moved out of this table once the catalog sync seeded their target types.
 
 **Note:** two relationships previously documented here — `LOCATED_AT` (Asset → Facility) and `CAPTURED_FROM` (Evidence → Incident) — were never implemented anywhere (not in `v2.ts`, not in `ingest-hints.json`, not queried by any `repo.ts`) and have been removed from this doc. If Asset-level location becomes a real requirement, model it explicitly (Phase 2's `Location` hierarchy in `roadmap.md` is the intended home).
 
@@ -512,6 +555,19 @@ All feeds live under `cli/feeds/csv/<domain>/`.
 | intelligence | rcas.csv | 15 | Root cause analyses |
 | assurance | evidence.csv | 30 | Evidence artifacts |
 
+**Catalog feeds** (`cli/feeds/csv/catalog/`, loaded by `cli/orchestration/catalog-sync.ts` via `cli/domains/catalog/ingest-hints.json`, generated by `cli/scripts/convert-catalog-seed.ts` from `.design/synthetic-data/data.csv`):
+
+| Domain | File | Rows | Description |
+|---|---|---|---|
+| catalog | jurisdictions.csv | 2 | Derived distinct values (India, UK) |
+| catalog | authorities.csv | 8 | Regulatory authorities |
+| catalog | regulations.csv | 11 | `:Catalog`-labeled, distinct from the 16 above |
+| catalog | standards.csv | 10 | Industry/ISO standards |
+| catalog | clauses.csv | 34 | Polymorphic parent: `regulationId` XOR `standardId` |
+| catalog | requirements.csv | 34 | `06_Obligations`, `Obligation → Requirement` mapping |
+
+No `edgeMap` for catalog feeds — every catalog relationship is an embedded FK (`v2.ts` `rels`), same mechanism `Regulation`/`Clause`/`Requirement`/`Control` already use.
+
 **Edge files** (`cli/feeds/csv/edges/`):
 | File | Rows | Relationship |
 |---|---|---|
@@ -525,7 +581,7 @@ All feeds live under `cli/feeds/csv/<domain>/`.
 | capa_verification.csv | 13 | Verification → CLOSES → CAPA |
 | incident_task.csv | 24 | Incident → HAS_TASK → Task |
 
-**Total: 179 nodes, 134 edges**
+**Enterprise pipeline total: 179 nodes, 134 edges.** **Catalog pipeline total: 99 nodes, 98 edges** (`:Catalog`-labeled, separate `catalog-sync.ts` run).
 
 ---
 
