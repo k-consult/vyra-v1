@@ -36,7 +36,7 @@ That loop runs across five graph domains (full detail in `vyra-graph-spine.md`):
 
 ## The Operating Model — 7-Layer JTBD
 
-Sourced from the WINAIM GRC Operating Model bow-tie (`__ref/` origin: `landscape.jpeg`). Each layer names a persona (who does the job today, and which agent family eventually automates it), its capabilities, and — the part the original diagram doesn't carry — **whether the graph can actually feed it right now.**
+Sourced from the GRC Operating Model bow-tie diagram supplied for this exercise. Each layer names a persona (who does the job today, and which agent family eventually automates it), its capabilities, and — the part the original diagram doesn't carry — **whether the graph can actually feed it right now.**
 
 Status key: **live** = real data, working queries · **partial** = modeled but incomplete or unstructured · **gap** = nothing built.
 
