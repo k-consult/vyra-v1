@@ -3,7 +3,7 @@ import path from 'path';
 import { parse } from 'csv-parse/sync';
 import log from '../../lib/log';
 
-const sourcePath = path.resolve(__dirname, '..', '..', '.design', 'synthetic-data', 'data.csv');
+const sourcePath = path.resolve(__dirname, '..', '..', '.design', '__ref', 'synthetic-data', 'data.csv');
 const outDir = path.resolve(__dirname, '..', 'feeds', 'csv', 'catalog');
 
 type Row = Record<string, string>;

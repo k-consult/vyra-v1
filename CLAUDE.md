@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Vyra v1** — an Agentic Risk & Compliance Infrastructure platform. AI agents continuously transform regulations into operational assurance by reasoning over a shared enterprise graph.
 
-Canonical architecture reference: @.design/blueprint.md
+Canonical docs: @.design/vyra-landscape.md (vision + operating model — start here), @.design/vyra-graph-spine.md (schema ground truth), @.design/vyra-implementation-plan.md (sequencing + status).
 
-Before any graph schema, agent design, or domain-model decision, read the blueprint. It is the source of truth.
+Before any graph schema, agent design, or domain-model decision, read the landscape doc, then the spine. They are the source of truth — not `.design/__ref/blueprint.md`, which is retired/historical.
 
 ---
 
@@ -131,4 +131,4 @@ Default autonomy level: **Level 1 (Agent Recommends, Human Approves)** unless ex
 
 - **Plan first.** For non-trivial tasks, outline the approach and wait for approval before writing code.
 - **Be terse.** No trailing summaries after completing work — the diff speaks for itself.
-- **Reference the blueprint.** Before proposing graph schema or agent architecture changes, verify alignment with `.design/blueprint.md`.
+- **Reference the spine.** Before proposing graph schema or agent architecture changes, verify alignment with `.design/vyra-graph-spine.md` (schema) and `.design/vyra-landscape.md` (operating model).
