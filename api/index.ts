@@ -12,8 +12,9 @@ import intelligence from './modules/intelligence';
 import assurance from './modules/assurance';
 import dashboard from './modules/dashboard';
 import catalog from './modules/catalog';
+import enterprise from './modules/enterprise';
 
-const modules = [knowledge, execution, operational, intelligence, assurance, dashboard, catalog];
+const modules = [knowledge, execution, operational, intelligence, assurance, dashboard, catalog, enterprise];
 
 async function start() {
     try {

@@ -1,0 +1,32 @@
+id,name,assetType,category,facilityId,buildingId,zoneId,roomId
+AST-001,Fire Hydrant System,Asset,Fire Suppression,LOC-001,BLD-002,ZN-004,RM-004
+AST-002,Fire Hose Reel Cabinet,Asset,Fire Suppression,LOC-002,BLD-004,ZN-007,RM-007
+AST-003,Sprinkler Riser Assembly,Asset,Fire Suppression,LOC-002,BLD-005,ZN-010,RM-010
+AST-004,ESFR Sprinkler Head Array,Asset,Fire Suppression,LOC-003,BLD-007,ZN-013,RM-013
+AST-005,Fire Pump - Diesel Engine Driven,Equipment,Fire Suppression,LOC-003,BLD-008,ZN-016,RM-016
+AST-006,Fire Pump - Electric Motor Driven,Equipment,Fire Suppression,LOC-004,BLD-010,ZN-019,RM-019
+AST-007,Jockey Pump Assembly,Equipment,Fire Suppression,LOC-004,BLD-011,ZN-022,RM-022
+AST-008,Fire Extinguisher - ABC Dry Powder,Equipment,Fire Suppression,LOC-005,BLD-013,ZN-025,RM-025
+AST-009,Fire Extinguisher - CO2 Type,Equipment,Fire Suppression,LOC-005,BLD-014,ZN-028,RM-028
+AST-010,FM200 Clean Agent System (Server/Panel Room),Equipment,Fire Suppression,LOC-006,BLD-016,ZN-031,RM-031
+AST-011,Smoke Detector Panel,Equipment,Fire Detection,LOC-006,BLD-017,ZN-034,RM-034
+AST-012,Heat Detector Array,Equipment,Fire Detection,LOC-007,BLD-019,ZN-037,RM-037
+AST-013,Fire Alarm Control Panel,Equipment,Fire Detection,LOC-007,BLD-020,ZN-040,RM-040
+AST-014,PA / Voice Evacuation System,Equipment,Fire Detection,LOC-008,BLD-022,ZN-043,RM-043
+AST-015,Emergency Lighting & Exit Signage,Asset,Emergency Response,LOC-008,BLD-023,ZN-046,RM-046
+AST-016,Assembly Point Signage & Muster Station,Asset,Emergency Response,LOC-009,BLD-025,ZN-049,RM-049
+AST-017,First Aid & Spill Kit Station,Asset,Emergency Response,LOC-009,BLD-026,ZN-052,RM-052
+AST-018,Forklift / MHE Unit,Asset,EHS Operations,LOC-010,BLD-028,ZN-055,RM-055
+AST-019,Pallet Racking System,Asset,Facilities,LOC-010,BLD-029,ZN-058,RM-058
+AST-020,Loading Dock Leveler,Asset,Facilities,LOC-011,BLD-031,ZN-061,RM-061
+AST-021,Battery Charging Station (MHE),Asset,EHS Operations,LOC-011,BLD-032,ZN-064,RM-064
+AST-022,Electrical Distribution Panel,Equipment,Utilities,LOC-012,BLD-034,ZN-067,RM-067
+AST-023,Transformer Unit,Equipment,Utilities,LOC-013,BLD-035,ZN-070,RM-070
+AST-024,Diesel Generator (DG) Backup Set,Equipment,Utilities,LOC-014,BLD-037,ZN-073,RM-073
+AST-025,Effluent / STP Treatment Plant,Asset,Environmental,LOC-014,BLD-038,ZN-076,RM-076
+AST-026,Hazardous Waste Storage Shed,Asset,Waste Management,LOC-015,BLD-040,ZN-079,RM-079
+AST-027,Waste Compactor,Equipment,Waste Management,LOC-016,BLD-041,ZN-082,RM-082
+AST-028,CCTV Surveillance Camera,Asset,Security,LOC-017,BLD-043,ZN-085,RM-085
+AST-029,Access Control System,Asset,Security,LOC-017,BLD-044,ZN-088,RM-088
+AST-030,Water Storage Tank (Fire Reserve),Asset,Fire Suppression,LOC-018,BLD-046,ZN-091,RM-091
+AST-031,HVAC / Air Handling Unit,Equipment,Utilities,LOC-019,BLD-047,ZN-094,RM-094

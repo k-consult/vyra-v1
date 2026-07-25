@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "idColumn": "id",
+  "nameColumn": "name",
+  "feedMap": {
+    "enterprise/organizations.csv": "Organization",
+    "enterprise/roles.csv":         "Role",
+    "enterprise/facilities.csv":    "Facility",
+    "enterprise/assets.csv":        "Asset"
+  },
+  "edgeMap": {}
+}

@@ -1,12 +1,14 @@
 # Vyra Graph Spine
 
-**Version:** 1.2  
-**Status:** Canonical — reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`) per `vyra-implementation-plan.md` Phase 0, 2026-07-21. Extended with the Global Compliance Catalog (Phase 0.5 + Phase 1), 2026-07-22. Relocated from `.design/graph.md` and renamed as part of the 3-doc consolidation (`vyra-landscape.md` / `vyra-graph-spine.md` / `vyra-implementation-plan.md`), 2026-07-23 — no content changed in the move.  
-**Source data:** `Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx` (7 incidents, enterprise seed) + `.design/__ref/synthetic-data/data.csv` (Industrial Parks/Warehouse/3PL vertical, catalog seed — `Authority`/`Jurisdiction`/`Regulation`/`Standard`/`Clause`/`Requirement`, `:Catalog`-labeled)
+**Version:** 1.3  
+**Status:** Canonical — reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`) per `vyra-implementation-plan.md` Phase 0, 2026-07-21. Extended with the Global Compliance Catalog (Phase 0.5 + Phase 1), 2026-07-22. Relocated from `.design/graph.md` and renamed as part of the 3-doc consolidation (`vyra-landscape.md` / `vyra-graph-spine.md` / `vyra-implementation-plan.md`), 2026-07-23 — no content changed in the move. Extended with Enterprise Context (Phase 2), 2026-07-25.  
+**Source data:** `Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx` (7 incidents, enterprise seed) + `.design/__ref/synthetic-data/data.csv` (Industrial Parks/Warehouse/3PL vertical, catalog seed — `Authority`/`Jurisdiction`/`Regulation`/`Standard`/`Clause`/`Requirement`, `:Catalog`-labeled; enterprise seed — `Organization`/`Role`/`Facility`/`Asset`, `:Enterprise`-labeled)
 
 ## The `:Catalog` Label Convention
 
 Every node written by `cli/orchestration/catalog-sync.ts` carries its domain label plus `:Catalog` (e.g. `(:Regulation:Catalog)`), per `vyra-implementation-plan.md` Phase 0.5. This scopes the catalog sync job's writes and lets callers distinguish centrally-synced reference data from enterprise-authored data of the same label — e.g. `MATCH (n:Regulation:Catalog)` returns only the 11 catalog-seeded regulations, not the 16 unlabeled ones the original enterprise pipeline (`cli/orchestration/index.ts`) seeded directly into `regulations.csv` before the catalog sync existed. The 16 legacy nodes are a known follow-up, not yet relabeled.
+
+The same convention extends to `:Enterprise`, written by `cli/orchestration/enterprise-sync.ts` (Phase 2). `Facility` and `Asset` are dual-origin labels exactly like `Regulation`: the 7 `Facility`/`Asset` pairs from the original incident pipeline stay unlabeled, and the second-tenant `Facility`/`Asset` rows sourced from `11_Spatial_Mapping`/`19_Asset_Equipment_Master` are written `:Facility:Enterprise` / `:Asset:Enterprise`, coexisting without ID collisions (`FAC-*`/enterprise asset IDs vs. `LOC-*`/`AST-*`).
 
 This is the primary graph model for Vyra's Compliance Digital Twin — the backbone `vyra-landscape.md` and `vyra-implementation-plan.md` both defer to. All schema, Cypher, and agent design decisions must align with this document.
 
@@ -268,16 +270,18 @@ The central operational node. Represents an audit-triggered compliance incident,
 ---
 
 #### `Facility`
-Physical location where the incident occurred.
+The compliance-bearing physical unit — the thing that gets inspected, audited, and licensed. Chosen over a separate `Location` node type (Phase 2 design decision): finer-grained physical position (site/building/zone/room) is modeled as attributes on `Facility`/`Asset`, not as additional node types — geography alone has no regulatory standing, `Facility` does.
 
 | Property | Type | Example |
 |---|---|---|
-| id | string | `FAC-1002` |
-| name | string | `FAC-1002` |
-| businessUnit | string | `Facility & EHS` |
+| id | string | `FAC-1002`, `LOC-001` |
+| name | string | `FAC-1002`, `Bengaluru Industrial & Logistics Park` |
+| businessUnit | string | `Facility & EHS` (enterprise-pipeline rows only) |
+| region | string | |
+| company | string | `Vantage Industrial Parks & Logistics REIT` (`:Enterprise` rows only) |
 | status | string | `active` |
 
-**7 facilities:** FAC-1002 through FAC-1008.
+**7 facilities** (`FAC-1002`–`FAC-1008`, enterprise pipeline, unlabeled) **+ 20 facilities** (`LOC-001`–`LOC-020`, `:Enterprise` label, deduped to Site granularity from `11_Spatial_Mapping`'s 100 rows by `cli/scripts/convert-enterprise-seed.ts`).
 
 ---
 
@@ -286,15 +290,19 @@ Equipment, systems, or infrastructure involved in the incident.
 
 | Property | Type | Example |
 |---|---|---|
-| id | string | `FSD-BLR-WH-B-447` |
+| id | string | `FSD-BLR-WH-B-447`, `AST-001` |
 | name | string | `Honeywell NOTIFIER Smoke Detector` |
 | assetType | string | `equipment` |
-| owner | string | `Facility & EHS` |
-| facilityId | string | `FAC-1002` |
-| vendorId | string | `VND-2002` |
+| owner | string | `Facility & EHS` (enterprise-pipeline rows only) |
+| facilityId | string | `FAC-1002`, `LOC-001` — FK to Facility |
+| vendorId | string | `VND-2002` (enterprise-pipeline rows only) |
+| buildingId | string | `BLD-002` (`:Enterprise` rows only) |
+| zoneId | string | `ZN-004` (`:Enterprise` rows only) |
+| roomId | string | `RM-004` (`:Enterprise` rows only) |
+| category | string | `Fire Suppression` (`:Enterprise` rows only) |
 | status | string | `active` |
 
-**7 assets:**
+**7 assets** (enterprise pipeline, unlabeled):
 | ID | Name | Facility |
 |---|---|---|
 | FSD-BLR-WH-B-447 | Honeywell NOTIFIER Smoke Detector | FAC-1002 |
@@ -304,6 +312,44 @@ Equipment, systems, or infrastructure involved in the incident.
 | DRN-PKG-221 | Drainage System - Packaging Hall | FAC-1006 |
 | WT-ANAND-778 | Mettler Toledo ICS685 Scale | FAC-1007 |
 | IOT-CHN-992 | Cisco Industrial IoT Gateway | FAC-1008 |
+
+**Plus 31 assets** (`AST-001`–`AST-031`, `:Enterprise` label, from `19_Asset_Equipment_Master`) — a second, non-colliding ID space, each carrying a real `LOCATED_AT` edge to its `:Enterprise`-labeled `Facility`.
+
+**Note:** `facilityId` existed in the enterprise pipeline's `assets.csv` since the original seed but was never wired to a relationship — `LOCATED_AT` was undeclared in `v2.ts` until Phase 2 added it, so the 7 original assets also start emitting `LOCATED_AT` edges to their (unlabeled) `Facility` on the next `./ingest.sh` run, no new data required.
+
+---
+
+#### `Organization`
+Enterprise org unit (`:Enterprise`) — a Company/BusinessUnit/Department combination that a `Role` belongs to.
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `ORG-VANTAGE_INDUSTRIAL_PARKS_LOGISTICS_REIT__EHS__SAFETY` |
+| name | string | `EHS - Safety` |
+| company | string | `Vantage Industrial Parks & Logistics REIT` |
+
+**12 organizations**, deduped by Company/BusinessUnit/Department from `10_Organization_Mapping`'s 16 rows.
+
+---
+
+#### `Role`
+A job function within an `Organization` (`:Enterprise`).
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `ROLE-004` |
+| name | string | `EHS Manager (Regional)` |
+| businessUnit | string | `EHS` |
+| department | string | `Safety` |
+| approvalAuthority | string | `Y` / `N` |
+| organizationId | string | FK to Organization |
+
+**16 roles**, 1:1 from `18_Roles_Master`.
+
+---
+
+#### `Person` — declared, not fed
+Named individual holding a `Role` and working at a `Facility` (`:Enterprise`). Props: `email`, `roleId`, `facilityId`. No seed data anywhere in either source dataset — `.design/__ref/entity-alignment.md` confirms the second dataset has role titles but no named individuals. `Incident.capturedBy`/`reviewedBy`/`Task.owner` stay free-text strings until an identity source exists. See "Declared, Not Yet Fed" below.
 
 ---
 
@@ -437,6 +483,8 @@ All relationships below are **live** — they are written by every `./ingest.sh`
 | `INVOLVES` | Incident → Asset | Asset implicated in incident |
 | `SUPPLIED_BY` | Asset → Vendor | Vendor responsible for asset |
 | `MANAGED_BY` | Incident → Vendor | Vendor involved in incident |
+| `LOCATED_AT` | Asset → Facility | Physical facility housing the asset (Phase 2) |
+| `BELONGS_TO` | Role → Organization | Role's org unit (Phase 2 — reuses the `BELONGS_TO` name already used for Clause→Regulation/Standard; safe since `cli/projection/index.ts` groups edge batches by `(relType, sourceLabel, targetLabel)`, not `relType` alone) |
 
 ### Intelligence Graph
 | Relationship | From → To | Meaning |
@@ -455,7 +503,7 @@ All relationships below are **live** — they are written by every `./ingest.sh`
 
 ## Declared, Not Yet Fed
 
-`v2.ts` declares 29 node types across the five graphs (27 original + `Authority` + `Schedule`, added with the Global Compliance Catalog). 18 now have a live CSV feed: the original 13 (`ingest-hints.json`'s `feedMap`) plus `Jurisdiction`, `Authority`, `Standard`, `Clause`, `Requirement` (`cli/domains/catalog/ingest-hints.json`'s `feedMap`, loaded by `cli/orchestration/catalog-sync.ts`). The rest — `Policy`, `Program`, `Workflow`, `Signal`, `Decision`, `EvidencePackage`, `Attestation`, `AssuranceStatement`, `Audit`, `Exception`, `Schedule` — have no seed data yet. Their relationships are declared in `v2.ts` but never fire today, since `cli/runtime/repo.ts`'s edge loader does `MATCH` (not `MERGE`) on both endpoints — no target node, no edge:
+`v2.ts` declares 32 node types across the five graphs (27 original + `Authority` + `Schedule`, added with the Global Compliance Catalog, + `Organization`/`Role`/`Person`, added with Enterprise Context). 22 now have a live CSV feed: the original 13 (`ingest-hints.json`'s `feedMap`) plus `Jurisdiction`, `Authority`, `Standard`, `Clause`, `Requirement` (`cli/domains/catalog/ingest-hints.json`, loaded by `cli/orchestration/catalog-sync.ts`) plus `Organization`, `Role` (`cli/domains/enterprise/ingest-hints.json`, loaded by `cli/orchestration/enterprise-sync.ts` — `Facility`/`Asset` already had live feeds and just gained a second, `:Enterprise`-labeled batch). The rest — `Policy`, `Program`, `Workflow`, `Signal`, `Decision`, `EvidencePackage`, `Attestation`, `AssuranceStatement`, `Audit`, `Exception`, `Schedule`, `Person` — have no seed data yet. Their relationships are declared in `v2.ts` but never fire today, since `cli/runtime/repo.ts`'s edge loader does `MATCH` (not `MERGE`) on both endpoints — no target node, no edge:
 
 | Relationship | From → To | Fed by |
 |---|---|---|
@@ -465,10 +513,12 @@ All relationships below are **live** — they are written by every `./ingest.sh`
 | `BACKED_BY` | Attestation → EvidencePackage | — |
 | `DERIVED_FROM` | AssuranceStatement → Attestation | — |
 | `WAIVES` | Exception → Requirement | — |
+| `HAS_ROLE` | Person → Role | blocked on an identity source — no `Person` seed data exists in either dataset (`.design/__ref/entity-alignment.md` §4) |
+| `WORKS_AT` | Person → Facility | same blocker as `HAS_ROLE` |
 
-`api/modules/execution/repo.ts`'s `listTasks(workflowId)` is already written against `PART_OF` so it'll start returning data the moment Phase 2 seeds `Workflow` — no query rewrite needed then. `api/modules/knowledge/repo.ts`'s `traceForward`/`traceReverse` and `api/modules/catalog/repo.ts`'s `traceRequirements` are **live now** — `BELONGS_TO`/`DEFINED_BY`/`IN_JURISDICTION`/`ISSUED_BY`/`OPERATES_IN` moved out of this table once the catalog sync seeded their target types.
+`api/modules/execution/repo.ts`'s `listTasks(workflowId)` is already written against `PART_OF` so it'll start returning data the moment Phase 2 seeds `Workflow` — no query rewrite needed then. `api/modules/knowledge/repo.ts`'s `traceForward`/`traceReverse` and `api/modules/catalog/repo.ts`'s `traceRequirements` are **live now** — `BELONGS_TO`/`DEFINED_BY`/`IN_JURISDICTION`/`ISSUED_BY`/`OPERATES_IN` moved out of this table once the catalog sync seeded their target types. `LOCATED_AT` (Asset → Facility) and `BELONGS_TO` (Role → Organization) moved out of this table with Phase 2 — both are live now, see the Relationship Reference above.
 
-**Note:** two relationships previously documented here — `LOCATED_AT` (Asset → Facility) and `CAPTURED_FROM` (Evidence → Incident) — were never implemented anywhere (not in `v2.ts`, not in `ingest-hints.json`, not queried by any `repo.ts`) and have been removed from this doc. If Asset-level location becomes a real requirement, model it explicitly (Phase 2's `Location` hierarchy in `vyra-implementation-plan.md` is the intended home).
+**Note:** `CAPTURED_FROM` (Evidence → Incident), previously documented here, was never implemented anywhere (not in `v2.ts`, not in `ingest-hints.json`, not queried by any `repo.ts`) and has been removed from this doc. `LOCATED_AT` (Asset → Facility), also previously flagged here as unimplemented with a note to model it explicitly in Phase 2, is now live — see above.
 
 ---
 
@@ -568,6 +618,17 @@ All feeds live under `cli/feeds/csv/<domain>/`.
 
 No `edgeMap` for catalog feeds — every catalog relationship is an embedded FK (`v2.ts` `rels`), same mechanism `Regulation`/`Clause`/`Requirement`/`Control` already use.
 
+**Enterprise feeds** (`cli/feeds/csv/enterprise/`, loaded by `cli/orchestration/enterprise-sync.ts` via `cli/domains/enterprise/ingest-hints.json`, generated by `cli/scripts/convert-enterprise-seed.ts` from the same `.design/__ref/synthetic-data/data.csv`):
+
+| Domain | File | Rows | Description |
+|---|---|---|---|
+| enterprise | organizations.csv | 12 | Deduped Company/BusinessUnit/Department combos |
+| enterprise | roles.csv | 16 | `18_Roles_Master`, 1:1 |
+| enterprise | facilities.csv | 20 | Deduped to Site granularity from `11_Spatial_Mapping` |
+| enterprise | assets.csv | 31 | `19_Asset_Equipment_Master`, carries `LOCATED_AT` FK to Facility |
+
+No `edgeMap` for enterprise feeds either — same embedded-FK mechanism.
+
 **Edge files** (`cli/feeds/csv/edges/`):
 | File | Rows | Relationship |
 |---|---|---|
@@ -581,7 +642,7 @@ No `edgeMap` for catalog feeds — every catalog relationship is an embedded FK 
 | capa_verification.csv | 13 | Verification → CLOSES → CAPA |
 | incident_task.csv | 24 | Incident → HAS_TASK → Task |
 
-**Enterprise pipeline total: 179 nodes, 134 edges.** **Catalog pipeline total: 99 nodes, 98 edges** (`:Catalog`-labeled, separate `catalog-sync.ts` run).
+**Enterprise pipeline total: 179 nodes, 134 edges** (plus 7 new `LOCATED_AT` edges on Asset once Phase 2's `v2.ts` change is in place — the original 7 `Asset` rows already carried `facilityId`, just unwired until now). **Catalog pipeline total: 99 nodes, 98 edges** (`:Catalog`-labeled, separate `catalog-sync.ts` run). **Enterprise Context (Phase 2) pipeline total: 79 nodes, 47 edges** (`:Enterprise`-labeled, separate `enterprise-sync.ts` run — 12 Organization, 16 Role, 20 Facility, 31 Asset; 16 `BELONGS_TO` + 31 `LOCATED_AT`).
 
 ---
 
@@ -628,9 +689,12 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 
 .design/__ref/synthetic-data/data.csv
     22-worksheet dump, Industrial Parks/Warehouse/3PL vertical
-    └─ cli/scripts/convert-catalog-seed.ts
-        ├─ 6 catalog node CSV files (99 nodes)
-        └─ 0 edge CSV files (all catalog rels are embedded FKs)
+    ├─ cli/scripts/convert-catalog-seed.ts
+    │   ├─ 6 catalog node CSV files (99 nodes)
+    │   └─ 0 edge CSV files (all catalog rels are embedded FKs)
+    └─ cli/scripts/convert-enterprise-seed.ts
+        ├─ 4 enterprise node CSV files (79 nodes)
+        └─ 0 edge CSV files (all enterprise rels are embedded FKs)
 ```
 
 **Source column → Graph mapping (enterprise seed):**

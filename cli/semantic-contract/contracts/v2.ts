@@ -169,7 +169,7 @@ export const v2: Contract = {
         Facility: {
             label: 'Facility',
             graph: Graph.Operational,
-            props: { ...baseProps, businessUnit: 'businessUnit', region: 'region' },
+            props: { ...baseProps, businessUnit: 'businessUnit', region: 'region', company: 'company' },
             axes: [Axis.Enterprise],
             rels: [],
         },
@@ -209,9 +209,22 @@ export const v2: Contract = {
         Asset: {
             label: 'Asset',
             graph: Graph.Operational,
-            props: { ...baseProps, assetType: 'assetType', owner: 'owner', vendorId: 'vendorId' },
+            props: {
+                ...baseProps,
+                assetType: 'assetType',
+                owner: 'owner',
+                vendorId: 'vendorId',
+                facilityId: 'facilityId',
+                buildingId: 'buildingId',
+                zoneId: 'zoneId',
+                roomId: 'roomId',
+                category: 'category',
+            },
             axes: [Axis.Enterprise],
-            rels: [{ type: 'SUPPLIED_BY', targetLabel: 'Vendor', sourceField: 'vendorId' }],
+            rels: [
+                { type: 'SUPPLIED_BY', targetLabel: 'Vendor', sourceField: 'vendorId' },
+                { type: 'LOCATED_AT', targetLabel: 'Facility', sourceField: 'facilityId' },
+            ],
         },
 
         Vendor: {
@@ -220,6 +233,39 @@ export const v2: Contract = {
             props: { ...baseProps, riskTier: 'riskTier', contactEmail: 'contactEmail' },
             axes: [Axis.Enterprise],
             rels: [],
+        },
+
+        Organization: {
+            label: 'Organization',
+            graph: Graph.Operational,
+            props: { ...baseProps, company: 'company' },
+            axes: [Axis.Enterprise],
+            rels: [],
+        },
+
+        Role: {
+            label: 'Role',
+            graph: Graph.Operational,
+            props: {
+                ...baseProps,
+                businessUnit: 'businessUnit',
+                department: 'department',
+                approvalAuthority: 'approvalAuthority',
+                organizationId: 'organizationId',
+            },
+            axes: [Axis.Enterprise],
+            rels: [{ type: 'BELONGS_TO', targetLabel: 'Organization', sourceField: 'organizationId' }],
+        },
+
+        Person: {
+            label: 'Person',
+            graph: Graph.Operational,
+            props: { ...baseProps, email: 'email', roleId: 'roleId', facilityId: 'facilityId' },
+            axes: [Axis.Enterprise],
+            rels: [
+                { type: 'HAS_ROLE', targetLabel: 'Role', sourceField: 'roleId' },
+                { type: 'WORKS_AT', targetLabel: 'Facility', sourceField: 'facilityId' },
+            ],
         },
 
         Signal: {
