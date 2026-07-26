@@ -46,19 +46,19 @@ Status key: **live** = real data, working queries · **partial** = modeled but i
 | | | | Standards | 🟢 live | `Standard` (`:Catalog`, 10) |
 | | | | Contracts | 🔴 gap | No `Contract` node type anywhere. Unscoped — not in any plan phase yet. |
 | | | | SOPs | 🟡 partial | Folded into `Control.controlType='policy-sop'`, not a distinct catalog item |
-| L2 | **Interpret** | Ops Admin → Applicability Intelligence Agents | Applicability Scoping | 🔴 gap | Needs enterprise asset/site context — Plan Phase 2 |
-| | | | Obligation Linkage | 🟡 partial | `Requirement→Clause→Regulation/Standard` + `Control→Requirement` live; not yet scoped per enterprise asset |
-| L3 | **Planning** | Planner → Control Intelligence Agents | 52-Week Calendar | 🔴 gap | `Schedule` type exists, deliberately unseeded (source data is Task-keyed) — `computeWindow()` pure fn ready; real cadence data is Plan Phase 3 |
-| | | | Location + Role Assign | 🔴 gap | No `Organization`/`Location`/`Role`/`Person` nodes — Plan Phase 2, not started |
+| L2 | **Interpret** | Ops Admin → Applicability Intelligence Agents | Applicability Scoping | 🟡 partial | Phase 2 delivered enterprise asset/site context (`Facility`/`Asset`/`Organization`/`Role`); Phase 3 added a real chain — `Asset -[:COVERED_BY]-> Control -[:IMPLEMENTS]-> Requirement` — resolved for 29 of 31 `:Enterprise` assets (the 2 `Security`-category assets are an open, documented gap, not a bug) |
+| | | | Obligation Linkage | 🟡 partial | `Requirement→Clause→Regulation/Standard` + `Control→Requirement` live; now also scoped per enterprise asset via the same `COVERED_BY` chain (Phase 3) |
+| L3 | **Planning** | Planner → Control Intelligence Agents | 52-Week Calendar | 🔴 gap | `Schedule` type exists, deliberately unseeded (source data is Task-keyed) — `computeWindow()` pure fn ready; real cadence data is unscoped |
+| | | | Location + Role Assign | 🟡 partial | `Organization` (12), `Role` (16) live (Phase 2); `Facility` carries location as attributes, not a separate `Location` node (Phase 2 design decision). `Person` — the individual, not just the role — is still unfed; no identity data exists in either source dataset |
 | L4 | **CTN Knowledge Graph Spine** — Capture • Review | *(the graph itself — every agent's shared memory)* | — | 🟢 live (as infrastructure) | This layer *is* `vyra-graph-spine.md`. "Review" = the Autonomy Level 1 human-approval gate. |
-| L5 | **Oversight** | Ops Supervisor → Signal Intelligence Agents | Deviation Alerts | 🔴 gap | Needs live `Signal` data (unfed) + working agents (`agents/` is 0% implemented) — Plan Phase 3 |
+| L5 | **Oversight** | Ops Supervisor → Signal Intelligence Agents | Deviation Alerts | 🟡 partial | Both original blockers are gone: `Signal` is live (`POST /operational/signals`, Phase 3) and `agents/` is no longer 0% implemented (`control-intelligence` is wired end-to-end, verified against real graph data — pending only the user's `ANTHROPIC_API_KEY` for live Claude calls). Not fully live yet: no agent watches Signals directly for deviations — `control-intelligence` reasons over uncontrolled Requirements, and `signal-intelligence` itself is still a stub |
 | | | | Escalation Paths | 🟡 partial | `Incident.escalationPath` is free text, not a graph-modeled chain to Role/Person |
 | L6 | **Assurance** | Compliance Mgmt → Assurance Agents | Coverage Scoring | 🔴 gap | Computable from existing edges, not implemented — Plan Phase 4 |
 | | | | Audit-Ready Export | 🔴 gap | `Audit`/`AssuranceStatement`/`Attestation`/`EvidencePackage` entirely dormant. **Not actually covered by Phase 4 as written** — Phase 4 assumes Assurance-graph data already exists; nothing in Phases 1–3 seeds it. Open sequencing gap. |
 | L7 | **Risk** | Risk Manager → Risk Intelligence Agents | Residual Risk Score | 🟡 partial | `Risk.residualScore` live, but per-Finding instance only — the Risk-taxonomy-vs-instance split (`entity-alignment.md`) is still unscoped |
 | | | Scenario Simulation | 🔴 gap | Needs working agents — unscoped, no phase names this explicitly |
 
-**Net**: L1 (minus Contracts/SOPs) and half of L2/L7 have real data underneath them. L3's Location+Role, all of L5, and all of L6 need Plan Phase 2–3 work — plus two items above (Contracts, Audit-Ready Export's data layer, Scenario Simulation) that no phase currently claims. Raise those as an explicit scoping decision before assuming Phase 4 will "just" cover them.
+**Net**: Phases 0–3 are done. L1 (minus Contracts/SOPs), L2, L3's Location+Role, and half of L5/L7 now have real data underneath them — none of that row is a hard "gap" anymore, though several are still "partial" against the full capability described (full Applicability Scoping, a named individual for Person, an agent that actually watches Signals for deviations). All of L6, L3's 52-Week Calendar, and L7's Scenario Simulation remain genuine gaps — plus three items that no phase currently claims (Contracts, Audit-Ready Export's data layer, Scenario Simulation). Raise those as an explicit scoping decision before assuming Phase 4 will "just" cover them.
 
 ---
 
