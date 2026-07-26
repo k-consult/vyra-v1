@@ -20,6 +20,12 @@ const LIST_AUTHORITIES = `
     ORDER BY n.name
 `;
 
+const LIST_COMPLIANCE_AREAS = `
+    MATCH (n:ComplianceArea)
+    RETURN properties(n) AS complianceArea
+    ORDER BY n.name
+`;
+
 const TRACE_REQUIREMENTS = `
     MATCH (reg:Regulation:Catalog {id: $id})-[:ISSUED_BY]->(auth:Authority)
     WITH reg
@@ -46,6 +52,17 @@ export const listAuthorities = async () => {
         return rows.map((r: any) => r.authority).filter(Boolean);
     } catch (err: any) {
         log.error('catalog.repo: listAuthorities failed', err.message);
+        return [];
+    }
+};
+
+export const listComplianceAreas = async () => {
+    try {
+        const raw: any = await db().fetch2(LIST_COMPLIANCE_AREAS, {});
+        const rows = Array.isArray(raw) ? raw : [raw];
+        return rows.map((r: any) => r.complianceArea).filter(Boolean);
+    } catch (err: any) {
+        log.error('catalog.repo: listComplianceAreas failed', err.message);
         return [];
     }
 };

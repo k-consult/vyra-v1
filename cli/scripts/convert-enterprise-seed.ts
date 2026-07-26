@@ -24,6 +24,19 @@ const slug = (...parts: string[]): string =>
 const orgId = (company: string, businessUnit: string, department: string): string =>
     `ORG-${slug(company, businessUnit, department)}`;
 
+// Manual, name/description-backed mapping — not derivable from the source data directly.
+// 'Security' has no corresponding ComplianceArea in 07_Compliance_Areas; left unmapped on purpose.
+const categoryToComplianceArea: Record<string, string> = {
+    'Fire Detection': 'CA-001',
+    'Fire Suppression': 'CA-002',
+    'Emergency Response': 'CA-003',
+    'EHS Operations': 'CA-004',
+    'Waste Management': 'CA-006',
+    'Facilities': 'CA-007',
+    'Utilities': 'CA-007',
+    'Environmental': 'CA-008',
+};
+
 const writeCSV = (fileName: string, rows: Row[]): void => {
     if (!rows.length) { log.warn(`convert-enterprise-seed: no rows for ${fileName}`); return; }
     const cols = Object.keys(rows[0]);
@@ -93,6 +106,7 @@ const convert = (): void => {
         buildingId: r['BuildingID'],
         zoneId: r['ZoneID'],
         roomId: r['RoomID'],
+        complianceAreaId: categoryToComplianceArea[r['Category']] ?? '',
     })));
 };
 

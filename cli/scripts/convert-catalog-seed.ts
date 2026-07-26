@@ -38,6 +38,8 @@ const convert = (): void => {
     const standardRows = extractWorksheet(raw, '04_Standards');
     const clauseRows = extractWorksheet(raw, '05_Clauses');
     const obligationRows = extractWorksheet(raw, '06_Obligations');
+    const complianceAreaRows = extractWorksheet(raw, '07_Compliance_Areas');
+    const controlRows = extractWorksheet(raw, '08_Operational_Controls');
 
     const jurisdictionNames = new Set<string>([
         ...authorityRows.map(r => r['Jurisdiction']),
@@ -96,6 +98,26 @@ const convert = (): void => {
         clauseId: r['ClauseID'],
         mandatory: r['Mandatory (Y/N)'],
         catalogVersion: '1.0',
+    })));
+
+    writeCSV('complianceAreas.csv', complianceAreaRows.map(r => ({
+        id: r['ComplianceAreaID'],
+        name: r['Name'],
+        description: r['Description'],
+    })));
+
+    writeCSV('controls.csv', controlRows.map(r => ({
+        id: r['ControlID'],
+        name: r['Name'],
+        controlType: r['Control Type'],
+        description: r['Description'],
+        complianceAreaId: r['ComplianceAreaID'],
+        riskId: r['RiskID'],
+        requirementId: r['Primary ObligationID(s)'],
+        clauseId: r['ClauseID'],
+        standardId: r['StandardID'],
+        regulationId: r['RegulationID'],
+        authorityId: r['AuthorityID'],
     })));
 };
 

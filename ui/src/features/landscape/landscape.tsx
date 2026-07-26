@@ -7,8 +7,9 @@ import {
     Shield, ListChecks, FileText, TrendingUp, Search,
     GitBranch, Wrench, CheckCircle2, ArrowRight,
     RefreshCw, ShieldCheck, Activity, Scale, X, ChevronRight,
+    Radio, Layers, Users, UserCog,
 } from 'lucide-react';
-import { dashboard, knowledge, operational, assurance, intelligence, execution } from '@/lib/api';
+import { dashboard, knowledge, operational, assurance, intelligence, execution, catalog, enterprise } from '@/lib/api';
 import { formatValue } from '@/features/validation/display';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -30,6 +31,10 @@ type LandscapeData = {
     decisions:     { total: number };
     capas:         { total: number; open: number };
     verifications: { total: number };
+    organizations:   { total: number };
+    roles:           { total: number };
+    complianceAreas: { total: number };
+    signals:         { total: number };
     posture:       Posture;
     updatedAt:     string;
 };
@@ -37,7 +42,8 @@ type LandscapeData = {
 type DrillKey =
     | 'incidents' | 'regulations' | 'facilities' | 'assets' | 'vendors'
     | 'controls' | 'tasks' | 'evidence' | 'risks' | 'findings'
-    | 'rcas' | 'decisions' | 'capas' | 'verifications';
+    | 'rcas' | 'decisions' | 'capas' | 'verifications'
+    | 'organizations' | 'roles' | 'complianceAreas' | 'signals';
 
 type Health = 'critical' | 'warn' | 'ok' | 'neutral';
 
@@ -65,6 +71,10 @@ const DRILL_FETCHERS: Record<DrillKey, () => Promise<any[]>> = {
     decisions:     () => intelligence.decisions().then(r => extractList(r, 'decisions', 'decision')),
     capas:         () => execution.capas().then(r => extractList(r, 'capas')),
     verifications: () => execution.verifications().then(r => extractList(r, 'verifications')),
+    organizations:   () => enterprise.organizations().then(r => extractList(r, 'organizations')),
+    roles:           () => enterprise.roles().then(r => extractList(r, 'roles')),
+    complianceAreas: () => catalog.complianceAreas().then(r => extractList(r, 'complianceAreas')),
+    signals:         () => operational.signals().then(r => extractList(r, 'signals', 'signal')),
 };
 
 // ── Config ─────────────────────────────────────────────────────────────────────
@@ -369,10 +379,14 @@ export function LandscapeView() {
                         sub: data.incidents.open > 0 ? `${data.incidents.open} open` : 'all closed',
                         health: data.incidents.open > 0 ? (data.incidents.critical > 0 ? 'critical' : 'warn') : 'ok',
                     })}
+                    <RowArrow />
+                    {nc('signals', Radio, 'Signals', data.signals.total)}
                 </LayerRow>
 
                 <LayerRow n="L2" label="Scope & Obligation" desc="Regulatory mapping to assets">
                     {nc('regulations', Scale,     'Regulations', data.regulations.total)}
+                    <RowArrow />
+                    {nc('complianceAreas', Layers, 'Compliance Areas', data.complianceAreas.total)}
                     <RowArrow />
                     {nc('facilities',  Building2, 'Facilities',  data.facilities.total)}
                     <RowArrow />
@@ -381,7 +395,13 @@ export function LandscapeView() {
                     {nc('vendors',     Package,   'Vendors',     data.vendors.total)}
                 </LayerRow>
 
-                <LayerRow n="L3" label="Control Execution" desc="Controls spawn tasks and evidence">
+                <LayerRow n="L3" label="Enterprise Context" desc="Who is responsible">
+                    {nc('organizations', Users,   'Organizations', data.organizations.total)}
+                    <RowArrow />
+                    {nc('roles',         UserCog, 'Roles',         data.roles.total)}
+                </LayerRow>
+
+                <LayerRow n="L4" label="Control Execution" desc="Controls spawn tasks and evidence">
                     {nc('controls', Shield,     'Controls', data.controls.total)}
                     <RowArrow />
                     {nc('tasks',    ListChecks, 'Tasks',    data.tasks.total, {
@@ -392,7 +412,7 @@ export function LandscapeView() {
                     {nc('evidence', FileText, 'Evidence', data.evidence.total, { health: 'ok' })}
                 </LayerRow>
 
-                <LayerRow n="L4" label="Intelligence" desc="Risk scoring → findings → RCA → decisions">
+                <LayerRow n="L5" label="Intelligence" desc="Risk scoring → findings → RCA → decisions">
                     {nc('risks', TrendingUp, 'Risks', data.risks.total, {
                         sub: data.risks.critical > 0 ? `${data.risks.critical} critical` : data.risks.high > 0 ? `${data.risks.high} high` : undefined,
                         health: data.risks.critical > 0 ? 'critical' : data.risks.high > 0 ? 'warn' : 'ok',
@@ -408,7 +428,7 @@ export function LandscapeView() {
                     {nc('decisions', BookOpen,  'Decisions', data.decisions.total)}
                 </LayerRow>
 
-                <LayerRow n="L5" label="Remediation & Closure" desc="CAPAs verified before closure">
+                <LayerRow n="L6" label="Remediation & Closure" desc="CAPAs verified before closure">
                     {nc('capas', Wrench, 'CAPAs', data.capas.total, {
                         sub: data.capas.open > 0 ? `${data.capas.open} open` : 'all closed',
                         health: data.capas.open > 0 ? 'warn' : 'ok',

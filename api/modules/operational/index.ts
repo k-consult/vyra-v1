@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { listAssets, listSignals, listIncidents, listFacilities, listVendors, getLifecycle } from './repo';
+import { listAssets, listSignals, listIncidents, listFacilities, listVendors, getLifecycle, createSignal } from './repo';
 
 const operational: any = async (fastify: FastifyInstance) => {
     fastify.get('/incidents', async (_req, reply) => {
@@ -21,6 +21,15 @@ const operational: any = async (fastify: FastifyInstance) => {
     fastify.get('/signals', async (req: any, reply) => {
         const { assetId } = req.query;
         reply.send({ signals: await listSignals(assetId) });
+    });
+
+    fastify.post('/signals', async (req: any, reply) => {
+        try {
+            const result = await createSignal(req.body ?? {});
+            reply.code(201).send(result);
+        } catch (err: any) {
+            reply.code(400).send({ error: err.message });
+        }
     });
 
     fastify.get('/incidents/:id/lifecycle', async (req: any, reply) => {

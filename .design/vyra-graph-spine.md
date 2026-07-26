@@ -1,8 +1,8 @@
 # Vyra Graph Spine
 
-**Version:** 1.3  
-**Status:** Canonical — reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`) per `vyra-implementation-plan.md` Phase 0, 2026-07-21. Extended with the Global Compliance Catalog (Phase 0.5 + Phase 1), 2026-07-22. Relocated from `.design/graph.md` and renamed as part of the 3-doc consolidation (`vyra-landscape.md` / `vyra-graph-spine.md` / `vyra-implementation-plan.md`), 2026-07-23 — no content changed in the move. Extended with Enterprise Context (Phase 2), 2026-07-25.  
-**Source data:** `Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx` (7 incidents, enterprise seed) + `.design/__ref/synthetic-data/data.csv` (Industrial Parks/Warehouse/3PL vertical, catalog seed — `Authority`/`Jurisdiction`/`Regulation`/`Standard`/`Clause`/`Requirement`, `:Catalog`-labeled; enterprise seed — `Organization`/`Role`/`Facility`/`Asset`, `:Enterprise`-labeled)
+**Version:** 1.4  
+**Status:** Canonical — reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`) per `vyra-implementation-plan.md` Phase 0, 2026-07-21. Extended with the Global Compliance Catalog (Phase 0.5 + Phase 1), 2026-07-22. Relocated from `.design/graph.md` and renamed as part of the 3-doc consolidation (`vyra-landscape.md` / `vyra-graph-spine.md` / `vyra-implementation-plan.md`), 2026-07-23 — no content changed in the move. Extended with Enterprise Context (Phase 2), 2026-07-25. Extended with Live Operational Context + first real agent (Phase 3), 2026-07-26.  
+**Source data:** `Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx` (7 incidents, enterprise seed) + `.design/__ref/synthetic-data/data.csv` (Industrial Parks/Warehouse/3PL vertical, catalog seed — `Authority`/`Jurisdiction`/`Regulation`/`Standard`/`Clause`/`Requirement`/`ComplianceArea`/`Control`, `:Catalog`-labeled; enterprise seed — `Organization`/`Role`/`Facility`/`Asset`, `:Enterprise`-labeled) + live API/agent writes (`Signal`, `Task`, `Decision` — no CSV involved)
 
 ## The `:Catalog` Label Convention
 
@@ -164,14 +164,30 @@ Policies, SOPs, and operational procedures that implement requirements.
 
 | Property | Type | Example |
 |---|---|---|
-| id | string | `CTL-001-01` |
-| name | string | `Fire Safety SOP` |
-| controlType | string | `policy-sop` |
-| owner | string | `Facility & EHS` |
-| requirementId | string | `REQ-XXX` (when mapped) |
+| id | string | `CTL-001-01`, `CTRL-004` |
+| name | string | `Fire Safety SOP`, `Fire Hydrant System Pressure Test` |
+| controlType | string | `policy-sop` (legacy), `Preventive`/`Detective` (`:Catalog` rows) |
+| owner | string | `Facility & EHS` (legacy rows only) |
+| requirementId | string | `REQ-XXX` (legacy) / `OBL-0004` (`:Catalog`) — FK to Requirement |
+| complianceAreaId | string | `CA-002` (`:Catalog` rows only) — FK to ComplianceArea |
+| riskId | string | `RSK-013` (`:Catalog` rows only, flat reference — no dedicated rel; the catalog `17_Risk_Register` taxonomy this points at is not yet ingested) |
+| clauseId / standardId / regulationId / authorityId | string | (`:Catalog` rows only, flat reference — already reachable via `Requirement -> Clause -> Regulation/Standard`, no duplicate rel added) |
 | status | string | `active` |
 
-**Note:** Controls in seed data come from "Policies & SOPs" column. Per-incident numbering: `CTL-{incident}-{seq}`.
+**15 controls** (legacy enterprise pipeline, unlabeled, per-incident numbering `CTL-{incident}-{seq}`, from the "Policies & SOPs" column) **+ 30 controls** (`CTRL-001`–`CTRL-030`, `:Catalog` label, Phase 3, from `08_Operational_Controls` — a reusable control catalog, not per-incident) — same dual-origin coexistence pattern as `Regulation`/`Regulation:Catalog`.
+
+---
+
+#### `ComplianceArea`
+Compliance domain taxonomy (Knowledge, `:Catalog`) — the shared vocabulary that links `Control` and `Asset` (see `IN_COMPLIANCE_AREA`/`BELONGS_TO`/`COVERED_BY` below).
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `CA-002` |
+| name | string | `Fire Suppression Systems` |
+| description | string | `Hydrants, sprinklers/ESFR, fire pump houses, and portable fire extinguishers.` |
+
+**10 compliance areas**, 1:1 from `07_Compliance_Areas`.
 
 ---
 
@@ -182,15 +198,18 @@ Compliance activities that must be performed to maintain or restore compliance.
 
 | Property | Type | Example |
 |---|---|---|
-| id | string | `TSK-001-01` |
+| id | string | `TSK-001-01`, `TSK-SIG-TEST-001` (signal-driven) |
 | name | string | `Inspect detector` |
-| owner | string | `Priya Nair - QA Executive` |
-| frequency | string | `incident-driven` |
+| owner | string | `Priya Nair - QA Executive` (legacy) / `'UNKNOWN'` (signal-driven, until `Person` is seeded) |
+| frequency | string | `incident-driven`, `signal-driven` (Phase 3) |
 | priority | string | `Critical` |
 | dueDate | datetime | `2026-05-03 17:36` |
 | workflowId | string | FK to Workflow |
 | evidenceRequired | string | `yes` |
-| status | string | `closed` |
+| controlIds / requirementIds | string[] | native array props, signal-driven Tasks only — every `Control`/`Requirement` the triggering `Asset` is covered by (via `COVERED_BY`), not a single FK, since one Asset can match multiple Controls under one ComplianceArea |
+| status | string | `closed` / `open` |
+
+**Signal-driven Tasks (Phase 3)** are created live by `api/modules/operational/repo.ts`'s `createSignal`, not the CLI pipeline — see "Live API/Agent Writes" below.
 
 **24 tasks** across 7 incidents.
 
@@ -300,6 +319,7 @@ Equipment, systems, or infrastructure involved in the incident.
 | zoneId | string | `ZN-004` (`:Enterprise` rows only) |
 | roomId | string | `RM-004` (`:Enterprise` rows only) |
 | category | string | `Fire Suppression` (`:Enterprise` rows only) |
+| complianceAreaId | string | `CA-002` (`:Enterprise` rows only) — FK to ComplianceArea, mapped from `category` via a manual, name/description-backed table in `convert-enterprise-seed.ts` (Phase 3). `Security`-category assets (2 of 31) have no mapping — no ComplianceArea in the source data corresponds to it; left blank on purpose, not guessed. |
 | status | string | `active` |
 
 **7 assets** (enterprise pipeline, unlabeled):
@@ -368,6 +388,24 @@ Third-party suppliers of assets or services involved in incidents.
 
 ---
 
+#### `Signal`
+A live operational event against an `Asset` (Phase 3) — the first node type written entirely outside the CLI pipeline.
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `SIG-TEST-001` (caller-supplied) |
+| name | string | defaults to `id` if not supplied |
+| type | string | `fire-alarm-trip` |
+| source | string | `'UNKNOWN'` if not supplied |
+| timestamp | string | ISO string, defaults to write-time |
+| payload | string | free text, defaults to `''` |
+| assetId | string | FK to Asset |
+| status | string | `new` |
+
+No CSV feed — written live via `POST /operational/signals`. See "Live API/Agent Writes" below.
+
+---
+
 ### Intelligence Graph
 
 #### `Finding`
@@ -433,6 +471,24 @@ Root cause analysis entries linked to findings.
 
 ---
 
+#### `Decision`
+An agent's recommendation (Phase 3, first real agent). Autonomy Level 1 — proposes only, never mutates the graph beyond writing this node.
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `DEC-OBL-0012` |
+| type | string | `control-recommendation` |
+| rationale | string | Claude's one/two-sentence recommendation |
+| agentId | string | `control-intelligence-agent` |
+| autonomyLevel | int | `1` |
+| confidence | float | `0`–`1`, Claude-reported |
+| status | string | `pending` |
+| decidedAt | datetime | |
+
+No CSV feed — written live by `agents/tools/graph-write.ts`'s `writeDecision`. See "Live API/Agent Writes" below.
+
+---
+
 ### Assurance Graph
 
 #### `Evidence`
@@ -467,6 +523,7 @@ All relationships below are **live** — they are written by every `./ingest.sh`
 | `OPERATES_IN` | Authority → Jurisdiction | Authority's jurisdiction of operation |
 | `BELONGS_TO` | Clause → Regulation **or** Clause → Standard | Clause's source document (polymorphic — a clause has exactly one parent, never both) |
 | `DEFINED_BY` | Requirement → Clause | Requirement is defined by this clause |
+| `BELONGS_TO` | Control → ComplianceArea | Control's compliance domain (Phase 3, `:Catalog` rows only — same name-reuse safety as Clause→Regulation/Standard above) |
 
 ### Execution Graph
 | Relationship | From → To | Meaning |
@@ -485,6 +542,7 @@ All relationships below are **live** — they are written by every `./ingest.sh`
 | `MANAGED_BY` | Incident → Vendor | Vendor involved in incident |
 | `LOCATED_AT` | Asset → Facility | Physical facility housing the asset (Phase 2) |
 | `BELONGS_TO` | Role → Organization | Role's org unit (Phase 2 — reuses the `BELONGS_TO` name already used for Clause→Regulation/Standard; safe since `cli/projection/index.ts` groups edge batches by `(relType, sourceLabel, targetLabel)`, not `relType` alone) |
+| `IN_COMPLIANCE_AREA` | Asset → ComplianceArea | Asset's compliance domain (Phase 3, mapped from `category`; `:Enterprise` rows only, 29 of 31 — `Security`-category assets have no mapping) |
 
 ### Intelligence Graph
 | Relationship | From → To | Meaning |
@@ -503,12 +561,11 @@ All relationships below are **live** — they are written by every `./ingest.sh`
 
 ## Declared, Not Yet Fed
 
-`v2.ts` declares 32 node types across the five graphs (27 original + `Authority` + `Schedule`, added with the Global Compliance Catalog, + `Organization`/`Role`/`Person`, added with Enterprise Context). 22 now have a live CSV feed: the original 13 (`ingest-hints.json`'s `feedMap`) plus `Jurisdiction`, `Authority`, `Standard`, `Clause`, `Requirement` (`cli/domains/catalog/ingest-hints.json`, loaded by `cli/orchestration/catalog-sync.ts`) plus `Organization`, `Role` (`cli/domains/enterprise/ingest-hints.json`, loaded by `cli/orchestration/enterprise-sync.ts` — `Facility`/`Asset` already had live feeds and just gained a second, `:Enterprise`-labeled batch). The rest — `Policy`, `Program`, `Workflow`, `Signal`, `Decision`, `EvidencePackage`, `Attestation`, `AssuranceStatement`, `Audit`, `Exception`, `Schedule`, `Person` — have no seed data yet. Their relationships are declared in `v2.ts` but never fire today, since `cli/runtime/repo.ts`'s edge loader does `MATCH` (not `MERGE`) on both endpoints — no target node, no edge:
+`v2.ts` declares 33 node types across the five graphs (27 original + `Authority`/`Schedule`, added with the Global Compliance Catalog, + `Organization`/`Role`/`Person`, added with Enterprise Context, + `ComplianceArea`, added with Phase 3). 23 now have a live CSV feed: the original 13 (`ingest-hints.json`'s `feedMap`) plus `Jurisdiction`, `Authority`, `Standard`, `Clause`, `Requirement`, `ComplianceArea` (`cli/domains/catalog/ingest-hints.json`, loaded by `cli/orchestration/catalog-sync.ts`) plus `Organization`, `Role` (`cli/domains/enterprise/ingest-hints.json`, loaded by `cli/orchestration/enterprise-sync.ts` — `Facility`/`Asset`/`Control` already had live feeds and just gained a second, dual-origin batch each). `Signal` and `Decision` are fed too, but never via CSV — see "Live API/Agent Writes" below. The rest — `Policy`, `Program`, `Workflow`, `EvidencePackage`, `Attestation`, `AssuranceStatement`, `Audit`, `Exception`, `Schedule`, `Person` — have no seed data yet. Their relationships are declared in `v2.ts` but never fire today, since `cli/runtime/repo.ts`'s edge loader does `MATCH` (not `MERGE`) on both endpoints — no target node, no edge:
 
 | Relationship | From → To | Fed by |
 |---|---|---|
 | `PART_OF` | Task → Workflow, Workflow → Program | Phase 1/2 |
-| `EMITTED_BY` | Signal → Asset | Phase 3 |
 | `APPLIES_TO` | Schedule → Requirement | deferred — `13_Schedule_Rules` is keyed by `TaskID`, not `RequirementID`; seeding this would fabricate a link the source data doesn't support. `api/modules/catalog/repo.ts`'s `computeWindow` is a pure function taking `{cadenceUnit, cadenceInterval, anchorDate}` directly, usable ahead of any `Schedule` node existing. |
 | `BACKED_BY` | Attestation → EvidencePackage | — |
 | `DERIVED_FROM` | AssuranceStatement → Attestation | — |
@@ -516,9 +573,24 @@ All relationships below are **live** — they are written by every `./ingest.sh`
 | `HAS_ROLE` | Person → Role | blocked on an identity source — no `Person` seed data exists in either dataset (`.design/__ref/entity-alignment.md` §4) |
 | `WORKS_AT` | Person → Facility | same blocker as `HAS_ROLE` |
 
-`api/modules/execution/repo.ts`'s `listTasks(workflowId)` is already written against `PART_OF` so it'll start returning data the moment Phase 2 seeds `Workflow` — no query rewrite needed then. `api/modules/knowledge/repo.ts`'s `traceForward`/`traceReverse` and `api/modules/catalog/repo.ts`'s `traceRequirements` are **live now** — `BELONGS_TO`/`DEFINED_BY`/`IN_JURISDICTION`/`ISSUED_BY`/`OPERATES_IN` moved out of this table once the catalog sync seeded their target types. `LOCATED_AT` (Asset → Facility) and `BELONGS_TO` (Role → Organization) moved out of this table with Phase 2 — both are live now, see the Relationship Reference above.
+`api/modules/execution/repo.ts`'s `listTasks(workflowId)` is already written against `PART_OF` so it'll start returning data the moment Phase 2 seeds `Workflow` — no query rewrite needed then. `api/modules/knowledge/repo.ts`'s `traceForward`/`traceReverse` and `api/modules/catalog/repo.ts`'s `traceRequirements` are **live now** — `BELONGS_TO`/`DEFINED_BY`/`IN_JURISDICTION`/`ISSUED_BY`/`OPERATES_IN` moved out of this table once the catalog sync seeded their target types. `LOCATED_AT` (Asset → Facility) and `BELONGS_TO` (Role → Organization) moved out of this table with Phase 2. `EMITTED_BY` (Signal → Asset) moved out with Phase 3 — live now, but via the API write path, not CLI (see below).
 
-**Note:** `CAPTURED_FROM` (Evidence → Incident), previously documented here, was never implemented anywhere (not in `v2.ts`, not in `ingest-hints.json`, not queried by any `repo.ts`) and has been removed from this doc. `LOCATED_AT` (Asset → Facility), also previously flagged here as unimplemented with a note to model it explicitly in Phase 2, is now live — see above.
+**Note:** `CAPTURED_FROM` (Evidence → Incident), previously documented here, was never implemented anywhere (not in `v2.ts`, not in `ingest-hints.json`, not queried by any `repo.ts`) and has been removed from this doc.
+
+---
+
+## Live API/Agent Writes (Phase 3, not CLI-fed)
+
+Three write paths exist entirely outside the CSV → compiler → projection → LOAD CSV pipeline. None of these are declared as `rels` in `v2.ts` (that field only drives CSV-embedded-FK compilation) — they're raw Cypher `MERGE`s executed directly via `lib/graph-db`.
+
+| Relationship | From → To | Written by |
+|---|---|---|
+| `EMITTED_BY` | Signal → Asset | `api/modules/operational/repo.ts`'s `createSignal`, via `POST /operational/signals` |
+| `HAS_TASK` | Signal → Task | same — reuses the `HAS_TASK` name already used for `Incident → Task`; safe since this is raw Cypher, not CLI-projected (the batching concern that motivated grouping by `(relType, sourceLabel, targetLabel)` in Phase 1 only applies to the CLI pipeline) |
+| `COVERED_BY` | Asset → Control | `cli/scripts/backfill-asset-control.ts` — a one-time, idempotent (`MERGE`) derived join through the shared `ComplianceArea`, rerun manually after any `catalog-sync`/`enterprise-sync` |
+| `ABOUT` | Decision → * (polymorphic, whatever `sourceId` resolves to) | `agents/tools/graph-write.ts`'s `writeDecision`, called by `agents/agents/control-intelligence/index.ts` — the first functioning agent, Autonomy Level 1 (recommend only) |
+
+`createSignal` auto-creates a `Task` in the same round trip: it resolves `Control`/`Requirement` coverage via `Asset -[:COVERED_BY]-> Control -[:IMPLEMENTS]-> Requirement` (collected as `Task.controlIds`/`requirementIds` arrays — an Asset can match multiple Controls under one `ComplianceArea`), and the responsible person via `Facility <-[:WORKS_AT]- Person` (falls back to `'UNKNOWN'` since `Person` is still unfed).
 
 ---
 
@@ -575,6 +647,13 @@ RETURN
     round(100.0 * count(DISTINCT ver) / count(DISTINCT capa)) AS closureRatePercent
 ```
 
+### Compliance Coverage — Which Controls Cover This Asset
+*"What Controls and Requirements apply to this Asset?" (Phase 3)*
+```cypher
+MATCH (a:Asset {id: 'AST-001'})-[:COVERED_BY]->(ctl:Control)-[:IMPLEMENTS]->(req:Requirement)
+RETURN a.name, a.category, collect(DISTINCT ctl.name) AS controls, collect(DISTINCT req.name) AS requirements
+```
+
 ### Continuous Monitoring — Regulation Coverage
 *"Which regulations are covered by continuous monitoring?"*
 ```cypher
@@ -615,6 +694,8 @@ All feeds live under `cli/feeds/csv/<domain>/`.
 | catalog | standards.csv | 10 | Industry/ISO standards |
 | catalog | clauses.csv | 34 | Polymorphic parent: `regulationId` XOR `standardId` |
 | catalog | requirements.csv | 34 | `06_Obligations`, `Obligation → Requirement` mapping |
+| catalog | complianceAreas.csv | 10 | `07_Compliance_Areas`, 1:1 (Phase 3) |
+| catalog | controls.csv | 30 | `08_Operational_Controls`, `:Catalog`-labeled, distinct from the 15 legacy `controls.csv` above (Phase 3) |
 
 No `edgeMap` for catalog feeds — every catalog relationship is an embedded FK (`v2.ts` `rels`), same mechanism `Regulation`/`Clause`/`Requirement`/`Control` already use.
 
@@ -625,7 +706,7 @@ No `edgeMap` for catalog feeds — every catalog relationship is an embedded FK 
 | enterprise | organizations.csv | 12 | Deduped Company/BusinessUnit/Department combos |
 | enterprise | roles.csv | 16 | `18_Roles_Master`, 1:1 |
 | enterprise | facilities.csv | 20 | Deduped to Site granularity from `11_Spatial_Mapping` |
-| enterprise | assets.csv | 31 | `19_Asset_Equipment_Master`, carries `LOCATED_AT` FK to Facility |
+| enterprise | assets.csv | 31 | `19_Asset_Equipment_Master`, carries `LOCATED_AT` FK to Facility + `complianceAreaId` (Phase 3, 29 of 31 rows — `Security` category unmapped) |
 
 No `edgeMap` for enterprise feeds either — same embedded-FK mechanism.
 
@@ -642,7 +723,7 @@ No `edgeMap` for enterprise feeds either — same embedded-FK mechanism.
 | capa_verification.csv | 13 | Verification → CLOSES → CAPA |
 | incident_task.csv | 24 | Incident → HAS_TASK → Task |
 
-**Enterprise pipeline total: 179 nodes, 134 edges** (plus 7 new `LOCATED_AT` edges on Asset once Phase 2's `v2.ts` change is in place — the original 7 `Asset` rows already carried `facilityId`, just unwired until now). **Catalog pipeline total: 99 nodes, 98 edges** (`:Catalog`-labeled, separate `catalog-sync.ts` run). **Enterprise Context (Phase 2) pipeline total: 79 nodes, 47 edges** (`:Enterprise`-labeled, separate `enterprise-sync.ts` run — 12 Organization, 16 Role, 20 Facility, 31 Asset; 16 `BELONGS_TO` + 31 `LOCATED_AT`).
+**Enterprise pipeline total: 179 nodes, 141 edges** (134 original + 7 `LOCATED_AT` on the legacy `Asset` rows, live since Phase 2). **Catalog pipeline total: 139 nodes, 158 edges** (`:Catalog`-labeled, separate `catalog-sync.ts` run — 99 original + 10 `ComplianceArea` + 30 `Control`; 98 original edges + 30 `IMPLEMENTS` + 30 `BELONGS_TO`, Phase 3). **Enterprise Context (Phase 2) pipeline total: 79 nodes, 47 edges** (`:Enterprise`-labeled, separate `enterprise-sync.ts` run — 12 Organization, 16 Role, 20 Facility, 31 Asset; 16 `BELONGS_TO` + 31 `LOCATED_AT` — plus 29 `IN_COMPLIANCE_AREA` edges added in Phase 3). **Phase 3 derived/live-write total: 101 `COVERED_BY` edges** (`backfill-asset-control.ts`, one-time) **+ Signal/Task/Decision created ad hoc via the API and agent runtime** (no fixed count — driven by live events, not seed data).
 
 ---
 

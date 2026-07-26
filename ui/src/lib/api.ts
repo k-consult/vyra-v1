@@ -46,3 +46,16 @@ export const assurance = {
 export const dashboard = {
     landscape: () => get<any>('/dashboard/landscape'),
 };
+
+export const catalog = {
+    regulations:      () => get<{ regulations: any[] }>('/catalog/regulations'),
+    authorities:      () => get<{ authorities: any[] }>('/catalog/authorities'),
+    complianceAreas:  () => get<{ complianceAreas: any[] }>('/catalog/complianceAreas'),
+    traceRequirements: (id: string) => get(`/catalog/trace/${id}`),
+};
+
+export const enterprise = {
+    organizations: () => get<{ organizations: any[] }>('/enterprise/organizations'),
+    roles:         () => get<{ roles: any[] }>('/enterprise/roles'),
+    orgChart:      (id: string) => get(`/enterprise/org-chart/${id}`),
+};

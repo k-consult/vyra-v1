@@ -8,7 +8,9 @@
     "catalog/regulations.csv":   "Regulation",
     "catalog/standards.csv":     "Standard",
     "catalog/clauses.csv":       "Clause",
-    "catalog/requirements.csv":  "Requirement"
+    "catalog/requirements.csv":  "Requirement",
+    "catalog/complianceAreas.csv": "ComplianceArea",
+    "catalog/controls.csv":      "Control"
   },
   "edgeMap": {}
 }

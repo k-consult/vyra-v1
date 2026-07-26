@@ -1,3 +1,4 @@
+import * as R from 'ramda';
 import { DB } from '../../../lib/graph-db';
 import { config } from '../../../lib/config';
 import log from '../../../lib/log';
@@ -77,6 +78,74 @@ export const listSignals = async (assetId?: string) => {
         log.error('operational.repo: listSignals failed', err.message);
         return [];
     }
+};
+
+export interface CreateSignalInput {
+    id: string;
+    name?: string;
+    type: string;
+    source?: string;
+    timestamp?: string;
+    payload?: string;
+    assetId: string;
+}
+
+const guardSignalInput = (input: Partial<CreateSignalInput>): CreateSignalInput => {
+    if (!input.id || !input.assetId || !input.type) {
+        throw new Error('Signal requires id, assetId, and type');
+    }
+    return {
+        id: input.id,
+        name: R.defaultTo(input.id, input.name),
+        type: input.type,
+        source: R.defaultTo('UNKNOWN', input.source),
+        timestamp: R.defaultTo(new Date().toISOString(), input.timestamp),
+        payload: R.defaultTo('', input.payload),
+        assetId: input.assetId,
+    };
+};
+
+// First non-CLI write path: writes directly via lib/graph-db, bypassing the CSV pipeline.
+// Auto-creates a Task in the same round trip, resolving Control/Requirement coverage
+// through Asset -[:COVERED_BY]-> Control (see cli/scripts/backfill-asset-control.ts) and
+// the responsible Person through Facility (falls back to 'UNKNOWN' while Person is unfed).
+const CREATE_SIGNAL_AND_TASK = `
+    MATCH (a:Asset {id: $assetId})
+    MERGE (s:Signal {id: $signalId})
+    ON CREATE SET s += $signalProps, s.createdAt = datetime(), s.status = 'new'
+    MERGE (s)-[:EMITTED_BY]->(a)
+    WITH s, a
+    OPTIONAL MATCH (a)-[:LOCATED_AT]->(fac:Facility)<-[:WORKS_AT]-(person:Person)
+    OPTIONAL MATCH (a)-[:COVERED_BY]->(ctl:Control)-[:IMPLEMENTS]->(req:Requirement)
+    WITH s, a, person, collect(DISTINCT ctl.id) AS controlIds, collect(DISTINCT req.id) AS requirementIds
+    MERGE (t:Task {id: $taskId})
+    ON CREATE SET
+        t.name = $taskName,
+        t.owner = coalesce(person.name, 'UNKNOWN'),
+        t.priority = 'Medium',
+        t.frequency = 'signal-driven',
+        t.evidenceRequired = 'yes',
+        t.status = 'open',
+        t.createdAt = datetime(),
+        t.controlIds = controlIds,
+        t.requirementIds = requirementIds
+    MERGE (s)-[:HAS_TASK]->(t)
+    RETURN properties(s) AS signal, properties(t) AS task
+`;
+
+export const createSignal = async (input: Partial<CreateSignalInput>) => {
+    const signal = guardSignalInput(input);
+    const taskId = `TSK-${signal.id}`;
+    const raw: any = await db().exec2(CREATE_SIGNAL_AND_TASK, {
+        assetId: signal.assetId,
+        signalId: signal.id,
+        signalProps: { name: signal.name, type: signal.type, source: signal.source, timestamp: signal.timestamp, payload: signal.payload, assetId: signal.assetId },
+        taskId,
+        taskName: `Respond to ${signal.type} signal on ${signal.assetId}`,
+    });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    if (!row?.signal) throw new Error(`Asset ${signal.assetId} not found`);
+    return row;
 };
 
 const GET_LIFECYCLE = `

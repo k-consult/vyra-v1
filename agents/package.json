@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npx ts-node --transpile-only runtime/index.ts",
+    "dev": "npx ts-node --transpile-only index.ts",
     "build": "tsc"
   },
   "dependencies": {

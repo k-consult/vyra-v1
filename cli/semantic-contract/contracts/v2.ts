@@ -95,9 +95,31 @@ export const v2: Contract = {
         Control: {
             label: 'Control',
             graph: Graph.Knowledge,
-            props: { ...baseProps, controlType: 'controlType', owner: 'owner', requirementId: 'requirementId' },
+            props: {
+                ...baseProps,
+                controlType: 'controlType',
+                owner: 'owner',
+                requirementId: 'requirementId',
+                complianceAreaId: 'complianceAreaId',
+                riskId: 'riskId',
+                clauseId: 'clauseId',
+                standardId: 'standardId',
+                regulationId: 'regulationId',
+                authorityId: 'authorityId',
+            },
             axes: [Axis.Regulatory, Axis.Process],
-            rels: [{ type: 'IMPLEMENTS', targetLabel: 'Requirement', sourceField: 'requirementId' }],
+            rels: [
+                { type: 'IMPLEMENTS', targetLabel: 'Requirement', sourceField: 'requirementId' },
+                { type: 'BELONGS_TO', targetLabel: 'ComplianceArea', sourceField: 'complianceAreaId' },
+            ],
+        },
+
+        ComplianceArea: {
+            label: 'ComplianceArea',
+            graph: Graph.Knowledge,
+            props: { ...baseProps },
+            axes: [Axis.Regulatory],
+            rels: [],
         },
 
         Policy: {
@@ -219,11 +241,13 @@ export const v2: Contract = {
                 zoneId: 'zoneId',
                 roomId: 'roomId',
                 category: 'category',
+                complianceAreaId: 'complianceAreaId',
             },
             axes: [Axis.Enterprise],
             rels: [
                 { type: 'SUPPLIED_BY', targetLabel: 'Vendor', sourceField: 'vendorId' },
                 { type: 'LOCATED_AT', targetLabel: 'Facility', sourceField: 'facilityId' },
+                { type: 'IN_COMPLIANCE_AREA', targetLabel: 'ComplianceArea', sourceField: 'complianceAreaId' },
             ],
         },
 
