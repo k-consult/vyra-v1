@@ -4,7 +4,8 @@ Type `/code-ninja` at any time to see the full skill map and quick-pick guide.
 
 | Skill | Layer | Purpose |
 |-------|-------|---------|
-| `/code-ninja` | Entry point | Skill map — start here |
+| `/grc` | Entry point | Resume Vyra project state — phase status, open gaps, recommended next step. Start here at the top of a session. |
+| `/code-ninja` | Entry point | Skill map — start here for coding conventions |
 | `/clean-code` | Principles | Universal design bible (GOF, SOLID, DDD) |
 | `/node-spine` | Spine | Node.js / TypeScript structural rules |
 | `/react-spine` | Spine | React component structural rules |
