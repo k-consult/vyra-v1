@@ -158,9 +158,12 @@ export const v2: Contract = {
         Task: {
             label: 'Task',
             graph: Graph.Execution,
-            props: { ...baseProps, owner: 'owner', frequency: 'frequency', priority: 'priority', dueDate: 'dueDate', workflowId: 'workflowId', evidenceRequired: 'evidenceRequired' },
+            props: { ...baseProps, owner: 'owner', frequency: 'frequency', priority: 'priority', dueDate: 'dueDate', workflowId: 'workflowId', evidenceRequired: 'evidenceRequired', controlId: 'controlId' },
             axes: [Axis.Process, Axis.Time],
-            rels: [{ type: 'PART_OF', targetLabel: 'Workflow', sourceField: 'workflowId' }],
+            rels: [
+                { type: 'PART_OF', targetLabel: 'Workflow', sourceField: 'workflowId' },
+                { type: 'IMPLEMENTS', targetLabel: 'Control', sourceField: 'controlId' },
+            ],
         },
 
         CAPA: {
@@ -182,9 +185,9 @@ export const v2: Contract = {
         Schedule: {
             label: 'Schedule',
             graph: Graph.Execution,
-            props: { ...baseProps, cadenceUnit: 'cadenceUnit', cadenceInterval: 'cadenceInterval', anchorDate: 'anchorDate', requirementId: 'requirementId' },
+            props: { ...baseProps, cadenceUnit: 'cadenceUnit', cadenceInterval: 'cadenceInterval', anchorDate: 'anchorDate', taskId: 'taskId' },
             axes: [Axis.Process, Axis.Time],
-            rels: [{ type: 'APPLIES_TO', targetLabel: 'Requirement', sourceField: 'requirementId' }],
+            rels: [{ type: 'APPLIES_TO', targetLabel: 'Task', sourceField: 'taskId' }],
         },
 
         // ── Operational Graph ────────────────────────────────────────────

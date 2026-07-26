@@ -110,7 +110,7 @@ const BADGE_FIELDS = new Set(['status', 'riskRating', 'severity', 'priority', 'i
 
 // ── Shared display ─────────────────────────────────────────────────────────────
 
-function PropRow({ label, value }: { label: string; value: any }) {
+export function PropRow({ label, value }: { label: string; value: any }) {
     const formatted = formatValue(value);
     if (!formatted) return null;
     const isBadge = BADGE_FIELDS.has(label) && !!BADGE_COLORS[formatted];
@@ -187,7 +187,7 @@ function LayerRow({ n, label, desc, children }: {
 
 // ── Drill drawer ───────────────────────────────────────────────────────────────
 
-function DrillDrawer({ title, items, loading, onClose }: {
+export function DrillDrawer({ title, items, loading, onClose }: {
     title: string; items: any[]; loading: boolean; onClose: () => void;
 }) {
     return (
@@ -330,6 +330,7 @@ export function LandscapeView() {
                         <nav className="hidden md:flex items-center gap-5 text-sm text-zinc-400">
                             <Link href="/validation/lifecycle"    className="hover:text-zinc-100 transition-colors">Lifecycle</Link>
                             <Link href="/validation/traceability" className="hover:text-zinc-100 transition-colors">Traceability</Link>
+                            <Link href="/calendar"                className="hover:text-zinc-100 transition-colors">Calendar</Link>
                         </nav>
                     </div>
                 </div>

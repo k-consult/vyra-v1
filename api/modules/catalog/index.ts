@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { Module } from '../../types';
-import { listRegulations, listAuthorities, listComplianceAreas, traceRequirements, computeWindow, Cadence } from './repo';
+import { listRegulations, listAuthorities, listComplianceAreas, traceRequirements, computeWindow, fetchTaskCalendar, Cadence } from './repo';
 
 const catalog: any = async (fastify: FastifyInstance) => {
     fastify.get('/regulations', async (_req, reply) => {
@@ -29,6 +29,11 @@ const catalog: any = async (fastify: FastifyInstance) => {
             anchorDate: anchor,
         };
         reply.send({ occurrences: computeWindow(cadence, Number(horizonWeeks) || 52) });
+    });
+
+    fastify.get('/calendar', async (req: any, reply) => {
+        const { horizonWeeks } = req.query;
+        reply.send({ calendar: await fetchTaskCalendar(Number(horizonWeeks) || 52) });
     });
 };
 

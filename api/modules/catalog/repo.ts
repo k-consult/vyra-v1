@@ -77,12 +77,12 @@ export const traceRequirements = async (regulationId: string) => {
 };
 
 export interface Cadence {
-    cadenceUnit: 'day' | 'week' | 'month';
+    cadenceUnit: 'hour' | 'day' | 'week' | 'month';
     cadenceInterval: number;
     anchorDate: string;
 }
 
-const unitInDays: Record<Cadence['cadenceUnit'], number> = { day: 1, week: 7, month: 30 };
+const unitInDays: Record<Cadence['cadenceUnit'], number> = { hour: 1 / 24, day: 1, week: 7, month: 30 };
 
 // Pure function — no DB call. Occurrence dates for a cadence within a horizon, per roadmap.md Phase 1.
 export const computeWindow = (cadence: Cadence, horizonWeeks: number): string[] => {
@@ -96,5 +96,38 @@ export const computeWindow = (cadence: Cadence, horizonWeeks: number): string[] 
         occurrence.setDate(occurrence.getDate() + offset);
         occurrences.push(occurrence.toISOString().slice(0, 10));
     }
-    return occurrences;
+    // Sub-day cadences (e.g. hour) step faster than this window's day-level granularity —
+    // dedupe so a task isn't reported as due dozens of times on the same calendar day.
+    return Array.from(new Set(occurrences));
+};
+
+const TASK_CALENDAR = `
+    MATCH (s:Schedule)-[:APPLIES_TO]->(t:Task)-[:IMPLEMENTS]->(c:Control)
+    RETURN properties(s) AS schedule, properties(t) AS task, properties(c) AS control
+    ORDER BY s.anchorDate
+`;
+
+export const fetchTaskCalendar = async (horizonWeeks = 52) => {
+    try {
+        const raw: any = await db().fetch2(TASK_CALENDAR, {});
+        const rows = Array.isArray(raw) ? raw : [raw];
+        return rows.filter(Boolean).map((r: any) => {
+            const cadence: Cadence = {
+                cadenceUnit: r.schedule.cadenceUnit,
+                cadenceInterval: Number(r.schedule.cadenceInterval),
+                anchorDate: r.schedule.anchorDate,
+            };
+            return {
+                taskId: r.task.id,
+                taskName: r.task.name,
+                frequency: r.task.frequency,
+                controlId: r.control.id,
+                controlName: r.control.name,
+                occurrences: computeWindow(cadence, horizonWeeks),
+            };
+        });
+    } catch (err: any) {
+        log.error('catalog.repo: fetchTaskCalendar failed', err.message);
+        return [];
+    }
 };

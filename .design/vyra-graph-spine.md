@@ -1,8 +1,8 @@
 # Vyra Graph Spine
 
-**Version:** 1.4  
-**Status:** Canonical — reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`) per `vyra-implementation-plan.md` Phase 0, 2026-07-21. Extended with the Global Compliance Catalog (Phase 0.5 + Phase 1), 2026-07-22. Relocated from `.design/graph.md` and renamed as part of the 3-doc consolidation (`vyra-landscape.md` / `vyra-graph-spine.md` / `vyra-implementation-plan.md`), 2026-07-23 — no content changed in the move. Extended with Enterprise Context (Phase 2), 2026-07-25. Extended with Live Operational Context + first real agent (Phase 3), 2026-07-26.  
-**Source data:** `Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx` (7 incidents, enterprise seed) + `.design/__ref/synthetic-data/data.csv` (Industrial Parks/Warehouse/3PL vertical, catalog seed — `Authority`/`Jurisdiction`/`Regulation`/`Standard`/`Clause`/`Requirement`/`ComplianceArea`/`Control`, `:Catalog`-labeled; enterprise seed — `Organization`/`Role`/`Facility`/`Asset`, `:Enterprise`-labeled) + live API/agent writes (`Signal`, `Task`, `Decision` — no CSV involved)
+**Version:** 1.5  
+**Status:** Canonical — reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`) per `vyra-implementation-plan.md` Phase 0, 2026-07-21. Extended with the Global Compliance Catalog (Phase 0.5 + Phase 1), 2026-07-22. Relocated from `.design/graph.md` and renamed as part of the 3-doc consolidation (`vyra-landscape.md` / `vyra-graph-spine.md` / `vyra-implementation-plan.md`), 2026-07-23 — no content changed in the move. Extended with Enterprise Context (Phase 2), 2026-07-25. Extended with Live Operational Context + first real agent (Phase 3), 2026-07-26. Extended with the 52-Week Compliance Calendar (Phase 3.5 — `Task`/`Schedule` catalog batch), 2026-07-26.  
+**Source data:** `Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx` (7 incidents, enterprise seed) + `.design/__ref/synthetic-data/data.csv` (Industrial Parks/Warehouse/3PL vertical, catalog seed — `Authority`/`Jurisdiction`/`Regulation`/`Standard`/`Clause`/`Requirement`/`ComplianceArea`/`Control`/`Task`/`Schedule`, `:Catalog`-labeled; enterprise seed — `Organization`/`Role`/`Facility`/`Asset`, `:Enterprise`-labeled) + live API/agent writes (`Signal`, `Task`, `Decision` — no CSV involved)
 
 ## The `:Catalog` Label Convention
 
@@ -207,11 +207,12 @@ Compliance activities that must be performed to maintain or restore compliance.
 | workflowId | string | FK to Workflow |
 | evidenceRequired | string | `yes` |
 | controlIds / requirementIds | string[] | native array props, signal-driven Tasks only — every `Control`/`Requirement` the triggering `Asset` is covered by (via `COVERED_BY`), not a single FK, since one Asset can match multiple Controls under one ComplianceArea |
+| controlId | string | `CTRL-001` (`:Catalog` rows only, Phase 3.5) — FK to Control, singular (one Task template implements exactly one Control, per `09_Task_Master`'s `Control ID` column) |
 | status | string | `closed` / `open` |
 
 **Signal-driven Tasks (Phase 3)** are created live by `api/modules/operational/repo.ts`'s `createSignal`, not the CLI pipeline — see "Live API/Agent Writes" below.
 
-**24 tasks** across 7 incidents.
+**24 tasks** (legacy enterprise pipeline, unlabeled, across 7 incidents) **+ 60 tasks** (`TSK-0001`–`TSK-0060`, `:Catalog` label, Phase 3.5, from `09_Task_Master` — kept thin per `entity-alignment.md`'s warning not to ingest that 39-column rollup as-is) — same dual-origin coexistence pattern as `Regulation`/`Control`. Plus signal-driven `TSK-SIG-*` rows, unlabeled, created ad hoc.
 
 ---
 
@@ -248,8 +249,21 @@ Confirmation that a CAPA was executed and effective.
 
 ---
 
-#### `Schedule` — declared, not fed
-Cadence for a `Requirement` (`Schedule -[:APPLIES_TO]-> Requirement`). Props: `cadenceUnit` (`day`/`week`/`month`), `cadenceInterval`, `anchorDate`, `requirementId`. No seed data — see "Declared, Not Yet Fed" below for why. `api/modules/catalog/repo.ts`'s `computeWindow({cadenceUnit, cadenceInterval, anchorDate}, horizonWeeks)` is a pure function computing occurrence dates directly from these fields, so the window projection is usable ahead of any `Schedule` node existing.
+#### `Schedule`
+Cadence for a `Task` (`Schedule -[:APPLIES_TO]-> Task`, `:Catalog`, Phase 3.5) — corrected from the originally-declared `Schedule -> Requirement`, which was one hop too coarse: `13_Schedule_Rules` is keyed by `TaskID`, and `Task` (via its new `controlId`) already reaches `Requirement` through `Control`, so `Schedule -> Task -> Control -> Requirement` is the real, non-fabricated chain.
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `SCH-TSK-0001` (synthesized, 1:1 with Task) |
+| name | string | `Schedule - TSK-0001` |
+| cadenceUnit | string | `hour` / `day` / `week` / `month` |
+| cadenceInterval | string | `3` (e.g. Quarterly = month/3) |
+| anchorDate | string | `2026-01-01` |
+| taskId | string | FK to Task |
+
+**50 schedules** (`SCH-TSK-0001`–..., `:Catalog` label), from the 50 of 60 `13_Schedule_Rules` rows where `Schedule Type = Fixed`. The other 10 (`Condition Based`/`Event Based`/`Sensor Triggered`/`Risk Triggered`/`AI Triggered`) are event-driven, not periodic — they get a `Task` but no `Schedule`, and are correctly served by the existing Phase 3 Signal→Task path instead.
+
+`Frequency` (`13_Schedule_Rules`, qualitative) maps to `cadenceUnit`/`cadenceInterval` via a fixed lookup table in `cli/scripts/convert-catalog-seed.ts` (`Hourly`→hour/1, `Daily`→day/1, `Weekly`→week/1, `Fortnightly`→week/2, `Monthly`→month/1, `Quarterly`→month/3, `Half-Yearly`→month/6, `Annual`→month/12) — a direct translation of the label, not fabricated data. `anchorDate` resolves `"Week NN"` as `2026-01-01 + 7×(NN−1)` days (naive 7-day blocks, not ISO week numbering). `api/modules/catalog/repo.ts`'s `computeWindow({cadenceUnit, cadenceInterval, anchorDate}, horizonWeeks)` expands a cadence into occurrence dates (deduped — sub-day cadences like `hour` step faster than this function's day-level granularity) and backs `GET /catalog/calendar`, joined with `Task`/`Control` for the UI's 52-week calendar (`ui/src/features/calendar/calendar.tsx`).
 
 ---
 
@@ -532,6 +546,8 @@ All relationships below are **live** — they are written by every `./ingest.sh`
 | `REQUIRES_CAPA` | RCA → CAPA | Root cause analysis prescribes a corrective action |
 | `ADDRESSES` | CAPA → Finding | Corrective action addresses the finding |
 | `CLOSES` | Verification → CAPA | Verification closes the CAPA |
+| `IMPLEMENTS` | Task → Control | Task is the recurring instance of what the Control requires (Phase 3.5, `:Catalog` rows only — reuses `IMPLEMENTS`, same as `Control -> Requirement`) |
+| `APPLIES_TO` | Schedule → Task | Schedule's cadence applies to this Task (Phase 3.5, `:Catalog` rows only, 50 of 60 Tasks) |
 
 ### Operational Graph
 | Relationship | From → To | Meaning |
@@ -561,19 +577,18 @@ All relationships below are **live** — they are written by every `./ingest.sh`
 
 ## Declared, Not Yet Fed
 
-`v2.ts` declares 33 node types across the five graphs (27 original + `Authority`/`Schedule`, added with the Global Compliance Catalog, + `Organization`/`Role`/`Person`, added with Enterprise Context, + `ComplianceArea`, added with Phase 3). 23 now have a live CSV feed: the original 13 (`ingest-hints.json`'s `feedMap`) plus `Jurisdiction`, `Authority`, `Standard`, `Clause`, `Requirement`, `ComplianceArea` (`cli/domains/catalog/ingest-hints.json`, loaded by `cli/orchestration/catalog-sync.ts`) plus `Organization`, `Role` (`cli/domains/enterprise/ingest-hints.json`, loaded by `cli/orchestration/enterprise-sync.ts` — `Facility`/`Asset`/`Control` already had live feeds and just gained a second, dual-origin batch each). `Signal` and `Decision` are fed too, but never via CSV — see "Live API/Agent Writes" below. The rest — `Policy`, `Program`, `Workflow`, `EvidencePackage`, `Attestation`, `AssuranceStatement`, `Audit`, `Exception`, `Schedule`, `Person` — have no seed data yet. Their relationships are declared in `v2.ts` but never fire today, since `cli/runtime/repo.ts`'s edge loader does `MATCH` (not `MERGE`) on both endpoints — no target node, no edge:
+`v2.ts` declares 33 node types across the five graphs (27 original + `Authority`/`Schedule`, added with the Global Compliance Catalog, + `Organization`/`Role`/`Person`, added with Enterprise Context, + `ComplianceArea`, added with Phase 3). 24 now have a live CSV feed: the original 13 (`ingest-hints.json`'s `feedMap`) plus `Jurisdiction`, `Authority`, `Standard`, `Clause`, `Requirement`, `ComplianceArea`, `Schedule` (`cli/domains/catalog/ingest-hints.json`, loaded by `cli/orchestration/catalog-sync.ts` — `Task`/`Control` already had live feeds and just gained a second, dual-origin batch each) plus `Organization`, `Role` (`cli/domains/enterprise/ingest-hints.json`, loaded by `cli/orchestration/enterprise-sync.ts`). `Signal` and `Decision` are fed too, but never via CSV — see "Live API/Agent Writes" below. The rest — `Policy`, `Program`, `Workflow`, `EvidencePackage`, `Attestation`, `AssuranceStatement`, `Audit`, `Exception`, `Person` — have no seed data yet. Their relationships are declared in `v2.ts` but never fire today, since `cli/runtime/repo.ts`'s edge loader does `MATCH` (not `MERGE`) on both endpoints — no target node, no edge:
 
 | Relationship | From → To | Fed by |
 |---|---|---|
 | `PART_OF` | Task → Workflow, Workflow → Program | Phase 1/2 |
-| `APPLIES_TO` | Schedule → Requirement | deferred — `13_Schedule_Rules` is keyed by `TaskID`, not `RequirementID`; seeding this would fabricate a link the source data doesn't support. `api/modules/catalog/repo.ts`'s `computeWindow` is a pure function taking `{cadenceUnit, cadenceInterval, anchorDate}` directly, usable ahead of any `Schedule` node existing. |
 | `BACKED_BY` | Attestation → EvidencePackage | — |
 | `DERIVED_FROM` | AssuranceStatement → Attestation | — |
 | `WAIVES` | Exception → Requirement | — |
 | `HAS_ROLE` | Person → Role | blocked on an identity source — no `Person` seed data exists in either dataset (`.design/__ref/entity-alignment.md` §4) |
 | `WORKS_AT` | Person → Facility | same blocker as `HAS_ROLE` |
 
-`api/modules/execution/repo.ts`'s `listTasks(workflowId)` is already written against `PART_OF` so it'll start returning data the moment Phase 2 seeds `Workflow` — no query rewrite needed then. `api/modules/knowledge/repo.ts`'s `traceForward`/`traceReverse` and `api/modules/catalog/repo.ts`'s `traceRequirements` are **live now** — `BELONGS_TO`/`DEFINED_BY`/`IN_JURISDICTION`/`ISSUED_BY`/`OPERATES_IN` moved out of this table once the catalog sync seeded their target types. `LOCATED_AT` (Asset → Facility) and `BELONGS_TO` (Role → Organization) moved out of this table with Phase 2. `EMITTED_BY` (Signal → Asset) moved out with Phase 3 — live now, but via the API write path, not CLI (see below).
+`api/modules/execution/repo.ts`'s `listTasks(workflowId)` is already written against `PART_OF` so it'll start returning data the moment Phase 2 seeds `Workflow` — no query rewrite needed then. `api/modules/knowledge/repo.ts`'s `traceForward`/`traceReverse` and `api/modules/catalog/repo.ts`'s `traceRequirements` are **live now** — `BELONGS_TO`/`DEFINED_BY`/`IN_JURISDICTION`/`ISSUED_BY`/`OPERATES_IN` moved out of this table once the catalog sync seeded their target types. `LOCATED_AT` (Asset → Facility) and `BELONGS_TO` (Role → Organization) moved out of this table with Phase 2. `EMITTED_BY` (Signal → Asset) moved out with Phase 3 — live now, but via the API write path, not CLI (see below). `APPLIES_TO` (Schedule → Task, corrected from the originally-declared Schedule → Requirement) and `IMPLEMENTS` (Task → Control) moved out with Phase 3.5.
 
 **Note:** `CAPTURED_FROM` (Evidence → Incident), previously documented here, was never implemented anywhere (not in `v2.ts`, not in `ingest-hints.json`, not queried by any `repo.ts`) and has been removed from this doc.
 
@@ -696,6 +711,8 @@ All feeds live under `cli/feeds/csv/<domain>/`.
 | catalog | requirements.csv | 34 | `06_Obligations`, `Obligation → Requirement` mapping |
 | catalog | complianceAreas.csv | 10 | `07_Compliance_Areas`, 1:1 (Phase 3) |
 | catalog | controls.csv | 30 | `08_Operational_Controls`, `:Catalog`-labeled, distinct from the 15 legacy `controls.csv` above (Phase 3) |
+| catalog | tasks.csv | 60 | `09_Task_Master`, kept thin (id/name/controlId/frequency/priority), `:Catalog`-labeled, distinct from the 24 legacy `tasks.csv` above (Phase 3.5) |
+| catalog | schedules.csv | 50 | `13_Schedule_Rules` filtered to `Schedule Type = Fixed` rows, `:Catalog`-labeled (Phase 3.5) |
 
 No `edgeMap` for catalog feeds — every catalog relationship is an embedded FK (`v2.ts` `rels`), same mechanism `Regulation`/`Clause`/`Requirement`/`Control` already use.
 
@@ -723,7 +740,7 @@ No `edgeMap` for enterprise feeds either — same embedded-FK mechanism.
 | capa_verification.csv | 13 | Verification → CLOSES → CAPA |
 | incident_task.csv | 24 | Incident → HAS_TASK → Task |
 
-**Enterprise pipeline total: 179 nodes, 141 edges** (134 original + 7 `LOCATED_AT` on the legacy `Asset` rows, live since Phase 2). **Catalog pipeline total: 139 nodes, 158 edges** (`:Catalog`-labeled, separate `catalog-sync.ts` run — 99 original + 10 `ComplianceArea` + 30 `Control`; 98 original edges + 30 `IMPLEMENTS` + 30 `BELONGS_TO`, Phase 3). **Enterprise Context (Phase 2) pipeline total: 79 nodes, 47 edges** (`:Enterprise`-labeled, separate `enterprise-sync.ts` run — 12 Organization, 16 Role, 20 Facility, 31 Asset; 16 `BELONGS_TO` + 31 `LOCATED_AT` — plus 29 `IN_COMPLIANCE_AREA` edges added in Phase 3). **Phase 3 derived/live-write total: 101 `COVERED_BY` edges** (`backfill-asset-control.ts`, one-time) **+ Signal/Task/Decision created ad hoc via the API and agent runtime** (no fixed count — driven by live events, not seed data).
+**Enterprise pipeline total: 179 nodes, 141 edges** (134 original + 7 `LOCATED_AT` on the legacy `Asset` rows, live since Phase 2). **Catalog pipeline total: 249 nodes, 268 edges** (`:Catalog`-labeled, separate `catalog-sync.ts` run — 99 original + 10 `ComplianceArea` + 30 `Control` + 60 `Task` + 50 `Schedule`; 98 original edges + 30 `IMPLEMENTS` (Control→Requirement) + 30 `BELONGS_TO` + 60 `IMPLEMENTS` (Task→Control) + 50 `APPLIES_TO` (Schedule→Task), Phase 3 + 3.5). **Enterprise Context (Phase 2) pipeline total: 79 nodes, 47 edges** (`:Enterprise`-labeled, separate `enterprise-sync.ts` run — 12 Organization, 16 Role, 20 Facility, 31 Asset; 16 `BELONGS_TO` + 31 `LOCATED_AT` — plus 29 `IN_COMPLIANCE_AREA` edges added in Phase 3). **Phase 3 derived/live-write total: 101 `COVERED_BY` edges** (`backfill-asset-control.ts`, one-time) **+ Signal/Task/Decision created ad hoc via the API and agent runtime** (no fixed count — driven by live events, not seed data).
 
 ---
 

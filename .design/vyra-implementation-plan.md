@@ -21,7 +21,7 @@ An early audit found the codebase was earlier-stage than the docs suggested at t
 
 **Second data source:** `.design/__ref/entity-alignment.md` maps `.design/__ref/synthetic-data/data.csv` (a second, independent enterprise seed — Industrial Parks/Warehouse/3PL vertical, entity extraction in `.design/__ref/consolidated-entities.md`) against this plan. It was largely confirmatory for Phase 1 and partially for Phase 2 (Role/Organization/Location present in the source, Person/Identity still missing), surfaced two net-new domain concepts with no current home (`InsuranceClause`, `ComplianceArea`), and flagged a second relationship-vocabulary set — reconciled together with Phase 0's fix.
 
-This plan covers **design and sequencing**, one phase at a time. **Phases 0, 0.5, 1, 2, and 3 are done.** Confirm before starting Phase 4.
+This plan covers **design and sequencing**, one phase at a time. **Phases 0, 0.5, 1, 2, 3, and 3.5 are done.** Confirm before starting Phase 4.
 
 ---
 
@@ -107,6 +107,23 @@ A CSV batch reload is fundamentally incompatible with continuous floor events. T
 
 ---
 
+## Phase 3.5 — 52-Week Compliance Calendar ✅ DONE (2026-07-26)
+
+Not in the original phase plan — added when the user asked what it would take to show the L3 "52-Week Calendar" JTBD row (`vyra-landscape.md`) in the UI. The graph spine's stated reason for leaving `Schedule` unseeded (`13_Schedule_Rules` is `TaskID`-keyed, not `RequirementID`-keyed, so `Schedule -> Requirement` would fabricate a link) stopped one hop too early: `09_Task_Master` (same `TaskID` space, confirmed 1:1 across all 60 rows) carries a real `Control ID` FK into the 30 `Control:Catalog` rows Phase 3 already seeded. The real, non-fabricated chain is `Schedule -> Task -> Control -> Requirement`.
+
+**What got built:**
+- Corrected `Schedule`'s target from `Requirement` to `Task` in `v2.ts` (`requirementId`→`taskId`, `APPLIES_TO -> Requirement`→`APPLIES_TO -> Task`), and added `Task.controlId` + `Task -[:IMPLEMENTS]-> Control`.
+- `cli/scripts/convert-catalog-seed.ts` extended to convert `09_Task_Master` → `tasks.csv` (60 rows, kept thin per `entity-alignment.md`'s explicit warning against ingesting that 39-column rollup as-is) and `13_Schedule_Rules` → `schedules.csv` (50 of 60 rows — only `Schedule Type = Fixed`; the other 10 are `Condition/Event/Sensor/Risk/AI`-Triggered and correctly stay on the existing Phase 3 Signal→Task path instead).
+- `Frequency` (qualitative: `Monthly`, `Quarterly`, etc.) resolved to numeric `cadenceUnit`/`cadenceInterval` via a fixed lookup table — a direct translation, not fabricated data. `"Week NN"` anchors resolved to `2026-01-01 + 7×(NN−1)` days (naive 7-day blocks, not ISO week numbering).
+- New `fetchTaskCalendar` in `api/modules/catalog/repo.ts`, exposed as `GET /catalog/calendar?horizonWeeks=`, joining `Schedule -[:APPLIES_TO]->Task-[:IMPLEMENTS]->Control` and expanding each cadence via the existing `computeWindow`. Extended `computeWindow`'s cadence enum with `hour`, and fixed a real bug found during verification: sub-day cadences (`hour`) produced ~24 duplicate date strings per day at `computeWindow`'s day-level granularity — now deduped.
+- New UI feature `ui/src/features/calendar/calendar.tsx` (`CalendarView`) at `/calendar`, following the existing `landscape.tsx` pattern (fetch-on-mount, drill-down drawer — `PropRow`/`DrillDrawer` exported from `landscape.tsx` and reused rather than duplicated). Tasks bucketed into 52 week-rows with frequency-colored badges; clicking a task shows its Control mapping and full occurrence list.
+
+Verified live: `convert-catalog-seed.ts` produced exactly 60 `tasks.csv` / 50 `schedules.csv` rows; `catalog-sync.ts` loaded them with the expected edge counts (`Schedule-[:APPLIES_TO]->Task`: 50, `Task-[:IMPLEMENTS]->Control`: 60); hit `GET /catalog/calendar` live and confirmed correct occurrence counts per cadence; loaded `/calendar` in a real browser via Playwright, confirmed correct week-bucketing and drill-down, and confirmed zero console errors after the dedup fix.
+
+**Files**: `cli/scripts/convert-catalog-seed.ts`, `cli/domains/catalog/ingest-hints.json`, `cli/semantic-contract/contracts/v2.ts`, `api/modules/catalog/{index.ts,repo.ts}`, `ui/src/lib/api.ts`, new `ui/src/features/calendar/calendar.tsx`, new `ui/src/app/calendar/page.tsx`, `ui/src/features/landscape/landscape.tsx` (exported `PropRow`/`DrillDrawer`, added nav link).
+
+---
+
 ## Phase 4 — Compliance posture/landscape views
 
 Purely additive once Phases 1–3 exist: aggregation Cypher across catalog + enterprise + operational + intelligence data. Extends `api/modules/dashboard` and `api/modules/assurance`. No new node types expected. **Not started.**
@@ -119,6 +136,7 @@ Purely additive once Phases 1–3 exist: aggregation Cypher across catalog + ent
 - Phase 1 ✅: ran the catalog sync job, confirmed `:Catalog` label present and correct counts via direct query; confirmed the polymorphic `Clause` parent resolves to both `Regulation` and `Standard` nodes; hit all 4 new `/catalog/*` routes live and got correct data (caught and fixed a direction bug in `traceRequirements` this way).
 - Phase 2 ✅: ran `enterprise-sync.ts` dry-run, confirmed exact expected node/edge counts (79 nodes: 12 Organization, 16 Role, 20 Facility, 31 Asset; 47 edges: 16 `BELONGS_TO`, 31 `LOCATED_AT`); ran it live and confirmed via direct query; re-ran `./ingest.sh` and confirmed the pre-existing 7 assets now carry `LOCATED_AT` edges; hit all 3 new `/enterprise/*` routes live.
 - Phase 3 ✅: ran `catalog-sync.ts`/`enterprise-sync.ts` live, confirmed `ComplianceArea` (10), `Control:Catalog` (30), `IN_COMPLIANCE_AREA` (29) counts; ran `backfill-asset-control.ts`, confirmed 101 `COVERED_BY` edges and spot-checked `AST-001` resolves to its 4 real Controls; POSTed test Signals via the live API against both a covered asset (`controlIds`/`requirementIds` populated) and a Security-gap asset (correctly empty), plus an invalid-payload case (clean 400); ran `agents/index.ts control-intelligence` live and confirmed `fetchRequirements` returns 4 real uncontrolled `Requirement`s from Neo4j, with a clean failure (not a hang, not silent) at the Claude call since `ANTHROPIC_API_KEY` isn't configured — the live Claude round-trip itself is deferred to the user, who needs to add that key.
+- Phase 3.5 ✅: ran the updated `convert-catalog-seed.ts`, confirmed exact 60/50 row counts for `tasks.csv`/`schedules.csv`; ran `catalog-sync.ts` live, confirmed `Task:Catalog` (60), `Schedule:Catalog` (50), `Schedule-[:APPLIES_TO]->Task` (50), `Task-[:IMPLEMENTS]->Control` (60) via direct Cypher; hit `GET /catalog/calendar` live and spot-checked occurrence counts per cadence; found and fixed a real bug this way (`Hourly` cadence produced ~24 duplicate dates per day due to `computeWindow`'s day-level granularity); loaded `/calendar` in a real headless browser (Playwright), confirmed correct rendering and drill-down, and confirmed zero console errors post-fix.
 - Phase 4: manually query new dashboard endpoints against a fully-seeded test instance and spot-check numbers against known seed data.
 
 **Correction from the original plan**: this section originally said "each phase should end with `/dev-audit`." That skill's checks are written for a different project template (`app/module/*/edge/api/`, Koa, `dbv4x`) that doesn't exist in this repo — running it produces false negatives, not real coverage. There is no drop-in substitute gate in this repo today; live-query verification against Neo4j (as done for Phase 0/1 above) is the actual closing check until one exists.

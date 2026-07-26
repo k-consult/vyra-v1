@@ -52,6 +52,7 @@ export const catalog = {
     authorities:      () => get<{ authorities: any[] }>('/catalog/authorities'),
     complianceAreas:  () => get<{ complianceAreas: any[] }>('/catalog/complianceAreas'),
     traceRequirements: (id: string) => get(`/catalog/trace/${id}`),
+    calendar:         (horizonWeeks?: number) => get<{ calendar: any[] }>(`/catalog/calendar${horizonWeeks ? `?horizonWeeks=${horizonWeeks}` : ''}`),
 };
 
 export const enterprise = {

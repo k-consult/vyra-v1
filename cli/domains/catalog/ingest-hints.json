@@ -10,7 +10,9 @@
     "catalog/clauses.csv":       "Clause",
     "catalog/requirements.csv":  "Requirement",
     "catalog/complianceAreas.csv": "ComplianceArea",
-    "catalog/controls.csv":      "Control"
+    "catalog/controls.csv":      "Control",
+    "catalog/tasks.csv":         "Task",
+    "catalog/schedules.csv":     "Schedule"
   },
   "edgeMap": {}
 }

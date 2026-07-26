@@ -1,0 +1,61 @@
+id,name,controlId,frequency,priority
+TSK-0001,Smoke & Heat Detector Functional Test - Monthly Check,CTRL-001,Monthly,Medium
+TSK-0002,Smoke & Heat Detector Functional Test - Quarterly Check,CTRL-001,Quarterly,Low
+TSK-0003,Fire Alarm Panel & Zone Verification - Weekly Check,CTRL-002,Weekly,High
+TSK-0004,Fire Alarm Panel & Zone Verification - Monthly Check,CTRL-002,Monthly,Medium
+TSK-0005,PA / Voice Evacuation System Test - Quarterly Check,CTRL-003,Quarterly,Low
+TSK-0006,PA / Voice Evacuation System Test - Half-Yearly Check,CTRL-003,Half-Yearly,High
+TSK-0007,Fire Hydrant System Pressure Test - Monthly Check,CTRL-004,Monthly,Medium
+TSK-0008,Fire Hydrant System Pressure Test - Sensor Triggered Check,CTRL-004,Sensor Triggered,Low
+TSK-0009,Sprinkler Riser & ESFR Head Inspection - Quarterly Check,CTRL-005,Quarterly,High
+TSK-0010,Sprinkler Riser & ESFR Head Inspection - Half-Yearly Check,CTRL-005,Half-Yearly,Medium
+TSK-0011,Fire Extinguisher Inspection & Recharge Check - Monthly Check,CTRL-006,Monthly,Low
+TSK-0012,Fire Extinguisher Inspection & Recharge Check - Quarterly Check,CTRL-006,Quarterly,High
+TSK-0013,Fire Pump House Operational Test - Weekly Check,CTRL-007,Weekly,Medium
+TSK-0014,Fire Pump House Operational Test - Monthly Check,CTRL-007,Monthly,Low
+TSK-0015,Fire & Emergency Evacuation Drill - Half-Yearly Check,CTRL-008,Half-Yearly,High
+TSK-0016,Fire & Emergency Evacuation Drill - Annual Check,CTRL-008,Annual,Medium
+TSK-0017,Emergency Response Team Readiness Check - Quarterly Check,CTRL-009,Quarterly,Low
+TSK-0018,Emergency Response Team Readiness Check - Half-Yearly Check,CTRL-009,Half-Yearly,High
+TSK-0019,Mock Drill - Mutual Aid & External Agency Coordination - Annual Check,CTRL-010,Annual,Medium
+TSK-0020,Mock Drill - Mutual Aid & External Agency Coordination - Event Based Check,CTRL-010,Event Based,Low
+TSK-0021,PPE Compliance Inspection - Weekly Check,CTRL-011,Weekly,High
+TSK-0022,PPE Compliance Inspection - Monthly Check,CTRL-011,Monthly,Medium
+TSK-0023,MHE / Forklift Safety Inspection - Daily Check,CTRL-012,Daily,Low
+TSK-0024,MHE / Forklift Safety Inspection - Weekly Check,CTRL-012,Weekly,High
+TSK-0025,Permit-to-Work & Hot Work Compliance Check - Event Based Check,CTRL-013,Event Based,Medium
+TSK-0026,Permit-to-Work & Hot Work Compliance Check - Condition Based Check,CTRL-013,Condition Based,Low
+TSK-0027,Hazardous Chemical Storage Compliance Check - Monthly Check,CTRL-014,Monthly,High
+TSK-0028,Hazardous Chemical Storage Compliance Check - Quarterly Check,CTRL-014,Quarterly,Medium
+TSK-0029,Battery Charging Area Safety Inspection - Weekly Check,CTRL-015,Weekly,Low
+TSK-0030,Battery Charging Area Safety Inspection - Hourly Check,CTRL-015,Hourly,High
+TSK-0031,Spill Kit & Chemical Spill Response Readiness Check - Monthly Check,CTRL-016,Monthly,Medium
+TSK-0032,Spill Kit & Chemical Spill Response Readiness Check - Quarterly Check,CTRL-016,Quarterly,Low
+TSK-0033,Waste Segregation & Storage Verification - Daily Check,CTRL-017,Daily,High
+TSK-0034,Waste Segregation & Storage Verification - Weekly Check,CTRL-017,Weekly,Medium
+TSK-0035,Hazardous Waste Disposal & Manifest Verification - Monthly Check,CTRL-018,Monthly,Low
+TSK-0036,Hazardous Waste Disposal & Manifest Verification - Quarterly Check,CTRL-018,Quarterly,High
+TSK-0037,Electrical Panel & Transformer Preventive Maintenance - Quarterly Check,CTRL-019,Quarterly,Medium
+TSK-0038,Electrical Panel & Transformer Preventive Maintenance - Half-Yearly Check,CTRL-019,Half-Yearly,Low
+TSK-0039,HVAC / Ventilation System Preventive Maintenance - Monthly Check,CTRL-020,Monthly,High
+TSK-0040,HVAC / Ventilation System Preventive Maintenance - Quarterly Check,CTRL-020,Quarterly,Medium
+TSK-0041,Racking System Structural Safety Inspection - Quarterly Check,CTRL-021,Quarterly,Low
+TSK-0042,Racking System Structural Safety Inspection - Annual Check,CTRL-021,Annual,High
+TSK-0043,Diesel Generator (DG) Set Operational Test - Weekly Check,CTRL-022,Weekly,Medium
+TSK-0044,Diesel Generator (DG) Set Operational Test - Monthly Check,CTRL-022,Monthly,Low
+TSK-0045,Effluent / STP Discharge Quality Testing - Fortnightly Check,CTRL-023,Fortnightly,High
+TSK-0046,Effluent / STP Discharge Quality Testing - Sensor Triggered Check,CTRL-023,Sensor Triggered,Medium
+TSK-0047,Air Emission & DG Stack Monitoring - Quarterly Check,CTRL-024,Quarterly,Low
+TSK-0048,Air Emission & DG Stack Monitoring - Half-Yearly Check,CTRL-024,Half-Yearly,High
+TSK-0049,Fire Risk Assessment Review - Annual Check,CTRL-025,Annual,Medium
+TSK-0050,Fire Risk Assessment Review - Risk Triggered Check,CTRL-025,Risk Triggered,Low
+TSK-0051,Internal Audit & Management Review - Half-Yearly Check,CTRL-026,Half-Yearly,High
+TSK-0052,Internal Audit & Management Review - Annual Check,CTRL-026,Annual,Medium
+TSK-0053,Incident Investigation & CAPA Closure Verification - Event Based Check,CTRL-027,Event Based,Low
+TSK-0054,Incident Investigation & CAPA Closure Verification - AI Triggered Check,CTRL-027,AI Triggered,High
+TSK-0055,Insurance Warranty Clause Compliance Check - Half-Yearly Check,CTRL-028,Half-Yearly,Medium
+TSK-0056,Insurance Warranty Clause Compliance Check - Annual Check,CTRL-028,Annual,Low
+TSK-0057,Fire NOC / Statutory Certificate Renewal Tracking - Annual Check,CTRL-029,Annual,High
+TSK-0058,Fire NOC / Statutory Certificate Renewal Tracking - Condition Based Check,CTRL-029,Condition Based,Medium
+TSK-0059,Risk Engineering Survey Recommendation Closure - Quarterly Check,CTRL-030,Quarterly,Low
+TSK-0060,Risk Engineering Survey Recommendation Closure - Condition Based Check,CTRL-030,Condition Based,High

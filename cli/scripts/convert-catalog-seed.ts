@@ -20,6 +20,33 @@ const extractWorksheet = (raw: string, name: string): Row[] => {
 
 const slugJurisdiction = (name: string): string => `JUR-${name.trim().toUpperCase().replace(/[^A-Z0-9]+/g, '_')}`;
 
+// 13_Schedule_Rules' Frequency is a qualitative label, not a numeric cadence — this is a direct
+// translation of that label, not fabricated data. Only 'Fixed' schedule-type rows use this map;
+// 'Triggered' rows (event/sensor/risk/AI-driven) have no periodic cadence and are excluded.
+const FREQUENCY_CADENCE: Record<string, { cadenceUnit: string; cadenceInterval: number }> = {
+    Hourly: { cadenceUnit: 'hour', cadenceInterval: 1 },
+    Daily: { cadenceUnit: 'day', cadenceInterval: 1 },
+    Weekly: { cadenceUnit: 'week', cadenceInterval: 1 },
+    Fortnightly: { cadenceUnit: 'week', cadenceInterval: 2 },
+    Monthly: { cadenceUnit: 'month', cadenceInterval: 1 },
+    Quarterly: { cadenceUnit: 'month', cadenceInterval: 3 },
+    'Half-Yearly': { cadenceUnit: 'month', cadenceInterval: 6 },
+    Annual: { cadenceUnit: 'month', cadenceInterval: 12 },
+};
+
+// "Week NN" -> naive 7-day blocks from 2026-01-01 (not ISO week numbering, which would put
+// Week 01 in late Dec 2025 since Jan 1 2026 falls on a Thursday).
+const CALENDAR_YEAR_START = '2026-01-01T00:00:00.000Z';
+
+const parseWeekAnchor = (anchorWeek: string): string => {
+    const match = anchorWeek.match(/Week (\d+)/);
+    if (!match) throw new Error(`unrecognised anchor week: ${anchorWeek}`);
+    const weekNumber = Number(match[1]);
+    const anchor = new Date(CALENDAR_YEAR_START);
+    anchor.setUTCDate(anchor.getUTCDate() + 7 * (weekNumber - 1));
+    return anchor.toISOString().slice(0, 10);
+};
+
 const writeCSV = (fileName: string, rows: Row[]): void => {
     if (!rows.length) { log.warn(`convert-catalog-seed: no rows for ${fileName}`); return; }
     const cols = Object.keys(rows[0]);
@@ -40,6 +67,8 @@ const convert = (): void => {
     const obligationRows = extractWorksheet(raw, '06_Obligations');
     const complianceAreaRows = extractWorksheet(raw, '07_Compliance_Areas');
     const controlRows = extractWorksheet(raw, '08_Operational_Controls');
+    const taskMasterRows = extractWorksheet(raw, '09_Task_Master');
+    const scheduleRuleRows = extractWorksheet(raw, '13_Schedule_Rules');
 
     const jurisdictionNames = new Set<string>([
         ...authorityRows.map(r => r['Jurisdiction']),
@@ -119,6 +148,31 @@ const convert = (): void => {
         regulationId: r['RegulationID'],
         authorityId: r['AuthorityID'],
     })));
+
+    // 09_Task_Master is a 39-column denormalized rollup — deliberately kept thin here rather
+    // than ingested as-is (see entity-alignment.md). Only the fields the graph needs: what the
+    // task is, which Control it implements, and its display frequency.
+    writeCSV('tasks.csv', taskMasterRows.map(r => ({
+        id: r['TaskID'],
+        name: r['Task Name'],
+        controlId: r['Control ID'],
+        frequency: r['Frequency'],
+        priority: r['Priority'],
+    })));
+
+    const fixedScheduleRows = scheduleRuleRows.filter(r => r['Schedule Type'] === 'Fixed');
+    writeCSV('schedules.csv', fixedScheduleRows.map(r => {
+        const cadence = FREQUENCY_CADENCE[r['Frequency']];
+        if (!cadence) throw new Error(`no cadence mapping for frequency: ${r['Frequency']}`);
+        return {
+            id: `SCH-${r['TaskID']}`,
+            name: `Schedule - ${r['TaskID']}`,
+            taskId: r['TaskID'],
+            cadenceUnit: cadence.cadenceUnit,
+            cadenceInterval: String(cadence.cadenceInterval),
+            anchorDate: parseWeekAnchor(r['Anchor Week/Date']),
+        };
+    }));
 };
 
 convert();
