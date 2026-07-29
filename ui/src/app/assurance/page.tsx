@@ -1,8 +1,5 @@
+import { AssuranceView } from '@/features/assurance/assurance';
+
 export default function AssurancePage() {
-    return (
-        <main>
-            <h1>Assurance</h1>
-            {/* TODO: evidence, posture, attestations */}
-        </main>
-    );
+    return <AssuranceView />;
 }

@@ -1,10 +1,11 @@
 import { FastifyInstance } from 'fastify';
-import { getPosture, listAttestations, listEvidence } from './repo';
+import { getCoverageScore, getRiskRollup, listAttestations, listEvidence } from './repo';
 
 const assurance: any = async (fastify: FastifyInstance) => {
     fastify.get('/posture', async (_req, reply) => {
-        const posture = await getPosture();
-        reply.send({ posture });
+        const [coverage, riskRollup] = await Promise.all([getCoverageScore(), getRiskRollup()]);
+        if (!coverage || !riskRollup) return reply.code(500).send({ error: 'Failed to load posture data' });
+        reply.send({ coverage, riskRollup });
     });
 
     fastify.get('/attestations', async (_req, reply) => {

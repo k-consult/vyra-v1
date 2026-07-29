@@ -331,6 +331,7 @@ export function LandscapeView() {
                             <Link href="/validation/lifecycle"    className="hover:text-zinc-100 transition-colors">Lifecycle</Link>
                             <Link href="/validation/traceability" className="hover:text-zinc-100 transition-colors">Traceability</Link>
                             <Link href="/calendar"                className="hover:text-zinc-100 transition-colors">Calendar</Link>
+                            <Link href="/assurance"               className="hover:text-zinc-100 transition-colors">Assurance</Link>
                         </nav>
                     </div>
                 </div>

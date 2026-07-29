@@ -25,6 +25,20 @@ This plan covers **design and sequencing**, one phase at a time. **Phases 0, 0.5
 
 ---
 
+## Task Brief — What's Pending (short form)
+
+One line per JTBD layer (`vyra-landscape.md`'s L1–L7 table), for a quick "what's pending" answer without re-reading the full plan. **Update this whenever a phase materially changes a layer's status** — it will drift otherwise.
+
+- **L1 Knowledge** — Regulations/Standards live; Contracts unscoped, SOPs still folded into `Control` (not a distinct catalog item)
+- **L2 Interpret** — Requirement→Control→Asset chain live; 2 Security-category assets still unmapped (documented gap)
+- **L3 Planning** — 52-week calendar + Org/Role live; `Person` (named individuals) unfed, task-completion tracking not built
+- **L4 Graph Spine** — complete (it's the infrastructure itself; "Review" = Autonomy Level 1 human-approval gate)
+- **L5 Oversight** — Signal + first agent (`control-intelligence`) live; nothing watches Signals for deviations yet, `signal-intelligence` still a stub
+- **L6 Assurance** — Coverage Scoring done (Phase 4a); Audit-Ready Export blocked — Assurance graph unfed, needs a scoping decision (Phase 4b)
+- **L7 Risk** — Per-Finding score + portfolio rollup live (Phase 4a); Scenario Simulation gap, needs agents beyond `control-intelligence`
+
+---
+
 ## Phase 0 — Reconcile relationship-vocabulary drift ✅ DONE (2026-07-21)
 
 Verified directly: `v2.ts` declared `RCA -[:ANALYSES]-> Finding`, but the code that actually ran — `ingest-hints.json` + `api/modules/{intelligence,operational}/repo.ts` — loaded and queried `Finding -[:ANALYSED_BY]-> RCA` (opposite direction, different name). Fixed by treating the live write path as the load-bearing truth and correcting `v2.ts` + the graph-spine doc to match, not the other way around. Also found and fixed, beyond the one example: a `GOVERNED_BY` name collision (Regulation→Jurisdiction vs. the live Incident→Regulation edge), three redundant duplicate-declared edges (`INVOLVES`, `MANAGED_BY`, `CLOSES` declared in both `v2.ts` and `ingest-hints.json`), and a `knowledge/repo.ts` + `execution/repo.ts` + `agents/tools/graph-read.ts` direction mismatch on the dormant Knowledge chain. Verified live: re-ingested, confirmed zero conflicting edges, deleted 15 stale `ANALYSES` edges a prior ingest had already written.
@@ -130,7 +144,31 @@ Verified live (2026-07-26 shape): `convert-catalog-seed.ts` produced exactly 60 
 
 ## Phase 4 — Compliance posture/landscape views
 
-Purely additive once Phases 1–3 exist: aggregation Cypher across catalog + enterprise + operational + intelligence data. Extends `api/modules/dashboard` and `api/modules/assurance`. No new node types expected. **Not started.**
+Scope narrowed 2026-07-29, after an explicit readiness check found the original one-line scope ("aggregation Cypher across catalog + enterprise + operational + intelligence data") bundled a ready slice and a blocked slice together. Split into 4a (start now) and 4b (needs a scoping decision first) rather than treated as one phase.
+
+### Phase 4a — Coverage Scoring + Risk rollup ✅ DONE (2026-07-29)
+
+**Scoping decision**: catalog-origin data only. `Control -[:BELONGS_TO]-> ComplianceArea` and `Asset -[:IN_COMPLIANCE_AREA]->` only exist for `:Catalog`/`:Enterprise`-labeled rows (Phase 3). The 15 legacy per-incident `Control`s (unlabeled, from the original 7-incident pipeline) have no `ComplianceArea` link and are excluded from the coverage score by explicit label filter (`Control:Catalog`, `Asset:Enterprise`) rather than left as an accidental artifact of missing edges — consistent with how the spine already treats every other dual-origin type. Legacy-incident coverage, if wanted later, is a separate follow-up (find or fabricate a second join path), not assumed here.
+
+**What got built**: `api/modules/assurance/repo.ts`'s old `getPosture()` (Requirement/Control/Finding only, no `COVERED_BY`/`ComplianceArea`, dating to the pre-Phase-0 base commit) was replaced with two functions:
+- `getCoverageScore()` — four queries (`REQUIREMENT_COVERAGE_TOTAL`, `ASSET_COVERAGE_TOTAL`, `REQUIREMENT_COVERAGE_BY_AREA`, `ASSET_COVERAGE_BY_AREA`) run in parallel and merged in JS by `complianceAreaId`, rather than one fanned-out query — avoids the row-multiplication that a single `Control`×`Requirement`×`Asset` `OPTIONAL MATCH` chain would produce. Returns total + per-`ComplianceArea` breakdown for both Requirement coverage and Asset coverage, plus `assets.unmappedComplianceArea` as its own field (the 2 `Security`-category assets), not folded into "uncovered."
+- `getRiskRollup()` — `Risk` grouped by `residualRating`, count + avg score per rating, plus an overall count-weighted average.
+- Both exposed via the existing `GET /assurance/posture` route (`api/modules/assurance/index.ts`), now returning `{ coverage, riskRollup }`. Kept in the `assurance` module rather than moved to `catalog` — posture/coverage is an assurance-domain question by the L6 JTBD naming, and no second endpoint was added (YAGNI).
+- `listAttestations()` left untouched — still dormant, blocked on Phase 4b.
+
+Verified live against the running API/Neo4j (not a fully-seeded test instance — the actual dev instance): `requirements: {total: 34, covered: 30, coveragePercent: 88.2}` — the 4 uncovered match the count `control-intelligence`'s `fetchRequirements` already found in Phase 3, a real cross-check, not a coincidence; `assets: {total: 31, covered: 29, unmappedComplianceArea: 2, coveragePercent: 93.5}` — matches the documented Security-category gap exactly; `riskRollup` (Critical: 2 @ avg 19, High: 3 @ avg 15.3, Medium: 2 @ avg 10.5, total 7, avg 15) matches the per-incident likelihood/severity table in `vyra-graph-spine.md`'s `Risk` section exactly. `api` workspace typechecks clean (`tsc --noEmit`).
+
+**UI wired 2026-07-29 (same-day follow-up)**: `ui/src/app/assurance/page.tsx`'s `{/* TODO: evidence, posture, attestations */}` stub replaced with `AssuranceView` (`ui/src/features/assurance/assurance.tsx`), following the existing `landscape.tsx`/`calendar.tsx` feature pattern (single-file component, fetch-on-mount, Tailwind zinc-950 theme) rather than introducing new architecture. Sections: Coverage Score (stat tiles + per-`ComplianceArea` table, `scope` string rendered as a visible caption, `unmappedComplianceArea` surfaced as its own labeled tile), Risk Rollup (rating tiles reusing the existing `BADGE_COLORS` red/orange/amber/emerald convention), Evidence (30 live items, reuses `PropRow` exported from `landscape.tsx` rather than duplicating row-rendering), and an explicit Attestations placeholder ("not yet available — blocked on Phase 4b") instead of a silently empty section. `assurance.posture()` in `ui/src/lib/api.ts` typed against the real response shape (`CoverageScore`/`RiskRollup`) instead of implicit `any`. Added an `/assurance` nav link to `landscape.tsx`, alongside Lifecycle/Traceability/Calendar.
+
+Verified live via headless browser (Playwright): `/assurance` renders all four sections with the same real numbers confirmed above (88.2%/93.5% coverage, risk rollup matching the graph-spine table, 30 evidence items), zero console/page errors, and the new nav link confirmed present and pointing at `/assurance` from the landscape page. `ui` workspace typechecks clean (`tsc --noEmit`).
+
+**Files**: `api/modules/assurance/{repo.ts,index.ts}`, `ui/src/lib/api.ts`, new `ui/src/features/assurance/assurance.tsx`, `ui/src/app/assurance/page.tsx`, `ui/src/features/landscape/landscape.tsx` (nav link).
+
+### Phase 4b — Audit-Ready Export — blocked, needs a scoping decision before any code
+
+`Audit`, `AssuranceStatement`, `Attestation`, `EvidencePackage` are declared in `v2.ts` but have **zero seed data** — nothing in Phases 1–3 feeds the Assurance graph. This was already flagged in `vyra-landscape.md` as a gap Phase 4 does not automatically cover just by existing. Before writing any code here, need an explicit decision: what feeds these nodes (real data source vs. derived from existing `Evidence`/CAPA-closure data vs. deferred), and whether that's in scope for this pass at all. Do not start this without raising it first.
+
+**Explicitly out of scope for Phase 4 entirely**: Scenario Simulation (L7) — needs working agents beyond `control-intelligence`, unscoped, no phase names it yet.
 
 ---
 
@@ -141,6 +179,7 @@ Purely additive once Phases 1–3 exist: aggregation Cypher across catalog + ent
 - Phase 2 ✅: ran `enterprise-sync.ts` dry-run, confirmed exact expected node/edge counts (79 nodes: 12 Organization, 16 Role, 20 Facility, 31 Asset; 47 edges: 16 `BELONGS_TO`, 31 `LOCATED_AT`); ran it live and confirmed via direct query; re-ran `./ingest.sh` and confirmed the pre-existing 7 assets now carry `LOCATED_AT` edges; hit all 3 new `/enterprise/*` routes live.
 - Phase 3 ✅: ran `catalog-sync.ts`/`enterprise-sync.ts` live, confirmed `ComplianceArea` (10), `Control:Catalog` (30), `IN_COMPLIANCE_AREA` (29) counts; ran `backfill-asset-control.ts`, confirmed 101 `COVERED_BY` edges and spot-checked `AST-001` resolves to its 4 real Controls; POSTed test Signals via the live API against both a covered asset (`controlIds`/`requirementIds` populated) and a Security-gap asset (correctly empty), plus an invalid-payload case (clean 400); ran `agents/index.ts control-intelligence` live and confirmed `fetchRequirements` returns 4 real uncontrolled `Requirement`s from Neo4j, with a clean failure (not a hang, not silent) at the Claude call since `ANTHROPIC_API_KEY` isn't configured — the live Claude round-trip itself is deferred to the user, who needs to add that key.
 - Phase 3.5 ✅: ran the updated `convert-catalog-seed.ts`, confirmed exact 60/50 row counts for `tasks.csv`/`schedules.csv`; ran `catalog-sync.ts` live, confirmed `Task:Catalog` (60), `Schedule:Catalog` (50), `Schedule-[:APPLIES_TO]->Task` (50), `Task-[:IMPLEMENTS]->Control` (60) via direct Cypher; hit `GET /catalog/calendar` live and spot-checked occurrence counts per cadence; found and fixed a real bug this way (`Hourly` cadence produced ~24 duplicate dates per day due to `computeWindow`'s day-level granularity); loaded `/calendar` in a real headless browser (Playwright), confirmed correct rendering and drill-down, and confirmed zero console errors post-fix. This verification predates the `a26eb83` matrix-view consolidation (2026-07-29) — the UI has since changed (drill-down → hover) and hasn't been re-run through Playwright.
-- Phase 4: manually query new dashboard endpoints against a fully-seeded test instance and spot-check numbers against known seed data.
+- Phase 4a ✅: hit `GET /assurance/posture` live against the running dev instance; confirmed `requirements.covered` (30/34) cross-checks exactly against the 4 uncovered `Requirement`s Phase 3's agent already found independently; confirmed `assets.unmappedComplianceArea` (2) surfaces the known `Security`-category gap explicitly rather than folding it into "uncovered"; confirmed `riskRollup` matches `vyra-graph-spine.md`'s per-incident risk table exactly (Critical 2/avg 19, High 3/avg 15.3, Medium 2/avg 10.5); `tsc --noEmit` clean on `api/`.
+- Phase 4b: not started — blocked on the scoping decision above.
 
 **Correction from the original plan**: this section originally said "each phase should end with `/dev-audit`." That skill's checks are written for a different project template (`app/module/*/edge/api/`, Koa, `dbv4x`) that doesn't exist in this repo — running it produces false negatives, not real coverage. There is no drop-in substitute gate in this repo today; live-query verification against Neo4j (as done for Phase 0/1 above) is the actual closing check until one exists.

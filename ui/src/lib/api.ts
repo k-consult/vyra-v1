@@ -37,8 +37,30 @@ export const intelligence = {
     reverseTrace: (id: string) => get<any>(`/intelligence/incidents/${id}/reverse-trace`),
 };
 
+export type ComplianceAreaCoverage = {
+    complianceAreaId: string;
+    complianceAreaName: string;
+    controls: number;
+    requirementsCovered: number;
+    assets: number;
+    coveredAssets: number;
+};
+
+export type CoverageScore = {
+    scope: string;
+    requirements: { total: number; covered: number; coveragePercent: number };
+    assets: { total: number; covered: number; unmappedComplianceArea: number; coveragePercent: number };
+    byComplianceArea: ComplianceAreaCoverage[];
+};
+
+export type RiskRollup = {
+    byRating: { rating: string; count: number; avgScore: number }[];
+    totalRisks: number;
+    avgResidualScore: number;
+};
+
 export const assurance = {
-    posture:      () => get('/assurance/posture'),
+    posture:      () => get<{ coverage: CoverageScore; riskRollup: RiskRollup }>('/assurance/posture'),
     attestations: () => get('/assurance/attestations'),
     evidence:     () => get<{ evidence: any[] }>('/assurance/evidence'),
 };
