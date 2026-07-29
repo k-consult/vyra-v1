@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { AlertTriangle, RefreshCw, ShieldCheck, Grid3x3, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { AlertTriangle, RefreshCw, ShieldCheck, CalendarDays, ArrowLeft } from 'lucide-react';
 import { catalog } from '@/lib/api';
-import { DrillDrawer } from '@/features/landscape/landscape';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -17,8 +16,6 @@ export type CalendarTask = {
     occurrences: string[];
 };
 
-type WeekItem = { task: CalendarTask; date: string };
-
 // Same anchor convention as cli/scripts/convert-catalog-seed.ts's parseWeekAnchor —
 // naive 7-day blocks from 2026-01-01, not ISO week numbering.
 export const CALENDAR_YEAR_START = new Date('2026-01-01T00:00:00.000Z').getTime();
@@ -28,16 +25,44 @@ export const TOTAL_WEEKS = 52;
 export const weekNumberOf = (isoDate: string): number =>
     Math.floor((new Date(`${isoDate}T00:00:00.000Z`).getTime() - CALENDAR_YEAR_START) / WEEK_MS) + 1;
 
-const FREQUENCY_COLORS: Record<string, string> = {
-    Hourly:       'bg-fuchsia-900 text-fuchsia-300 border-fuchsia-700',
-    Daily:        'bg-rose-900 text-rose-300 border-rose-700',
-    Weekly:       'bg-sky-900 text-sky-300 border-sky-700',
-    Fortnightly:  'bg-cyan-900 text-cyan-300 border-cyan-700',
-    Monthly:      'bg-emerald-900 text-emerald-300 border-emerald-700',
-    Quarterly:    'bg-amber-900 text-amber-300 border-amber-700',
-    'Half-Yearly':'bg-orange-900 text-orange-300 border-orange-700',
-    Annual:       'bg-violet-900 text-violet-300 border-violet-700',
+// ── Config ─────────────────────────────────────────────────────────────────────
+//
+// Single-hue (blue) ordinal ramp — order encodes recurrence density (frequent →
+// rare), not arbitrary category identity. Validated with the dataviz skill's
+// validate_palette.js against this app's actual dark surface (#09090b, Tailwind
+// zinc-950): `--ordinal --mode dark --surface "#09090b"` — all checks pass
+// (monotone lightness, adjacent ΔL ≥ 0.06, light-end contrast 2.45:1). The two
+// lowest-volume frequencies (Hourly: 1 task, Fortnightly: 1 task) share their
+// nearest neighbor's step rather than each claiming a dedicated one — 8 discrete
+// steps don't fit this ramp's usable dark-mode band (100–600) with a legal gap,
+// per the skill's ordinal spacing rule.
+const FREQUENCY_COLOR: Record<string, string> = {
+    Hourly:        '#cde2fb',
+    Daily:         '#cde2fb',
+    Weekly:        '#9ec5f4',
+    Fortnightly:   '#9ec5f4',
+    Monthly:       '#6da7ec',
+    Quarterly:     '#3987e5',
+    'Half-Yearly': '#256abf',
+    Annual:        '#184f95',
 };
+
+const LEGEND: { label: string; color: string }[] = [
+    { label: 'Hourly / Daily',        color: '#cde2fb' },
+    { label: 'Weekly / Fortnightly',  color: '#9ec5f4' },
+    { label: 'Monthly',               color: '#6da7ec' },
+    { label: 'Quarterly',             color: '#3987e5' },
+    { label: 'Half-Yearly',           color: '#256abf' },
+    { label: 'Annual',                color: '#184f95' },
+];
+
+const WEEKS = Array.from({ length: TOTAL_WEEKS }, (_, i) => i + 1);
+const QUARTER_WEEKS = new Set([13, 26, 39, 52]);
+
+const weekStartOf = (week: number): string =>
+    new Date(CALENDAR_YEAR_START + (week - 1) * WEEK_MS).toISOString().slice(0, 10);
+
+type Hover = { x: number; y: number; task: CalendarTask; week: number; dates: string[] };
 
 // ── Main view ──────────────────────────────────────────────────────────────────
 
@@ -45,7 +70,7 @@ export function CalendarView() {
     const [tasks, setTasks]     = useState<CalendarTask[] | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError]     = useState(false);
-    const [drillTask, setDrillTask] = useState<CalendarTask | null>(null);
+    const [hover, setHover]     = useState<Hover | null>(null);
 
     const load = () => {
         setLoading(true);
@@ -58,19 +83,20 @@ export function CalendarView() {
 
     useEffect(load, []);
 
-    const weeks = useMemo(() => {
-        const buckets: WeekItem[][] = Array.from({ length: TOTAL_WEEKS }, () => []);
+    // taskId -> week -> occurrence dates that week
+    const presence = useMemo(() => {
+        const map = new Map<string, Map<number, string[]>>();
         for (const task of tasks ?? []) {
+            const weekMap = new Map<number, string[]>();
             for (const date of task.occurrences) {
                 const week = weekNumberOf(date);
-                if (week >= 1 && week <= TOTAL_WEEKS) buckets[week - 1].push({ task, date });
+                if (week < 1 || week > TOTAL_WEEKS) continue;
+                (weekMap.get(week) ?? weekMap.set(week, []).get(week)!).push(date);
             }
+            map.set(task.taskId, weekMap);
         }
-        return buckets;
+        return map;
     }, [tasks]);
-
-    const openDrill = useCallback((task: CalendarTask) => setDrillTask(task), []);
-    const closeDrill = useCallback(() => setDrillTask(null), []);
 
     if (loading) {
         return (
@@ -95,13 +121,8 @@ export function CalendarView() {
         );
     }
 
-    const drillItems = drillTask ? [{
-        id: drillTask.taskId,
-        name: drillTask.taskName,
-        control: drillTask.controlName,
-        frequency: drillTask.frequency,
-        occurrences: drillTask.occurrences.join(', '),
-    }] : [];
+    const cellBorder = (week: number) =>
+        QUARTER_WEEKS.has(week) ? 'border-r border-zinc-700' : 'border-r border-zinc-800/50';
 
     return (
         <div className="h-screen flex flex-col overflow-hidden bg-zinc-950 text-zinc-100">
@@ -122,9 +143,6 @@ export function CalendarView() {
                         <button onClick={load} className="p-2 rounded-md hover:bg-zinc-800 transition-colors" title="Refresh">
                             <RefreshCw size={14} className="text-zinc-500" />
                         </button>
-                        <Link href="/calendar/matrix" className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors">
-                            Matrix view (v2)
-                        </Link>
                         <Link href="/" className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-100 transition-colors">
                             <ArrowLeft size={13} /> Landscape
                         </Link>
@@ -132,41 +150,79 @@ export function CalendarView() {
                 </div>
             </header>
 
-            <div className="px-6 py-3 border-b border-zinc-800/60 shrink-0 flex items-center gap-2">
-                <CalendarDays size={11} className="text-zinc-600" />
-                <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
-                    {tasks.length} scheduled tasks · click any task to see its control &amp; full occurrence list
-                </p>
+            {/* ── Info + legend ── */}
+            <div className="px-6 py-2.5 border-b border-zinc-800/60 shrink-0 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <Grid3x3 size={11} className="text-zinc-600" />
+                    <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
+                        {tasks.length} scheduled tasks × 52 weeks · hover a cell for details
+                    </p>
+                </div>
+                <div className="flex items-center gap-4">
+                    <span className="text-[10px] text-zinc-600 uppercase tracking-wider">Frequency</span>
+                    {LEGEND.map(({ label, color }) => (
+                        <div key={label} className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: color }} />
+                            <span className="text-[10px] text-zinc-500">{label}</span>
+                        </div>
+                    ))}
+                </div>
             </div>
 
-            {/* ── Weeks ── */}
-            <div className="flex-1 min-h-0 overflow-auto px-6 py-4 flex flex-col gap-1.5">
-                {weeks.map((items, i) => {
-                    const week = i + 1;
-                    const weekStart = new Date(CALENDAR_YEAR_START + i * WEEK_MS).toISOString().slice(0, 10);
-                    return (
-                        <div key={week} className="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/30 px-4 py-2">
-                            <div className="w-24 shrink-0">
-                                <p className="text-[10px] font-mono text-zinc-600">Week {String(week).padStart(2, '0')}</p>
-                                <p className="text-[10px] text-zinc-600">{weekStart}</p>
-                            </div>
-                            <div className="w-px h-8 bg-zinc-800 shrink-0" />
-                            <div className="flex-1 min-w-0 flex flex-wrap gap-1.5">
-                                {items.length === 0 && <span className="text-[11px] text-zinc-700 italic">—</span>}
-                                {items.map(({ task, date }) => (
-                                    <button
-                                        key={`${task.taskId}-${date}`}
-                                        onClick={() => openDrill(task)}
-                                        className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] transition-opacity hover:opacity-80 ${FREQUENCY_COLORS[task.frequency] ?? 'bg-zinc-800 text-zinc-300 border-zinc-600'}`}
-                                        title={task.controlName}
+            {/* ── Matrix ── */}
+            <div className="flex-1 min-h-0 overflow-auto px-6 py-4">
+                <table className="border-collapse text-[9px]">
+                    <thead>
+                        <tr>
+                            <th className="sticky left-0 top-0 z-20 bg-zinc-950 text-left px-3 py-1.5 border-b border-r border-zinc-700 min-w-[240px] max-w-[240px]">
+                                Task
+                            </th>
+                            {WEEKS.map(week => (
+                                <th
+                                    key={week}
+                                    title={`Week ${week} · ${weekStartOf(week)}`}
+                                    className={`sticky top-0 z-10 bg-zinc-950 text-zinc-500 font-normal py-1.5 border-b border-zinc-700 ${cellBorder(week)} w-[20px]`}
+                                >
+                                    {week}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {tasks.map((task, ti) => {
+                            const weekMap = presence.get(task.taskId) ?? new Map<number, string[]>();
+                            const rowShade = ti % 2 === 0 ? 'bg-zinc-950' : 'bg-zinc-900/30';
+                            return (
+                                <tr key={task.taskId} className="group">
+                                    <td
+                                        title={`${task.controlName} · ${task.frequency}`}
+                                        className={`sticky left-0 z-10 ${rowShade} group-hover:bg-zinc-800 text-zinc-300 px-3 py-1 border-r border-b border-zinc-700 whitespace-nowrap overflow-hidden text-ellipsis max-w-[240px]`}
                                     >
                                         {task.taskName}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    );
-                })}
+                                    </td>
+                                    {WEEKS.map(week => {
+                                        const dates = weekMap.get(week);
+                                        return (
+                                            <td
+                                                key={week}
+                                                className={`${rowShade} group-hover:bg-zinc-800/60 border-b border-zinc-800/50 ${cellBorder(week)} p-0 w-[20px] h-[20px]`}
+                                                onMouseEnter={e => dates && setHover({ x: e.clientX, y: e.clientY, task, week, dates })}
+                                                onMouseLeave={() => setHover(null)}
+                                            >
+                                                {dates && (
+                                                    <div
+                                                        className="w-full h-full rounded-[2px] m-[2px]"
+                                                        style={{ backgroundColor: FREQUENCY_COLOR[task.frequency] ?? '#71717a', width: 'calc(100% - 4px)', height: 'calc(100% - 4px)' }}
+                                                    />
+                                                )}
+                                            </td>
+                                        );
+                                    })}
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
             </div>
 
             {/* ── Footer ── */}
@@ -180,12 +236,17 @@ export function CalendarView() {
                 <p className="text-[10px] text-zinc-700">Compliance. Handled.</p>
             </footer>
 
-            {/* ── Drill drawer ── */}
-            {drillTask && (
-                <>
-                    <div className="fixed inset-0 bg-zinc-950/60 z-40" onClick={closeDrill} />
-                    <DrillDrawer title={drillTask.taskName} items={drillItems} loading={false} onClose={closeDrill} />
-                </>
+            {/* ── Hover tooltip ── */}
+            {hover && (
+                <div
+                    className="fixed z-50 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 shadow-2xl pointer-events-none max-w-xs"
+                    style={{ left: hover.x + 14, top: hover.y + 14 }}
+                >
+                    <p className="text-xs font-semibold text-zinc-100">{hover.task.taskName}</p>
+                    <p className="text-[11px] text-zinc-400 mt-0.5">{hover.task.controlName}</p>
+                    <p className="text-[11px] text-zinc-500 mt-1">Week {hover.week} · {hover.task.frequency}</p>
+                    <p className="text-[10px] text-zinc-600 mt-0.5">{hover.dates.join(', ')}</p>
+                </div>
             )}
         </div>
     );
