@@ -31,11 +31,10 @@
   - [2.1 Domain Overlap & Bridge Nodes](#21-domain-overlap--bridge-nodes)
   - [2.2 The Layered Graph Model](#22-the-layered-graph-model)
   - [2.3 Mapping to the 7-Layer Operating Model](#23-mapping-to-the-7-layer-operating-model)
-- [Part III · How the Graph Is Populated](#part-iii--how-the-graph-is-populated)
-  - [3.1 Two Data Sources, One Graph](#31-two-data-sources-one-graph)
-  - [3.2 Reference vs. Enterprise Data — the dual-origin convention](#32-reference-vs-enterprise-data--the-dual-origin-convention)
-  - [3.3 Live Today vs. Declared-But-Not-Yet-Fed](#33-live-today-vs-declared-but-not-yet-fed)
-  - [3.4 Write Paths — CLI Ingest vs. Live API/Agent Writes](#34-write-paths--cli-ingest-vs-live-apiagent-writes)
+- [Part III · Data Flow & Ownership](#part-iii--data-flow--ownership)
+  - [3.1 What Feeds the Twin](#31-what-feeds-the-twin)
+  - [3.2 Global Catalog vs. Enterprise Catalog](#32-global-catalog-vs-enterprise-catalog)
+  - [3.3 Ownership & Propagation](#33-ownership--propagation)
 - [Part IV · Working with the Graph](#part-iv--working-with-the-graph)
 - [Appendix A · Node Catalog](#appendix-a--node-catalog)
 - [Appendix B · Relationship Catalog](#appendix-b--relationship-catalog)
@@ -151,7 +150,7 @@ graph TB
 
 ## 2.2 The Layered Graph Model
 
-The same five domains as horizontal layers, read top-to-bottom along the operating loop (Knowledge → Operational → Intelligence → Execution → Assurance). Unlike the overlap diagram above — which sketches the conceptual clockwise loop — this view uses the **actual canonical relationship names and directions** from Appendix B (Relationship Catalog), so it doubles as a live schema map. Dashed edges + grey nodes are **declared but not yet fed** (see §3.3).
+The same five domains as horizontal layers, read top-to-bottom along the operating loop (Knowledge → Operational → Intelligence → Execution → Assurance). Unlike the overlap diagram above — which sketches the conceptual clockwise loop — this view uses the **actual canonical relationship names and directions** from Appendix B (Relationship Catalog), so it doubles as a schema map. Dashed edges + grey nodes are part of the designed model but not yet carrying data.
 
 ```mermaid
 graph TB
@@ -243,8 +242,8 @@ graph TB
 
 **Reading the diagram:**
 - **Five bands** = the five graph domains, stacked in operating-loop order.
-- **Solid arrows** = relationships that fire on every ingest / live write today (all names/directions match Appendix B and the Write Paths section, §3.4).
-- **Dashed arrows + grey nodes** = the Assurance chain (`EvidencePackage`/`Attestation`/`AssuranceStatement`) — declared in `v2.ts`, not yet fed (see §3.3).
+- **Solid arrows** = relationships that are live today (all names/directions match Appendix B, including its runtime & derived relationships).
+- **Dashed arrows + grey nodes** = the Assurance chain (`EvidencePackage`/`Attestation`/`AssuranceStatement`) — part of the designed model, not yet carrying data (rollout is tracked in the plan, not here).
 - `Decision -->|ABOUT| Requirement` is drawn to `Requirement` as the representative target, but `ABOUT` is polymorphic (`Decision → *`, whatever `sourceId` resolves to).
 
 ## 2.3 Mapping to the 7-Layer Operating Model
@@ -316,80 +315,174 @@ graph LR
 
 ---
 
-# Part III · How the Graph Is Populated
+# Part III · Data Flow & Ownership
 
-You've seen *what's* in the graph and *how* the domains connect. This part answers where the data comes from, how to tell shared reference data from a specific enterprise's own data, and — crucially — which parts are **live today** versus **declared but not yet built**.
+The twin is not a static picture — it is continuously fed and kept current. This part explains, without implementation detail, **what** kinds of information flow into the graph, **how** the shared global catalog and each enterprise's own data coexist, and **who** owns each part and propagates change. For the concrete entities behind every idea here, see Appendix A.
 
-## 3.1 Two Data Sources, One Graph
+## 3.1 What Feeds the Twin
 
-Vyra's graph is seeded from two independent sources, both loaded into the **same per-enterprise Neo4j database**, plus a third path that writes at runtime:
+Four kinds of information populate the digital twin, each carried in by its own service:
 
-- **Enterprise incident seed** — `Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx` (7 real audit incidents with full context: facilities, assets, vendors, findings, CAPAs, evidence).
-- **Compliance catalog + enterprise-context seed** — `.design/__ref/synthetic-data/data.csv` (an Industrial Parks / Warehouse / 3PL vertical, India + UK). Provides the reusable regulatory **catalog** (`Authority`/`Jurisdiction`/`Regulation`/`Standard`/`Clause`/`Requirement`/`ComplianceArea`/`Control`/`Task`/`Schedule`) and **enterprise context** (`Organization`/`Role`/`Facility`/`Asset`).
-- **Live writes** — `Signal`, `Task`, and `Decision` nodes created at runtime by the API and agent runtime, never from CSV (see §3.4).
+- **Compliance catalog** — the regulatory library: the authorities that issue rules, the regulations and standards they publish, the obligations those break down into, and the controls that satisfy them. A **catalog ingester** brings this in and refreshes it as regulation changes.
+- **Enterprise context** — the organization itself: its business units and roles, its sites and facilities, and the equipment and assets that compliance attaches to. An **enterprise sync** service maps this in.
+- **Incident history** — real audit and incident records that seed the operational and intelligence picture: what was inspected, what failed, what was found, and how it was resolved.
+- **Live operational events** — signals arriving continuously from the floor. An **events sink** ingests each one and derives the follow-up work it implies.
 
-The two CSV paths run as separate jobs — `cli/orchestration/catalog-sync.ts` for catalog data and `cli/orchestration/enterprise-sync.ts` for enterprise data — both reusing the same compiler → projection → LOAD CSV machinery as the original incident pipeline. Full file-by-file feed listing is in Appendix C; the source-to-graph column mapping is in Appendix E.
+The **application layer** (these services and agents) sits on top and writes into the **connected graph** underneath — one graph per enterprise:
 
-## 3.2 Reference vs. Enterprise Data — the dual-origin convention
+```mermaid
+graph TB
+    classDef src    fill:#f5f5f4,stroke:#78716c,color:#292524;
+    classDef svc    fill:#faf5ff,stroke:#7c3aed,color:#3b0764,stroke-width:1.5px;
+    classDef know   fill:#eef2ff,stroke:#4f46e5,color:#1e1b4b;
+    classDef oper   fill:#ecfeff,stroke:#0891b2,color:#083344;
+    classDef intel  fill:#fef2f2,stroke:#dc2626,color:#450a0a;
+    classDef exec   fill:#fefce8,stroke:#ca8a04,color:#422006;
+    classDef assure fill:#f0fdf4,stroke:#16a34a,color:#052e16;
 
-Two kinds of data coexist in one graph and must stay distinguishable:
+    subgraph SRC["SOURCES"]
+        direction LR
+        S1[Regulators /<br/>global catalog]:::src
+        S2[Enterprise records]:::src
+        S3[Floor / IoT signals]:::src
+    end
 
-- **Reference (catalog) data** — the shared, centrally-maintained regulatory library, identical for every customer. Carries a **`:Catalog`** label (e.g. `(:Regulation:Catalog)`), written by `catalog-sync.ts`.
-- **Enterprise data** — a specific organization's own context and history. Carries an **`:Enterprise`** label (e.g. `(:Asset:Enterprise)`), written by `enterprise-sync.ts` — or, for the original 7-incident seed, no extra label at all.
+    subgraph APP["APPLICATION LAYER · services and agents"]
+        direction LR
+        SVC1[Catalog ingester]:::svc
+        SVC2[Enterprise sync]:::svc
+        SVC3[Events sink]:::svc
+        SVC4[Agent runtime]:::svc
+    end
 
-Because a label is **structural** (a Cypher pattern can match on it), scoping is reliable and can't be forgotten the way a property flag would: `MATCH (n:Regulation:Catalog)` returns only the 11 catalog regulations, not the 16 unlabeled ones the original incident pipeline seeded.
+    subgraph GRAPH["CONNECTED GRAPH · one per enterprise"]
+        direction LR
+        GK[📘 Knowledge]:::know
+        GO[🏭 Operational]:::oper
+        GI[🔍 Intelligence]:::intel
+        GE[⚙️ Execution]:::exec
+        GA[✅ Assurance]:::assure
+    end
 
-Several node types are **dual-origin** — the same domain label appears both with and without an origin tag, in separate, non-colliding ID spaces:
+    S1 --> SVC1
+    S2 --> SVC2
+    S3 --> SVC3
 
-| Node | Unlabeled (incident seed) | Catalog / Enterprise |
-|---|---|---|
-| `Regulation` | 16 (unlabeled) | 11 `:Catalog` |
-| `Control` | 15 (unlabeled, `CTL-*`, per-incident) | 30 `:Catalog` (`CTRL-*`, reusable) |
-| `Task` | 24 (unlabeled) + ad-hoc signal-driven `TSK-SIG-*` | 60 `:Catalog` (`TSK-*`) |
-| `Facility` | 7 (unlabeled, `FAC-*`) | 20 `:Enterprise` (`LOC-*`) |
-| `Asset` | 7 (unlabeled, `FSD-*` etc.) | 31 `:Enterprise` (`AST-*`) |
+    SVC1 --> GK
+    SVC2 --> GO
+    SVC3 --> GO
+    SVC3 --> GE
+    SVC4 --> GI
 
-The distinct ID prefixes (`FAC-*`/`LOC-*`, incident-asset IDs/`AST-*`, `CTL-*`/`CTRL-*`) guarantee the two batches coexist without collision.
+    GK -.- GO -.- GI -.- GE -.- GA
+```
 
-**Known follow-up:** the 16 legacy `Regulation` nodes seeded before the catalog sync existed are still **unlabeled** — neither `:Catalog` nor `:Enterprise`. Relabeling already-committed data is a deliberate, not-yet-taken decision.
+**Reading the diagram:** top-to-bottom = sources → the services that ingest them → the sub-graph each writes into. The dotted line across the bottom is the **connected graph** itself — the sub-graphs are joined by relationships, which is what carries a change in one across to the others (§3.3).
 
-## 3.3 Live Today vs. Declared-But-Not-Yet-Fed
+*(For the exact entities and attributes behind each of these, see [Appendix A · Node Catalog](#appendix-a--node-catalog).)*
 
-Not every node/relationship the semantic contract (`v2.ts`) declares actually has data behind it. This section is the honest ledger of what's real. *(Parenthetical build-phase references trace to the history in Appendix F.)*
+## 3.2 Global Catalog vs. Enterprise Catalog
 
-`v2.ts` declares 33 node types across the five graphs. **24 now have a live feed:** the original 13 (`ingest-hints.json`'s `feedMap`) plus `Jurisdiction`, `Authority`, `Standard`, `Clause`, `Requirement`, `ComplianceArea`, `Schedule` (`cli/domains/catalog/ingest-hints.json`, loaded by `catalog-sync.ts` — `Task`/`Control` already had live feeds and just gained a second, dual-origin batch each), plus `Organization`, `Role` (`cli/domains/enterprise/ingest-hints.json`, loaded by `enterprise-sync.ts`). `Signal` and `Decision` are fed too, but never via CSV — see §3.4.
+Two catalogs coexist in every deployment:
 
-The rest — `Policy`, `Program`, `Workflow`, `EvidencePackage`, `Attestation`, `AssuranceStatement`, `Audit`, `Exception`, `Person` — have **no seed data yet**. Their relationships are declared in `v2.ts` but never fire today, since `cli/runtime/repo.ts`'s edge loader does `MATCH` (not `MERGE`) on both endpoints — no target node, no edge:
+- The **global compliance catalog** — centrally maintained by Vyra, identical for every customer: the authoritative, versioned library of regulations, standards, obligations, and reusable controls. When a regulator publishes a revision, the global catalog changes once, centrally.
+- Each tenant's **enterprise catalog** — that organization's own context and history: its structure, sites, assets, incidents, and the compliance work it has performed.
 
-| Relationship | From → To | Blocker |
-|---|---|---|
-| `PART_OF` | Task → Workflow, Workflow → Program | `Workflow`/`Program` unseeded |
-| `BACKED_BY` | Attestation → EvidencePackage | Assurance graph unseeded |
-| `DERIVED_FROM` | AssuranceStatement → Attestation | Assurance graph unseeded |
-| `WAIVES` | Exception → Requirement | `Exception` unseeded |
-| `HAS_ROLE` | Person → Role | blocked on an identity source — no `Person` seed data exists in either dataset (`.design/__ref/entity-alignment.md` §4) |
-| `WORKS_AT` | Person → Facility | same blocker as `HAS_ROLE` |
+Both live in the **same enterprise graph**, told apart structurally by a **label** — global-catalog entities carry `:Catalog`, enterprise entities carry `:Enterprise`. Because the distinction is a label rather than a hidden attribute, any question can scope cleanly to one or the other, and the *same kind of thing* — a regulation, a control — can exist in both a shared and an enterprise-specific form without clashing.
 
-`api/modules/execution/repo.ts`'s `listTasks(workflowId)` is already written against `PART_OF`, so it'll start returning data the moment `Workflow` is seeded — no query rewrite needed. `api/modules/knowledge/repo.ts`'s `traceForward`/`traceReverse` and `api/modules/catalog/repo.ts`'s `traceRequirements` are **live now** — `BELONGS_TO`/`DEFINED_BY`/`IN_JURISDICTION`/`ISSUED_BY`/`OPERATES_IN` became live once the catalog sync seeded their target types. `LOCATED_AT` (Asset → Facility) and `BELONGS_TO` (Role → Organization) went live with Enterprise Context. `EMITTED_BY` (Signal → Asset) is live via the API write path, not CLI (see §3.4). `APPLIES_TO` (Schedule → Task) and `IMPLEMENTS` (Task → Control) went live with the compliance calendar work.
+Keeping the two in step is the job of **intermediary sync services**: they propagate the central global catalog down into each enterprise graph on a cadence, so every tenant reasons against current regulation while its own enterprise data stays untouched. Vyra runs **one graph per enterprise**, not a shared multi-tenant graph — the global catalog is *synced into* each, never queried across a boundary.
 
-## 3.4 Write Paths — CLI Ingest vs. Live API/Agent Writes
+```mermaid
+graph TB
+    classDef central fill:#ede9fe,stroke:#6d28d9,color:#3b0764,stroke-width:2px;
+    classDef sync    fill:#fff7ed,stroke:#ea580c,color:#7c2d12,stroke-width:1.5px;
+    classDef cat     fill:#eef2ff,stroke:#4f46e5,color:#1e1b4b;
+    classDef ent     fill:#ecfeff,stroke:#0891b2,color:#083344;
 
-Most of the graph is loaded by the **CLI ingest pipeline** (CSV → compiler → projection → `LOAD CSV`). But three write paths exist entirely **outside** it, writing raw Cypher `MERGE`s directly via `lib/graph-db`. None are declared as `rels` in `v2.ts` (that field only drives CSV-embedded-FK compilation):
+    GC[🌐 Global Compliance Catalog<br/>central · versioned · maintained by Vyra]:::central
+    GC ==> SYNC[Sync service · periodic propagation]:::sync
 
-| Relationship | From → To | Written by |
-|---|---|---|
-| `EMITTED_BY` | Signal → Asset | `api/modules/operational/repo.ts`'s `createSignal`, via `POST /operational/signals` |
-| `HAS_TASK` | Signal → Task | same — reuses the `HAS_TASK` name already used for `Incident → Task`; safe since this is raw Cypher, not CLI-projected |
-| `COVERED_BY` | Asset → Control | `cli/scripts/backfill-asset-control.ts` — a one-time, idempotent (`MERGE`) derived join through the shared `ComplianceArea`, rerun manually after any `catalog-sync`/`enterprise-sync` |
-| `ABOUT` | Decision → * (polymorphic, whatever `sourceId` resolves to) | `agents/tools/graph-write.ts`'s `writeDecision`, called by `agents/agents/control-intelligence/index.ts` — the first functioning agent, Autonomy Level 1 (recommend only) |
+    subgraph E1["ENTERPRISE A · one graph"]
+        direction LR
+        A_C["Catalog nodes<br/>(:Catalog) — synced library"]:::cat
+        A_E["Enterprise nodes<br/>(:Enterprise) — own context + history"]:::ent
+        A_C --- A_E
+    end
 
-`createSignal` auto-creates a `Task` in the same round trip: it resolves `Control`/`Requirement` coverage via `Asset -[:COVERED_BY]-> Control -[:IMPLEMENTS]-> Requirement` (collected as `Task.controlIds`/`requirementIds` arrays — an Asset can match multiple Controls under one `ComplianceArea`), and the responsible person via `Facility <-[:WORKS_AT]- Person` (falls back to `'UNKNOWN'`, since `Person` is still unfed).
+    subgraph E2["ENTERPRISE B · one graph"]
+        direction LR
+        B_C["Catalog nodes<br/>(:Catalog) — synced library"]:::cat
+        B_E["Enterprise nodes<br/>(:Enterprise) — own context + history"]:::ent
+        B_C --- B_E
+    end
+
+    SYNC --> A_C
+    SYNC --> B_C
+```
+
+**Reading the diagram:** one central catalog is maintained once and **synced down** into every enterprise's own graph, updating only the `:Catalog` side. Each tenant's `:Enterprise` data is never touched by the sync and never leaves its own graph — the two simply coexist, joined by relationships, inside one boundary per enterprise.
+
+## 3.3 Ownership & Propagation
+
+Each sub-graph has a clear owner — the service or agent responsible for authoring it — and a change made by one owner flows to the others *through the shared graph*, never by writing into another's territory:
+
+- The **catalog ingester** owns the Knowledge sub-graph (regulations → obligations → controls). When a regulation is revised, the change lands here, and everything downstream now reads against the new version.
+- The **enterprise sync** owns enterprise context (organization, roles, facilities, assets) and the links that place each asset under the controls that apply to it.
+- The **events sink** owns the live operational sub-graph. When a signal arrives against an asset, it resolves which controls and obligations already cover that asset and derives the follow-up task automatically — the operating loop advancing on its own, one hop at a time.
+- **Agents** own their own contributions: they reason over the graph and record a recommendation as a first-class node, under human-approval autonomy — proposing, never silently rewriting what another owner authored.
+
+```mermaid
+graph LR
+    classDef svc    fill:#faf5ff,stroke:#7c3aed,color:#3b0764,stroke-width:1.5px;
+    classDef know   fill:#eef2ff,stroke:#4f46e5,color:#1e1b4b;
+    classDef oper   fill:#ecfeff,stroke:#0891b2,color:#083344;
+    classDef intel  fill:#fef2f2,stroke:#dc2626,color:#450a0a;
+    classDef exec   fill:#fefce8,stroke:#ca8a04,color:#422006;
+    classDef assure fill:#f0fdf4,stroke:#16a34a,color:#052e16;
+
+    CI[Catalog ingester]:::svc == owns ==> K[📘 Knowledge]:::know
+    ES[Enterprise sync]:::svc == owns ==> O[🏭 Operational]:::oper
+    EV[Events sink]:::svc == owns ==> O
+    AG[Agent runtime]:::svc == owns ==> I[🔍 Intelligence]:::intel
+
+    K -->|applies to| O
+    O -->|surfaces| I
+    I -->|drives| E[⚙️ Execution]:::exec
+    E -->|proves| A[✅ Assurance]:::assure
+    EV -->|derives work| E
+```
+
+**Reading the diagram:** the **thick "owns" arrows** show who authors each sub-graph; the **thin arrows** are how a change propagates *through the shared graph* — no owner writes into another's territory.
+
+The through-line: a regulation change, an incident, a signal, an agent's recommendation each land in their **own** sub-graph, and the **relationships between sub-graphs** carry the consequence forward. That is exactly what makes the twin traceable end to end — and what Part IV shows you how to walk.
 
 ---
 
 # Part IV · Working with the Graph
 
-The compliance loop from §1.2, expressed as query patterns. These are the canonical traversals the API is built on.
+Every compliance question is a **walk along the traceability chain** — the operating loop from §1.2, followed in one direction or the other. Read left to right, you go **forward**: from a regulation, down to the evidence that proves it. Read right to left, you go **reverse**: from a finding or a piece of evidence, back to the obligation and regulation it answers to.
+
+```mermaid
+graph LR
+    classDef k fill:#eef2ff,stroke:#4f46e5,color:#1e1b4b;
+    classDef o fill:#ecfeff,stroke:#0891b2,color:#083344;
+    classDef i fill:#fef2f2,stroke:#dc2626,color:#450a0a;
+    classDef e fill:#fefce8,stroke:#ca8a04,color:#422006;
+    classDef a fill:#f0fdf4,stroke:#16a34a,color:#052e16;
+
+    REG[Regulation]:::k --> REQ[Requirement]:::k --> CTL[Control]:::k
+    CTL --> AST[Asset]:::o --> INC[Incident]:::o --> FND[Finding]:::i
+    FND --> RSK[Risk]:::i
+    FND --> CAPA[CAPA]:::e --> VER[Verification]:::e --> EVD[Evidence]:::a
+```
+
+- **Forward** (`Regulation → … → Evidence`): *"What do we do about this rule, and can we prove it?"*
+- **Reverse** (`Finding → … → Regulation`): *"Which obligation does this failure implicate?"*
+- **Sideways**: the same chain answers posture questions — asset risk, vendor exposure, CAPA closure rate — by pivoting at any node.
+
+Every named query below is one of these walks. The rest of this part is a **developer reference**: the exact Cypher the API is built on.
+
+## Sample Queries (developer reference)
 
 ### Forward Traceability — Regulation to Evidence
 *"Show me everything under OSHA"*
@@ -562,7 +655,7 @@ Compliance activities that must be performed to maintain or restore compliance.
 | controlId | string | `CTRL-001` (`:Catalog` rows only) — FK to Control, singular (one Task template implements exactly one Control, per `09_Task_Master`'s `Control ID` column) |
 | status | string | `closed` / `open` |
 
-**Signal-driven Tasks** are created live by `api/modules/operational/repo.ts`'s `createSignal`, not the CLI pipeline — see §3.4.
+**Signal-driven Tasks** are created live by the events sink when a signal arrives, not by the batch ingest — see §3.3.
 
 **24 tasks** (legacy enterprise pipeline, unlabeled, across 7 incidents) **+ 60 tasks** (`TSK-0001`–`TSK-0060`, `:Catalog` label, from `09_Task_Master` — kept thin per `entity-alignment.md`'s warning not to ingest that 39-column rollup as-is) — same dual-origin coexistence pattern as `Regulation`/`Control`. Plus signal-driven `TSK-SIG-*` rows, unlabeled, created ad hoc.
 
@@ -613,7 +706,7 @@ Cadence for a `Task` (`Schedule -[:APPLIES_TO]-> Task`, `:Catalog`) — correcte
 | anchorDate | string | `2026-01-01` |
 | taskId | string | FK to Task |
 
-**50 schedules** (`SCH-TSK-0001`–..., `:Catalog` label), from the 50 of 60 `13_Schedule_Rules` rows where `Schedule Type = Fixed`. The other 10 (`Condition Based`/`Event Based`/`Sensor Triggered`/`Risk Triggered`/`AI Triggered`) are event-driven, not periodic — they get a `Task` but no `Schedule`, and are correctly served by the Signal→Task path (§3.4) instead.
+**50 schedules** (`SCH-TSK-0001`–..., `:Catalog` label), from the 50 of 60 `13_Schedule_Rules` rows where `Schedule Type = Fixed`. The other 10 (`Condition Based`/`Event Based`/`Sensor Triggered`/`Risk Triggered`/`AI Triggered`) are event-driven, not periodic — they get a `Task` but no `Schedule`, and are correctly served by the Signal→Task path (§3.3) instead.
 
 `Frequency` (`13_Schedule_Rules`, qualitative) maps to `cadenceUnit`/`cadenceInterval` via a fixed lookup table in `cli/scripts/convert-catalog-seed.ts` (`Hourly`→hour/1, `Daily`→day/1, `Weekly`→week/1, `Fortnightly`→week/2, `Monthly`→month/1, `Quarterly`→month/3, `Half-Yearly`→month/6, `Annual`→month/12) — a direct translation of the label, not fabricated data. `anchorDate` resolves `"Week NN"` as `2026-01-01 + 7×(NN−1)` days (naive 7-day blocks, not ISO week numbering). `api/modules/catalog/repo.ts`'s `computeWindow({cadenceUnit, cadenceInterval, anchorDate}, horizonWeeks)` expands a cadence into occurrence dates (deduped — sub-day cadences like `hour` step faster than this function's day-level granularity) and backs `GET /catalog/calendar`, joined with `Task`/`Control` for the UI's 52-week calendar (`ui/src/features/calendar/calendar.tsx`).
 
@@ -735,7 +828,7 @@ A job function within an `Organization` (`:Enterprise`).
 ---
 
 ### `Person` — declared, not fed
-Named individual holding a `Role` and working at a `Facility` (`:Enterprise`). Props: `email`, `roleId`, `facilityId`. No seed data anywhere in either source dataset — `.design/__ref/entity-alignment.md` confirms the second dataset has role titles but no named individuals. `Incident.capturedBy`/`reviewedBy`/`Task.owner` stay free-text strings until an identity source exists. See §3.3.
+Named individual holding a `Role` and working at a `Facility` (`:Enterprise`). Props: `email`, `roleId`, `facilityId`. The model provides for it (`HAS_ROLE → Role`, `WORKS_AT → Facility`), awaiting an identity source; until then `Incident.capturedBy`/`reviewedBy`/`Task.owner` stay free-text strings.
 
 ---
 
@@ -768,7 +861,7 @@ A live operational event against an `Asset` — the first node type written enti
 | assetId | string | FK to Asset |
 | status | string | `new` |
 
-No CSV feed — written live via `POST /operational/signals`. See §3.4.
+No CSV feed — written live by the events sink when a signal arrives. See §3.3.
 
 ---
 
@@ -851,7 +944,7 @@ An agent's recommendation (first real agent). Autonomy Level 1 — proposes only
 | status | string | `pending` |
 | decidedAt | datetime | |
 
-No CSV feed — written live by `agents/tools/graph-write.ts`'s `writeDecision`. See §3.4.
+No CSV feed — recorded live by the agent runtime when an agent reasons. See §3.3.
 
 ---
 
@@ -876,7 +969,7 @@ Artifacts collected during the incident/audit that prove compliance activities.
 
 # Appendix B · Relationship Catalog
 
-All relationships below are **live** — they are written by every `./ingest.sh` run (either via `ingest-hints.json`'s dedicated edge CSVs or a `sourceField` FK embedded in a node's own CSV row, see `cli/compiler/index.ts`) and are the relationships the API (`api/modules/*/repo.ts`) actually queries. (For relationships *declared but not yet firing*, see §3.3; for relationships written outside the CLI pipeline, see §3.4.)
+All relationships below are **live** and are the relationships the API actually queries. The first group is written by the batch ingest; the **Runtime & derived relationships** group at the end is authored at runtime or by a derived join (see §3.3 for who owns them).
 
 ### Knowledge Graph
 | Relationship | From → To | Meaning |
@@ -924,6 +1017,24 @@ All relationships below are **live** — they are written by every `./ingest.sh`
 | Relationship | From → To | Meaning |
 |---|---|---|
 | `PRODUCED_BY` | Evidence → Task | Evidence was generated by this task |
+
+### Runtime & derived relationships
+Authored at runtime (by the events sink or the agent runtime) or by a derived join, rather than by the batch ingest — see §3.3.
+
+| Relationship | From → To | Meaning |
+|---|---|---|
+| `EMITTED_BY` | Signal → Asset | Links a live operational signal to the asset that raised it |
+| `HAS_TASK` | Signal → Task | Follow-up work derived from a signal (reuses the `HAS_TASK` name used for `Incident → Task`) |
+| `COVERED_BY` | Asset → Control | Asset falls under a control, derived through the shared `ComplianceArea` |
+| `ABOUT` | Decision → * | An agent recommendation about some entity (polymorphic target — whatever the decision concerns) |
+
+### Designed, not yet active
+Part of the designed model, awaiting the entities they connect — they carry no data today.
+
+| Relationship | From → To | Meaning |
+|---|---|---|
+| `PART_OF` | Task → Workflow, Workflow → Program | Places a task within its workflow, and a workflow within its program |
+| `WAIVES` | Exception → Requirement | Records a formal exception that waives a requirement |
 
 ---
 
@@ -1090,4 +1201,4 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 | 2026-07-23 | Relocated from `.design/graph.md`, renamed in the 3-doc consolidation (`vyra-landscape.md` / `vyra-graph-spine.md` / `vyra-implementation-plan.md`) — no content changed in the move. |
 | 2026-07-25 | Extended with Enterprise Context (`Organization`/`Role`/`Facility`/`Asset` + `:Enterprise` convention, `LOCATED_AT`). |
 | 2026-07-26 | Extended with Live Operational Context + the first real agent (`Signal`, `Decision`, `COVERED_BY`, live write paths), and the 52-Week Compliance Calendar (`Task`/`Schedule` catalog batch, `APPLIES_TO`, `IMPLEMENTS`). |
-| 2026-08-08 | Restructured into narrative Parts (Orientation → Conceptual Model → How the Graph Is Populated → Working with the Graph) + reference Appendices A–F, for standalone stakeholder reading. Added the Layered Graph Model and 7-Layer mapping diagrams. **No schema facts changed.** |
+| 2026-08-08 | Restructured into narrative Parts (Orientation → Conceptual Model → Data Flow & Ownership → Working with the Graph) + reference Appendices A–F, for standalone stakeholder reading. Added the Layered Graph Model, 7-Layer mapping, and traceability-flow diagrams. Raised Part III to a conceptual data-flow/ownership view (implementation and build-status detail moved to the plan/appendices). **No schema facts changed.** |
