@@ -27,7 +27,7 @@ This plan covers **design and sequencing**, one phase at a time. **Phases 0, 0.5
 
 ## Task Brief — What's Pending (short form)
 
-One line per JTBD layer (`vyra-landscape.md`'s L1–L7 table), for a quick "what's pending" answer without re-reading the full plan. **Update this whenever a phase materially changes a layer's status** — it will drift otherwise.
+One line per JTBD layer (the 7-layer model defined in `vyra-landscape.md`; the fuller status-with-backing view lives in `vyra-tracker.md`), for a quick "what's pending" answer without re-reading the full plan. **Update this whenever a phase materially changes a layer's status** — it, and `vyra-tracker.md`, will drift otherwise.
 
 - **L1 Knowledge** — Regulations/Standards live; Contracts unscoped, SOPs still folded into `Control` (not a distinct catalog item)
 - **L2 Interpret** — Requirement→Control→Asset chain live; 2 Security-category assets still unmapped (documented gap)

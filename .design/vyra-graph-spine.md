@@ -18,7 +18,7 @@
 | **Part IV** | Working with the graph | Query and traversal patterns. |
 | **Appendices A–F** | Reference | Every node, every relationship, feeds, constraints, lineage, and document history. |
 
-> Optional companion: `vyra-landscape.md` gives the business-value / operating-model view. This document stands on its own — you don't need it to understand the graph.
+> Optional companions: `vyra-landscape.md` gives the business-value / operating-model view; `vyra-architecture.md` shows the software layers and components built *around* this graph (how the API, agents, ingestion, and UI read and write it). This document stands on its own — you don't need either to understand the graph.
 
 ---
 
