@@ -29,7 +29,7 @@ class API {
     }
 
     async start() {
-        this.fastify.listen({ port: config.app.port }, (err: any, address: any) => {
+        this.fastify.listen({ port: config.app.port, host: '0.0.0.0' }, (err: any, address: any) => {
             if (err) { log.error('Failed to start API', err); process.exit(1); }
             log.info(`API running on ${address}`);
         });

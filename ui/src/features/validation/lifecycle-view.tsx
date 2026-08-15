@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, AlertTriangle, XCircle, ChevronRight } from 'lucide-react';
 import { operational } from '@/lib/api';
-import { PropRow, NodeCard, NodeList, CoverageSummary } from './display';
+import { NodeList, CoverageSummary } from './display';
 
 // ── State types ────────────────────────────────────────────────────────────────
 

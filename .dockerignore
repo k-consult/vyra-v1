@@ -1,0 +1,15 @@
+node_modules
+**/node_modules
+**/dist
+**/.next
+logs
+*.log
+.git
+.env
+.env.local
+cli/neo4j-import
+cli/cypher
+cli/out
+.DS_Store
+**/.DS_Store
+.vscode
