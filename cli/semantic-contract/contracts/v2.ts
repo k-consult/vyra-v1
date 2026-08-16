@@ -287,7 +287,7 @@ export const v2: Contract = {
         Person: {
             label: 'Person',
             graph: Graph.Operational,
-            props: { ...baseProps, email: 'email', roleId: 'roleId', facilityId: 'facilityId' },
+            props: { ...baseProps, email: 'email', roleId: 'roleId', roleTitle: 'roleTitle', facilityId: 'facilityId' },
             axes: [Axis.Enterprise],
             rels: [
                 { type: 'HAS_ROLE', targetLabel: 'Role', sourceField: 'roleId' },

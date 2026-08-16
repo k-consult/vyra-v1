@@ -21,7 +21,7 @@ An early audit found the codebase was earlier-stage than the docs suggested at t
 
 **Second data source:** `.design/__ref/entity-alignment.md` maps `.design/__ref/synthetic-data/data.csv` (a second, independent enterprise seed — Industrial Parks/Warehouse/3PL vertical, entity extraction in `.design/__ref/consolidated-entities.md`) against this plan. It was largely confirmatory for Phase 1 and partially for Phase 2 (Role/Organization/Location present in the source, Person/Identity still missing), surfaced two net-new domain concepts with no current home (`InsuranceClause`, `ComplianceArea`), and flagged a second relationship-vocabulary set — reconciled together with Phase 0's fix.
 
-This plan covers **design and sequencing**, one phase at a time. **Phases 0, 0.5, 1, 2, 3, 3.5, 4a, 4b, and 5 are done** (4b on synthetic seed data — see its section below).
+This plan covers **design and sequencing**, one phase at a time. **Phases 0, 0.5, 1, 2, 3, 3.5, 4a, 4b, 5, and 6 are done** (4b on synthetic seed data — see its section below).
 
 ---
 
@@ -31,7 +31,7 @@ One line per JTBD layer (the 7-layer model defined in `vyra-landscape.md`; the f
 
 - **L1 Knowledge** — Regulations/Standards live; Contracts unscoped, SOPs still folded into `Control` (not a distinct catalog item)
 - **L2 Interpret** — Requirement→Control→Asset chain live; 2 Security-category assets still unmapped (documented gap)
-- **L3 Planning** — 52-week calendar + Org/Role live; `Person` (named individuals) unfed, task-completion tracking not built
+- **L3 Planning** — 52-week calendar + Org/Role/`Person` all live (Phase 6 fed `Person` from free-text names already in the data); `HAS_ROLE` still unfired (no real Role match, documented gap), task-completion tracking not built
 - **L4 Graph Spine** — complete (it's the infrastructure itself; "Review" = Autonomy Level 1 human-approval gate)
 - **L5 Oversight** — Signal + `control-intelligence` + `signal-intelligence` all live (Phase 5) — Signals are now watched for deviations; Escalation Paths still free text, not graph-modeled
 - **L6 Assurance** — Coverage Scoring done (Phase 4a); Audit-Ready Export done on synthetic seed data (Phase 4b) — a real audit-trail source is still needed to replace the fabricated `Audit`/`EvidencePackage`/`Attestation`/`AssuranceStatement` chain
@@ -201,6 +201,26 @@ The second of the original 4 planned agent families (`control-intelligence`, `ri
 Verified live against the graph's 2 real test `Signal`s (`SIG-TEST-001` fire-alarm-trip on a covered asset, `SIG-TEST-002` unauthorized-access on a `Security`-category coverage-gap asset, both from Phase 3's verification): both produced real, distinct `llama3.1:8b` rationale — the fire-alarm one flagged the missing `source` field and pointed at the auto-scheduled task for context; the unauthorized-access one correctly read it as a potential security breach needing escalation. Re-ran the agent a second time and confirmed it observed 0 signals — the `NOT (:Decision)-[:ABOUT]->(s)` filter makes it idempotent, matching `control-intelligence`'s already-established behavior.
 
 **Files**: `agents/tools/graph-read.ts`, new `agents/agents/signal-intelligence/index.ts`, `agents/index.ts`.
+
+---
+
+## Phase 6 — Person Identity Backfill (L3 Location + Role Assign) ✅ DONE (2026-08-16)
+
+`Person` was declared in `v2.ts` since Phase 2 (`HAS_ROLE → Role`, `WORKS_AT → Facility`) but never fed — no identity source exists in either seed dataset. This phase closes that gap without a new identity source: the 7 real names already sit as free text across the legacy dataset (`Incident.capturedBy`/`reviewedBy`, `CAPA.owner`, `Verification.verifiedBy`, `Risk.owner`, `Task.owner`, all shaped `"Name - Title"`) — extracting and deduping them into first-class `Person` nodes needed no new data, just a script.
+
+**Two real findings changed the design from the original "just feed the declared FKs" plan:**
+- **No single "home facility" is supported by the data.** Every one of the 7 people appears at 2–4 different facilities with exactly equal frequency (verified directly — no facility repeats for any person). Picking one via the declared single-valued `facilityId` embedded FK would have been an arbitrary, ungrounded pick. Modeled `WORKS_AT` as many-valued instead, via a new `cli/feeds/csv/edges/person_facility.csv` (14 rows) — same edges-CSV mechanism Phase 4b used for `COVERS`. `people.csv`'s `facilityId` column is left blank on purpose.
+- **No real `Role` match exists.** The 7 people's actual job titles (`QA Executive`, `Corporate EHS`, `QA Director`, `Facility Engineer`, `Compliance Manager`, `Operations Director`, `Compliance Lead`) come from the legacy biotech/pharma/food-safety dataset; the 16 seeded `Role` rows come from the Industrial Parks/Warehouse/3PL dataset — different verticals, zero overlap. Forcing a match would be a guess. Added a new `roleTitle` prop to `Person` in `v2.ts` to preserve the real text instead of silently discarding it; `roleId`/`HAS_ROLE` stay unpopulated, a documented gap (same treatment as the `Security`-category `ComplianceArea` gap).
+
+**What got built**: new `cli/scripts/generate-person-seed.ts` (mirrors `generate-assurance-seed.ts`'s pattern) writes `cli/feeds/csv/operational/people.csv` (7 rows) and `cli/feeds/csv/edges/person_facility.csv` (14 rows); both wired into `cli/domains/grc/ingest-hints.json`.
+
+**Real bug found and fixed as a direct consequence**: `api/modules/operational/repo.ts`'s `createSignal` (Phase 3) already read `Asset -[:LOCATED_AT]-> Facility <-[:WORKS_AT]- Person` to resolve a signal-driven Task's owner, but the query never handled more than one `Person` per facility — with `WORKS_AT` now genuinely many-valued and multiple facilities shared by 2 people each (e.g. `FAC-1002`: Priya Nair and Karthik Iyer), the match was non-deterministic. Added `WITH s, a, person ORDER BY person.id LIMIT 1` to collapse it to one deterministic pick before the Task is written.
+
+Verified live: `generate-person-seed.ts` produced exactly 7/14 rows; `./ingest.sh` confirmed `Person: 7`, `WORKS_AT: 14` via direct Cypher; POSTed a real signal against `FSD-BLR-WH-B-447` (`FAC-1002`, which has 2 `WORKS_AT` people) — before the `ORDER BY` fix + API restart it returned `"Priya Nair"` (whichever order Neo4j happened to return), after it deterministically returned `"Karthik Iyer"` (lower `person.id`) on every repeat call — confirming both that the fallback-to-`'UNKNOWN'` path Phase 3 left in place is now resolving to a real name, and that the fix made it reproducible rather than order-dependent. `tsc --noEmit` clean on `api/`.
+
+**Files**: `cli/semantic-contract/contracts/v2.ts`, `cli/domains/grc/ingest-hints.json`, new `cli/scripts/generate-person-seed.ts`, new `cli/feeds/csv/operational/people.csv`, new `cli/feeds/csv/edges/person_facility.csv`, `api/modules/operational/repo.ts`.
+
+**UI + API wired same day**: `GET /operational/people` (new `listPeople()` in `api/modules/operational/repo.ts`) exposes `Person` + its `WORKS_AT` facility list. Added as a "People" section on `/intelligence` (`ui/src/features/intelligence/intelligence.tsx`), the same page `signal-intelligence`'s Decisions already landed on. **Third instance of the same Cypher bug** this session (after Phase 4b's `listAssuranceStatements`/`listAudits`): `listPeople`'s first draft had `RETURN ... collect(DISTINCT fac.id) ... ORDER BY p.name`, which 400s — `ORDER BY` can't reference a variable from before a `RETURN` that aggregates. Fixed with the same `WITH p, collect(...) AS facilityIds` pattern. Verified live: `GET /operational/people` returns all 7 real people with `roleTitle` + `facilityIds`; Playwright screenshot of `/intelligence` confirms the People section renders correctly with zero console errors.
 
 ---
 

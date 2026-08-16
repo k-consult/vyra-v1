@@ -41,6 +41,25 @@ export const listVendors = async () => {
     }
 };
 
+const LIST_PEOPLE = `
+    MATCH (p:Person)
+    OPTIONAL MATCH (p)-[:WORKS_AT]->(fac:Facility)
+    WITH p, collect(DISTINCT fac.id) AS facilityIds
+    RETURN properties(p) AS person, facilityIds
+    ORDER BY p.name
+`;
+
+export const listPeople = async () => {
+    try {
+        const raw: any = await db().fetch2(LIST_PEOPLE, {});
+        const rows = Array.isArray(raw) ? raw : [raw];
+        return rows.filter((r: any) => r?.person).map((r: any) => ({ ...r.person, facilityIds: r.facilityIds ?? [] }));
+    } catch (err: any) {
+        log.error('operational.repo: listPeople failed', err.message);
+        return [];
+    }
+};
+
 const LIST_INCIDENTS = `
     MATCH (inc:Incident)
     RETURN properties(inc) AS incident
@@ -108,7 +127,10 @@ const guardSignalInput = (input: Partial<CreateSignalInput>): CreateSignalInput 
 // First non-CLI write path: writes directly via lib/graph-db, bypassing the CSV pipeline.
 // Auto-creates a Task in the same round trip, resolving Control/Requirement coverage
 // through Asset -[:COVERED_BY]-> Control (see cli/scripts/backfill-asset-control.ts) and
-// the responsible Person through Facility (falls back to 'UNKNOWN' while Person is unfed).
+// the responsible Person through Facility (falls back to 'UNKNOWN' if nobody WORKS_AT
+// that facility). WORKS_AT is many-valued (cli/scripts/generate-person-seed.ts) — a
+// facility can have more than one Person, so the match is collapsed to one deterministic
+// row (lowest person.id) before the Task is written, rather than left to arbitrary order.
 const CREATE_SIGNAL_AND_TASK = `
     MATCH (a:Asset {id: $assetId})
     MERGE (s:Signal {id: $signalId})
@@ -116,6 +138,7 @@ const CREATE_SIGNAL_AND_TASK = `
     MERGE (s)-[:EMITTED_BY]->(a)
     WITH s, a
     OPTIONAL MATCH (a)-[:LOCATED_AT]->(fac:Facility)<-[:WORKS_AT]-(person:Person)
+    WITH s, a, person ORDER BY person.id LIMIT 1
     OPTIONAL MATCH (a)-[:COVERED_BY]->(ctl:Control)-[:IMPLEMENTS]->(req:Requirement)
     WITH s, a, person, collect(DISTINCT ctl.id) AS controlIds, collect(DISTINCT req.id) AS requirementIds
     MERGE (t:Task {id: $taskId})

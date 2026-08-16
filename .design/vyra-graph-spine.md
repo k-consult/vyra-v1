@@ -647,7 +647,7 @@ Compliance activities that must be performed to maintain or restore compliance.
 |---|---|---|
 | id | string | `TSK-001-01`, `TSK-SIG-TEST-001` (signal-driven) |
 | name | string | `Inspect detector` |
-| owner | string | `Priya Nair - QA Executive` (legacy) / `'UNKNOWN'` (signal-driven, until `Person` is seeded) |
+| owner | string | `Priya Nair - QA Executive` (legacy) / `Priya Nair` (signal-driven, resolved live via `Asset -[:LOCATED_AT]-> Facility <-[:WORKS_AT]- Person`, Phase 6 — falls back to `'UNKNOWN'` only if nobody `WORKS_AT` that facility) |
 | frequency | string | `incident-driven`, `signal-driven` |
 | priority | string | `Critical` |
 | dueDate | datetime | `2026-05-03 17:36` |
@@ -829,8 +829,23 @@ A job function within an `Organization` (`:Enterprise`).
 
 ---
 
-### `Person` — declared, not fed
-Named individual holding a `Role` and working at a `Facility` (`:Enterprise`). Props: `email`, `roleId`, `facilityId`. The model provides for it (`HAS_ROLE → Role`, `WORKS_AT → Facility`), awaiting an identity source; until then `Incident.capturedBy`/`reviewedBy`/`Task.owner` stay free-text strings.
+### `Person`
+Named individual, extracted from free-text name fields already present across the legacy 7-incident dataset (`Incident.capturedBy`/`reviewedBy`, `CAPA.owner`, `Verification.verifiedBy`, `Risk.owner`, `Task.owner`) rather than a dedicated identity source, which still doesn't exist in either seed dataset.
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `PER-PRIYA_NAIR` |
+| name | string | `Priya Nair` |
+| roleTitle | string | `QA Executive` — parsed from the free-text `"Name - Title"` shape |
+| email | string | *(blank — no real email data exists in either source; left empty rather than fabricated)* |
+| roleId | string | *(blank — see below)* |
+| status | string | `active` |
+
+**7 people**, one per distinct name across the free-text fields above.
+
+**`roleId` / `HAS_ROLE` is a documented gap, not a bug**: none of these 7 people's real job titles (`QA Executive`, `Corporate EHS`, `QA Director`, `Facility Engineer`, `Compliance Manager`, `Operations Director`, `Compliance Lead`) match any of the 16 seeded `Role` rows — that catalog (`18_Roles_Master`) is from a different vertical (Industrial Parks/Warehouse/3PL) than the 7-incident dataset these names come from (biotech/pharma/food-safety). Forcing a match would be a guess, so `HAS_ROLE` simply never fires for these rows; `roleTitle` preserves the real text instead of discarding it.
+
+**`WORKS_AT` is many-valued, not a single "home facility"**: every one of the 7 people appears at 2–4 different facilities with exactly equal frequency in the source data (verified — no facility is visited more than once per person), so there is no real signal for a single "home base." Modeled as a many-valued edge (`cli/feeds/csv/edges/person_facility.csv`) instead of forcing an arbitrary single pick via the embedded `facilityId` FK column (left blank in `people.csv` for the same reason `roleId` is).
 
 ---
 
@@ -1069,6 +1084,7 @@ All relationships below are **live** and are the relationships the API actually 
 | `LOCATED_AT` | Asset → Facility | Physical facility housing the asset |
 | `BELONGS_TO` | Role → Organization | Role's org unit (reuses the `BELONGS_TO` name already used for Clause→Regulation/Standard; safe since `cli/projection/index.ts` groups edge batches by `(relType, sourceLabel, targetLabel)`, not `relType` alone) |
 | `IN_COMPLIANCE_AREA` | Asset → ComplianceArea | Asset's compliance domain (mapped from `category`; `:Enterprise` rows only, 29 of 31 — `Security`-category assets have no mapping) |
+| `WORKS_AT` | Person → Facility | Person has appeared at this facility (many-valued — every seeded Person WORKS_AT 2-4 facilities, no single "home" is supported by the data) |
 
 ### Intelligence Graph
 | Relationship | From → To | Meaning |
@@ -1104,6 +1120,7 @@ Part of the designed model, awaiting the entities they connect — they carry no
 | Relationship | From → To | Meaning |
 |---|---|---|
 | `PART_OF` | Task → Workflow, Workflow → Program | Places a task within its workflow, and a workflow within its program |
+| `HAS_ROLE` | Person → Role | Declared and would fire on a match, but none of the 7 seeded `Person` rows' real job titles match any of the 16 seeded `Role` rows (different verticals — see `Person` in Appendix A) |
 | `WAIVES` | Exception → Requirement | Records a formal exception that waives a requirement |
 
 ---
@@ -1118,6 +1135,7 @@ All feeds live under `cli/feeds/csv/<domain>/`.
 | operational | facilities.csv | 7 | FAC-1002 to FAC-1008 |
 | operational | assets.csv | 7 | Equipment involved in incidents |
 | operational | vendors.csv | 7 | VND-2002 to VND-2008 |
+| operational | people.csv | 7 | Extracted from free-text name fields across the legacy dataset (Phase 6) |
 | knowledge | regulations.csv | 16 | All regulatory frameworks |
 | knowledge | controls.csv | 15 | Policies & SOPs per incident |
 | execution | tasks.csv | 24 | Compliance tasks per incident |
@@ -1174,8 +1192,9 @@ No `edgeMap` for enterprise feeds either — same embedded-FK mechanism.
 | incident_task.csv | 24 | Incident → HAS_TASK → Task |
 | assurance_statement_regulation.csv | 18 | **Synthetic (Phase 4b)** — AssuranceStatement → COVERS → Regulation |
 | assurance_statement_audit.csv | 7 | **Synthetic (Phase 4b)** — AssuranceStatement → PREPARED_FOR → Audit |
+| person_facility.csv | 14 | Phase 6 — Person → WORKS_AT → Facility (many-valued, see `Person` in Appendix A) |
 
-**Enterprise pipeline total: 207 nodes, 210 edges** (179 nodes + 141 edges through Phase 2, plus Phase 4b's 28 synthetic Assurance nodes (7 each of `EvidencePackage`/`Attestation`/`AssuranceStatement`/`Audit`) + 69 synthetic edges (30 `PART_OF` + 7 `BACKED_BY` + 7 `DERIVED_FROM` + 18 `COVERS` + 7 `PREPARED_FOR`)). **Catalog pipeline total: 249 nodes, 268 edges** (`:Catalog`-labeled, separate `catalog-sync.ts` run — 99 original + 10 `ComplianceArea` + 30 `Control` + 60 `Task` + 50 `Schedule`; 98 original edges + 30 `IMPLEMENTS` (Control→Requirement) + 30 `BELONGS_TO` + 60 `IMPLEMENTS` (Task→Control) + 50 `APPLIES_TO` (Schedule→Task)). **Enterprise Context pipeline total: 79 nodes, 47 edges** (`:Enterprise`-labeled, separate `enterprise-sync.ts` run — 12 Organization, 16 Role, 20 Facility, 31 Asset; 16 `BELONGS_TO` + 31 `LOCATED_AT` — plus 29 `IN_COMPLIANCE_AREA` edges). **Derived/live-write total: 101 `COVERED_BY` edges** (`backfill-asset-control.ts`, one-time) **+ Signal/Task/Decision created ad hoc via the API and agent runtime** (no fixed count — driven by live events, not seed data).
+**Enterprise pipeline total: 214 nodes, 224 edges** (179 nodes + 141 edges through Phase 2, plus Phase 4b's 28 synthetic Assurance nodes (7 each of `EvidencePackage`/`Attestation`/`AssuranceStatement`/`Audit`) + 69 synthetic edges (30 `PART_OF` + 7 `BACKED_BY` + 7 `DERIVED_FROM` + 18 `COVERS` + 7 `PREPARED_FOR`), plus Phase 6's 7 `Person` nodes + 14 `WORKS_AT` edges). **Catalog pipeline total: 249 nodes, 268 edges** (`:Catalog`-labeled, separate `catalog-sync.ts` run — 99 original + 10 `ComplianceArea` + 30 `Control` + 60 `Task` + 50 `Schedule`; 98 original edges + 30 `IMPLEMENTS` (Control→Requirement) + 30 `BELONGS_TO` + 60 `IMPLEMENTS` (Task→Control) + 50 `APPLIES_TO` (Schedule→Task)). **Enterprise Context pipeline total: 79 nodes, 47 edges** (`:Enterprise`-labeled, separate `enterprise-sync.ts` run — 12 Organization, 16 Role, 20 Facility, 31 Asset; 16 `BELONGS_TO` + 31 `LOCATED_AT` — plus 29 `IN_COMPLIANCE_AREA` edges). **Derived/live-write total: 101 `COVERED_BY` edges** (`backfill-asset-control.ts`, one-time) **+ Signal/Task/Decision created ad hoc via the API and agent runtime** (no fixed count — driven by live events, not seed data).
 
 ---
 
@@ -1268,7 +1287,7 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 
 # Appendix F · Document History
 
-**Version 1.8** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
+**Version 1.9** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
 
 | Date | Change |
 |---|---|
@@ -1280,3 +1299,4 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 | 2026-08-08 | Restructured into narrative Parts (Orientation → Conceptual Model → Data Flow & Ownership → Working with the Graph) + reference Appendices A–F, for standalone stakeholder reading. Added the Layered Graph Model, 7-Layer mapping, and traceability-flow diagrams. Raised Part III to a conceptual data-flow/ownership view (implementation and build-status detail moved to the plan/appendices). **No schema facts changed.** |
 | 2026-08-16 | Phase 4b — documented and fed the previously-dormant Assurance chain (`EvidencePackage`, `Attestation`, `AssuranceStatement`, `Audit`), all four **synthetic, script-generated 1:1 off the 7-incident dataset** (`cli/scripts/generate-assurance-seed.ts`) rather than a real audit-trail source — flagged explicitly as a placeholder in Appendix A. Added `PART_OF` (Evidence→EvidencePackage), `COVERS` (AssuranceStatement→Regulation), `PREPARED_FOR` (AssuranceStatement→Audit); `BACKED_BY`/`DERIVED_FROM` went live for the first time. |
 | 2026-08-16 | Agent runtime swapped from the Anthropic API to a local Ollama LLM (`llama3.1:8b`, no API key) — no schema change, but `Decision.rationale`/`Decision.confidence` descriptions reworded provider-neutral. See `vyra-implementation-plan.md`'s Phase 3 follow-up. |
+| 2026-08-16 | Phase 5 — new `signal-intelligence` agent (no schema change, reuses `Signal`/`Decision`). Phase 6 — `Person` fed for the first time (7 rows, extracted from free-text name fields already in the legacy dataset), added `roleTitle` prop, `WORKS_AT` went live as a many-valued relationship, `HAS_ROLE` remains declared-but-unfired (documented gap). |

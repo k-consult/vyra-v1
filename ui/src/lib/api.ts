@@ -26,6 +26,7 @@ export const operational = {
     incidents: () => get<{ incidents: any[] }>('/operational/incidents'),
     facilities:() => get<{ facilities: any[] }>('/operational/facilities'),
     vendors:   () => get<{ vendors: any[] }>('/operational/vendors'),
+    people:    () => get<{ people: any[] }>('/operational/people'),
     lifecycle: (id: string) => get<any>(`/operational/incidents/${id}/lifecycle`),
 };
 

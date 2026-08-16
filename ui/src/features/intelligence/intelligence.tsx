@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
     AlertTriangle, RefreshCw, Brain, ArrowLeft,
-    Sparkles, TrendingUp, Search, GitBranch,
+    Sparkles, TrendingUp, Search, GitBranch, Users,
 } from 'lucide-react';
-import { intelligence } from '@/lib/api';
+import { intelligence, operational } from '@/lib/api';
 import { PropRow, BADGE_COLORS } from '@/features/landscape/landscape';
 
 function Badge({ value }: { value: string }) {
@@ -146,6 +146,36 @@ function RcasSection({ items }: { items: any[] }) {
     );
 }
 
+// ── People ───────────────────────────────────────────────────────────────────────
+
+function PersonCard({ person }: { person: any }) {
+    return (
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
+            <p className="text-[11px] font-mono text-zinc-500 mb-2">{person.id}</p>
+            <p className="text-sm text-zinc-200 mb-2">{person.name}</p>
+            <PropRow label="roleTitle" value={person.roleTitle} />
+            <PropRow label="worksAt" value={(person.facilityIds ?? []).join(', ')} />
+        </div>
+    );
+}
+
+function PeopleSection({ items }: { items: any[] }) {
+    return (
+        <section className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+                <Users size={11} className="text-zinc-600" />
+                <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">People · {items.length}</p>
+                <p className="text-[10px] text-zinc-700" title="Extracted from free-text name fields already in the data — see vyra-graph-spine.md">
+                    · extracted from free-text names, no roleId match (different Role catalog vertical)
+                </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {items.map((p, i) => <PersonCard key={p?.id ?? i} person={p} />)}
+            </div>
+        </section>
+    );
+}
+
 // ── Main view ──────────────────────────────────────────────────────────────────
 
 export function IntelligenceView() {
@@ -153,18 +183,20 @@ export function IntelligenceView() {
     const [findings, setFindings] = useState<any[]>([]);
     const [risks, setRisks] = useState<any[]>([]);
     const [rcas, setRcas] = useState<any[]>([]);
+    const [people, setPeople] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
 
     const load = () => {
         setLoading(true);
         setError(false);
-        Promise.all([intelligence.decisions(), intelligence.findings(), intelligence.risks(), intelligence.rcas()])
-            .then(([dec, find, risk, rca]: any[]) => {
+        Promise.all([intelligence.decisions(), intelligence.findings(), intelligence.risks(), intelligence.rcas(), operational.people()])
+            .then(([dec, find, risk, rca, ppl]: any[]) => {
                 setDecisions(dec.decisions ?? []);
                 setFindings(find.findings ?? []);
                 setRisks(risk.risks ?? []);
                 setRcas(rca.rcas ?? []);
+                setPeople(ppl.people ?? []);
             })
             .catch(() => setError(true))
             .finally(() => setLoading(false));
@@ -227,6 +259,7 @@ export function IntelligenceView() {
                 <FindingsSection items={findings} />
                 <RisksSection items={risks} />
                 <RcasSection items={rcas} />
+                <PeopleSection items={people} />
             </div>
 
             {/* ── Footer ── */}
