@@ -20,7 +20,7 @@ Monorepo. Each workspace has its own `package.json` and `npm install`.
 |-----------|------|---------|
 | `lib/` | — | Shared utilities: `graph-db`, `log`, `config` |
 | `cli/` | — | Ingestion pipeline: CSV → Parser → Compiler → Projection → LOAD CSV |
-| `agents/` | — | Agent runtime: TypeScript + Anthropic SDK |
+| `agents/` | — | Agent runtime: TypeScript + local Ollama LLM |
 | `api/` | 4001 | Fastify REST API, reads from Neo4j |
 | `ui/` | 3002 | Next.js + React frontend |
 
@@ -85,7 +85,7 @@ The compliance digital twin is composed of five graphs. For entity types, relati
 
 ## Agent Runtime (`agents/`)
 
-TypeScript + Anthropic SDK (Claude Sonnet 4.6 — model ID: `claude-sonnet-4-6`).
+TypeScript + a local Ollama LLM (default model: `llama3.1:8b`, configurable via `OLLAMA_MODEL`) — no API key, no cloud billing. `agents/runtime/index.ts`'s `reasonWithLLM` calls Ollama's local REST API (`OLLAMA_HOST`, default `http://localhost:11434`).
 
 Agents read from and write to the Neo4j graph via `agents/tools/graph-read.ts` and `agents/tools/graph-write.ts`. They never call the REST API.
 

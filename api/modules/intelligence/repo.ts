@@ -11,7 +11,8 @@ const db = () => DB.get(config.db.twin.database, {
 export const listFindings = async () => {
     try {
         const cypher = `MATCH (f:Finding) RETURN properties(f) AS finding ORDER BY f.severity, f.detectedAt DESC LIMIT 200`;
-        return await db().fetch2(cypher, {});
+        const raw: any = await db().fetch2(cypher, {});
+        const rows = Array.isArray(raw) ? raw : [raw]; return rows.map((r: any) => r.finding).filter(Boolean);
     } catch (err: any) {
         log.error('intelligence.repo: listFindings failed', err.message);
         return [];
@@ -21,7 +22,8 @@ export const listFindings = async () => {
 export const listRisks = async () => {
     try {
         const cypher = `MATCH (r:Risk) RETURN properties(r) AS risk ORDER BY r.inherentScore DESC LIMIT 200`;
-        return await db().fetch2(cypher, {});
+        const raw: any = await db().fetch2(cypher, {});
+        const rows = Array.isArray(raw) ? raw : [raw]; return rows.map((r: any) => r.risk).filter(Boolean);
     } catch (err: any) {
         log.error('intelligence.repo: listRisks failed', err.message);
         return [];
@@ -47,7 +49,8 @@ export const listRcas = async () => {
 export const listDecisions = async () => {
     try {
         const cypher = `MATCH (d:Decision) RETURN properties(d) AS decision ORDER BY d.decidedAt DESC LIMIT 100`;
-        return await db().fetch2(cypher, {});
+        const raw: any = await db().fetch2(cypher, {});
+        const rows = Array.isArray(raw) ? raw : [raw]; return rows.map((r: any) => r.decision).filter(Boolean);
     } catch (err: any) {
         log.error('intelligence.repo: listDecisions failed', err.message);
         return [];

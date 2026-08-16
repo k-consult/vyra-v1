@@ -1,11 +1,11 @@
-import { defaultContext, runAgentLoop, reasonWithClaude, Reasoning } from '../../runtime';
+import { defaultContext, runAgentLoop, reasonWithLLM, Reasoning } from '../../runtime';
 import { fetchRequirements } from '../../tools/graph-read';
 import { writeDecision, DecisionPayload } from '../../tools/graph-write';
 import { DB } from '../../../lib/graph-db';
 import { config } from '../../../lib/config';
 
 // Control Intelligence Agent
-// Reads uncontrolled Requirements from the graph and proposes Controls via Claude.
+// Reads uncontrolled Requirements from the graph and proposes Controls via a local LLM.
 // Autonomy Level 1: proposes only — writes Decision nodes, does not create Controls.
 
 interface Requirement {
@@ -28,7 +28,7 @@ export const run = async (regulationId?: string): Promise<void> => {
     await runAgentLoop<Requirement>(ctx.agentId, {
         observe: () => fetchRequirements(regulationId) as Promise<Requirement[]>,
 
-        reason: (req): Promise<Reasoning> => reasonWithClaude(
+        reason: (req): Promise<Reasoning> => reasonWithLLM(
             `A compliance requirement has no Control implementing it yet:\n` +
             `Requirement: "${req.name}" (mandatory: ${req.mandatory ?? 'UNKNOWN'}, type: ${req.obligationType ?? 'UNKNOWN'})\n` +
             `Recommend, in one or two sentences, what kind of Control (policy, SOP, or operational check) should implement this requirement.`

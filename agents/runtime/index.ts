@@ -1,11 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk';
 import log from '../../lib/log';
 
-export const MODEL = 'claude-sonnet-4-6';
-
-export const client = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
-});
+export const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://localhost:11434';
+export const MODEL = process.env.OLLAMA_MODEL || 'llama3.1:8b';
 
 export interface AgentContext {
     agentId: string;
@@ -50,17 +46,24 @@ export const runAgentLoop = async <T>(agentId: string, steps: AgentLoopSteps<T>)
 // Minimal reasoning call — one plain prompt instructing strict JSON output, not
 // tool-use/function-calling. This is the first agent proving the loop end-to-end;
 // multi-turn tool-calling is a natural follow-up once the primitive is proven.
-export const reasonWithClaude = async (prompt: string): Promise<Reasoning> => {
-    const response = await client.messages.create({
-        model: MODEL,
-        max_tokens: 512,
-        messages: [{
-            role: 'user',
-            content: `${prompt}\n\nRespond with ONLY a JSON object of the form {"rationale": string, "confidence": number between 0 and 1}. No other text.`,
-        }],
+// Backed by a local Ollama model — no API key, no cloud billing.
+export const reasonWithLLM = async (prompt: string): Promise<Reasoning> => {
+    const res = await fetch(`${OLLAMA_HOST}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            model: MODEL,
+            stream: false,
+            format: 'json',
+            messages: [{
+                role: 'user',
+                content: `${prompt}\n\nRespond with ONLY a JSON object of the form {"rationale": string, "confidence": number between 0 and 1}. No other text.`,
+            }],
+        }),
     });
-    const block = response.content.find(b => b.type === 'text');
-    const text = block && block.type === 'text' ? block.text : '';
+    if (!res.ok) throw new Error(`runtime: Ollama request failed: ${res.status} ${await res.text()}`);
+    const data: any = await res.json();
+    const text = data?.message?.content ?? '';
     try {
         const parsed = JSON.parse(text);
         return {
@@ -68,7 +71,7 @@ export const reasonWithClaude = async (prompt: string): Promise<Reasoning> => {
             confidence: Number(parsed.confidence ?? 0),
         };
     } catch {
-        log.error('runtime: reasonWithClaude failed to parse Claude response as JSON', text);
+        log.error('runtime: reasonWithLLM failed to parse LLM response as JSON', text);
         return { rationale: 'UNKNOWN', confidence: 0 };
     }
 };

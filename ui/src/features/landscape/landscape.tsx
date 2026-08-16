@@ -93,7 +93,7 @@ const HEALTH_STYLE: Record<Health, { border: string; count: string; hover: strin
     neutral:  { border: 'border-zinc-700',    count: 'text-zinc-200',    hover: 'hover:border-zinc-500'    },
 };
 
-const BADGE_COLORS: Record<string, string> = {
+export const BADGE_COLORS: Record<string, string> = {
     Critical: 'bg-red-900 text-red-300 border-red-700',
     High:     'bg-orange-900 text-orange-300 border-orange-700',
     Medium:   'bg-amber-900 text-amber-300 border-amber-700',
@@ -332,6 +332,7 @@ export function LandscapeView() {
                             <Link href="/validation/traceability" className="hover:text-zinc-100 transition-colors">Traceability</Link>
                             <Link href="/calendar"                className="hover:text-zinc-100 transition-colors">Calendar</Link>
                             <Link href="/assurance"               className="hover:text-zinc-100 transition-colors">Assurance</Link>
+                            <Link href="/intelligence"             className="hover:text-zinc-100 transition-colors">Intelligence</Link>
                         </nav>
                     </div>
                 </div>

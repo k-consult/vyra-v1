@@ -14,7 +14,7 @@ The platform meets the outside world at **two edges**, with the application laye
 - **Presentation edge (top)** — the human-facing boundary: the web UI, spanning the top.
 - **Integration edge (left)** — the machine-facing boundary: IoT services (live floor signals), feeds (catalog + enterprise seed data), and integration APIs for third-party systems.
 - **Application layers (center)** — the API/Service and Ingestion write paths and the shared `lib/graph-db` foundation, with the **Agent Runtime** on the right within the same band.
-- **External services (right)** — stacked to the right of the app layers: the agents reason against **Anthropic's Claude**; identity/SSO and notifications are planned integrations, not yet built.
+- **External services (right)** — stacked to the right of the app layers: the agents reason against a **local Ollama LLM** (no API key, no cloud dependency — runs on the same machine); identity/SSO and notifications are planned integrations, not yet built.
 
 Two write paths feed the twin, and they are deliberately different in character:
 - **Batch ingestion** (`cli/`) — CSV → Neo4j `LOAD CSV`, run on demand to seed and re-sync the catalog and enterprise context.
@@ -30,7 +30,7 @@ Everything below the API — the agent runtime, the ingestion pipeline, the API 
 |---|---|---|---|---|
 | **Presentation** | `ui/` | 3002 | Next.js + React feature views — `landscape`, `dashboard`, `knowledge`, `execution`, `intelligence`, `assurance`, `calendar`, `validation` | API (HTTP) only — **never** Neo4j |
 | **API / Service** | `api/` | 4001 | Fastify; domain modules — `knowledge`, `execution`, `operational`, `intelligence`, `assurance`, `catalog`, `enterprise`, `dashboard` | `lib/graph-db` |
-| **Agent Runtime** | `agents/` | — | `runtime` (observe→reason→act→verify loop + Claude helper), `tools` (graph-read / graph-write), agent families — `control-intelligence` (live), `risk-`/`signal-`/`assurance-intelligence` (stubs) | `lib/graph-db` + Anthropic SDK — **never** the API |
+| **Agent Runtime** | `agents/` | — | `runtime` (observe→reason→act→verify loop + `reasonWithLLM` helper), `tools` (graph-read / graph-write), agent families — `control-intelligence` (live), `risk-`/`signal-`/`assurance-intelligence` (stubs) | `lib/graph-db` + local Ollama (`localhost:11434`) — **never** the API |
 | **Ingestion** | `cli/` | — | Pipeline: `parser` → `compiler` → `projection` → `runtime`; orchestrators `index.ts` / `catalog-sync.ts` / `enterprise-sync.ts`; `semantic-contract/v2.ts` (column→node contract); `scripts/` (converters, backfill) | `lib/graph-db` (via `LOAD CSV`) |
 | **Shared Foundation** | `lib/` | — | `graph-db` (sole Neo4j driver), `log`, `config` — **built before all others** | Neo4j |
 | **Data / Graph** | Neo4j `agentic-grc` | — | The five-domain Compliance Digital Twin — see `vyra-graph-spine.md` | — |
@@ -89,7 +89,7 @@ graph TB
     %% ═══════ RIGHT · external services (top → bottom) ═══════
     subgraph EXT_SVC["🌐 External Services"]
         direction TB
-        CLAUDE[Anthropic · Claude<br/>LLM reasoning]:::ext
+        OLLAMA[Ollama · local LLM<br/>llama3.1:8b — localhost:11434]:::ext
         SSO[Identity / SSO<br/>planned]:::planned
         NOTIFY[Notifications / Alerting<br/>planned]:::planned
     end
@@ -110,8 +110,8 @@ graph TB
 
     %% agent → external services (AG is the rightmost app node, so the block hangs to the right;
     %% invisible links force the three services into a vertical column)
-    AG -->|reason| CLAUDE
-    CLAUDE ~~~ SSO
+    AG -->|reason| OLLAMA
+    OLLAMA ~~~ SSO
     SSO ~~~ NOTIFY
 ```
 
@@ -119,4 +119,4 @@ graph TB
 - **Two edges, a central spine, and external services.** The **Presentation edge** spans the **top** (human boundary); the **Integration edge** runs down the **left** (machine boundary — IoT signals, seed feeds, third-party APIs); the **application layers** form the **center** — the core service stack (API → Ingestion → Foundation) top-to-bottom with the **Agent Runtime** to its right in the same band; and **External Services** stack vertically on the **right**.
 - **Where each edge lands:** UI and third-party/IoT traffic enter through the **API**; seed feeds enter through **Ingestion**. Together with the agents, these are the write paths into the twin — none writes into another's territory; the graph carries the consequence forward.
 - **`lib/graph-db` is the single door to Neo4j** — API, ingestion, and agents all pass through it; nothing else holds a driver.
-- **Agents reason against Claude** (right) but persist only into the graph, under Autonomy Level 1 (propose, human approves). **Identity/SSO** and **Notifications** are drawn dashed — planned external integrations, not yet built.
+- **Agents reason against a local Ollama LLM** (right) but persist only into the graph, under Autonomy Level 1 (propose, human approves). Ollama runs on the same machine — no API key, no outbound cloud call, unlike a hosted model provider. **Identity/SSO** and **Notifications** are drawn dashed — planned external integrations, not yet built.

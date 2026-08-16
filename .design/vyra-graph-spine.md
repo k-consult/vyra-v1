@@ -939,10 +939,10 @@ An agent's recommendation (first real agent). Autonomy Level 1 — proposes only
 |---|---|---|
 | id | string | `DEC-OBL-0012` |
 | type | string | `control-recommendation` |
-| rationale | string | Claude's one/two-sentence recommendation |
+| rationale | string | the LLM's one/two-sentence recommendation |
 | agentId | string | `control-intelligence-agent` |
 | autonomyLevel | int | `1` |
-| confidence | float | `0`–`1`, Claude-reported |
+| confidence | float | `0`–`1`, LLM-reported |
 | status | string | `pending` |
 | decidedAt | datetime | |
 
@@ -1268,7 +1268,7 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 
 # Appendix F · Document History
 
-**Version 1.7** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
+**Version 1.8** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
 
 | Date | Change |
 |---|---|
@@ -1279,3 +1279,4 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 | 2026-07-26 | Extended with Live Operational Context + the first real agent (`Signal`, `Decision`, `COVERED_BY`, live write paths), and the 52-Week Compliance Calendar (`Task`/`Schedule` catalog batch, `APPLIES_TO`, `IMPLEMENTS`). |
 | 2026-08-08 | Restructured into narrative Parts (Orientation → Conceptual Model → Data Flow & Ownership → Working with the Graph) + reference Appendices A–F, for standalone stakeholder reading. Added the Layered Graph Model, 7-Layer mapping, and traceability-flow diagrams. Raised Part III to a conceptual data-flow/ownership view (implementation and build-status detail moved to the plan/appendices). **No schema facts changed.** |
 | 2026-08-16 | Phase 4b — documented and fed the previously-dormant Assurance chain (`EvidencePackage`, `Attestation`, `AssuranceStatement`, `Audit`), all four **synthetic, script-generated 1:1 off the 7-incident dataset** (`cli/scripts/generate-assurance-seed.ts`) rather than a real audit-trail source — flagged explicitly as a placeholder in Appendix A. Added `PART_OF` (Evidence→EvidencePackage), `COVERS` (AssuranceStatement→Regulation), `PREPARED_FOR` (AssuranceStatement→Audit); `BACKED_BY`/`DERIVED_FROM` went live for the first time. |
+| 2026-08-16 | Agent runtime swapped from the Anthropic API to a local Ollama LLM (`llama3.1:8b`, no API key) — no schema change, but `Decision.rationale`/`Decision.confidence` descriptions reworded provider-neutral. See `vyra-implementation-plan.md`'s Phase 3 follow-up. |

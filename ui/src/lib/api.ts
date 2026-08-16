@@ -30,9 +30,9 @@ export const operational = {
 };
 
 export const intelligence = {
-    findings:     () => get('/intelligence/findings'),
-    risks:        () => get('/intelligence/risks'),
-    decisions:    () => get('/intelligence/decisions'),
+    findings:     () => get<{ findings: any[] }>('/intelligence/findings'),
+    risks:        () => get<{ risks: any[] }>('/intelligence/risks'),
+    decisions:    () => get<{ decisions: any[] }>('/intelligence/decisions'),
     rcas:         () => get<{ rcas: any[] }>('/intelligence/rcas'),
     reverseTrace: (id: string) => get<any>(`/intelligence/incidents/${id}/reverse-trace`),
 };

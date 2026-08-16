@@ -117,6 +117,8 @@ A CSV batch reload is fundamentally incompatible with continuous floor events. T
 
 **Deliberately deferred**: adding `ANTHROPIC_API_KEY` to `.env` and running a live Claude round-trip — that's the user's key to add; verified everything up to that boundary.
 
+**Follow-up (2026-08-16): swapped to a local Ollama LLM instead of Anthropic.** Rather than add a paid `ANTHROPIC_API_KEY`, the user chose a free, fully-local model — no API key, no cloud billing. `agents/runtime/index.ts`'s `reasonWithClaude` was replaced with `reasonWithLLM`, calling Ollama's local REST API (`OLLAMA_HOST`, default `http://localhost:11434`) instead of the Anthropic SDK; default model `llama3.1:8b`, overridable via `OLLAMA_MODEL`. The Anthropic SDK dependency was removed from `agents/package.json`. This unblocks the "deferred" item above by removing the blocker entirely rather than resolving it — the deferred Claude round-trip itself was never run.
+
 **Files**: `cli/semantic-contract/contracts/v2.ts`, `cli/scripts/convert-catalog-seed.ts`, `cli/scripts/convert-enterprise-seed.ts`, new `cli/scripts/backfill-asset-control.ts`, `api/modules/operational/{index.ts,repo.ts}`, `agents/tools/graph-read.ts`, `agents/tools/graph-write.ts`, `agents/runtime/index.ts`, `agents/agents/control-intelligence/index.ts`, new `agents/index.ts`.
 
 ---
