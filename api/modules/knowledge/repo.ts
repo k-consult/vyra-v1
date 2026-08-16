@@ -47,6 +47,16 @@ const LIST_CONTROLS = `
     ORDER BY n.name
 `;
 
+// Surfaces what a Phase 7 control-recommendation approval actually created — the
+// Landscape page's "Controls" drill-down includes these too (no label filter there),
+// but sorted alphabetically by name they land wherever "Proposed Control - ..." falls,
+// easy to miss. This is the "what did approving that Decision just do" view instead.
+const LIST_AGENT_PROPOSED_CONTROLS = `
+    MATCH (n:Control:AgentProposed)
+    RETURN properties(n) AS control
+    ORDER BY n.createdAt DESC
+`;
+
 export const listRegulations = async () => {
     try {
         const raw: any = await db().fetch2(LIST_REGULATIONS, {});
@@ -63,6 +73,16 @@ export const listControls = async () => {
         const rows = Array.isArray(raw) ? raw : [raw]; return rows.map((r: any) => r.control).filter(Boolean);
     } catch (err: any) {
         log.error('knowledge.repo: listControls failed', err.message);
+        return [];
+    }
+};
+
+export const listAgentProposedControls = async () => {
+    try {
+        const raw: any = await db().fetch2(LIST_AGENT_PROPOSED_CONTROLS, {});
+        const rows = Array.isArray(raw) ? raw : [raw]; return rows.map((r: any) => r.control).filter(Boolean);
+    } catch (err: any) {
+        log.error('knowledge.repo: listAgentProposedControls failed', err.message);
         return [];
     }
 };

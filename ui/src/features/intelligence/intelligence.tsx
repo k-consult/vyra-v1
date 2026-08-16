@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
     AlertTriangle, RefreshCw, Brain, ArrowLeft,
-    Sparkles, TrendingUp, Search, GitBranch, Users,
+    Sparkles, TrendingUp, Search, GitBranch, Users, ShieldCheck,
 } from 'lucide-react';
-import { intelligence, operational } from '@/lib/api';
+import { intelligence, operational, knowledge } from '@/lib/api';
 import { PropRow, BADGE_COLORS } from '@/features/landscape/landscape';
 
 function Badge({ value }: { value: string }) {
@@ -19,7 +19,25 @@ function Badge({ value }: { value: string }) {
 const CONFIDENCE_COLOR = (c: number) =>
     c >= 0.8 ? 'text-emerald-300' : c >= 0.5 ? 'text-amber-300' : 'text-red-300';
 
-function DecisionCard({ decision }: { decision: any }) {
+function DecisionCard({ decision, people, onResolved }: { decision: any; people: any[]; onResolved: () => void }) {
+    const [reviewedBy, setReviewedBy] = useState(people[0]?.id ?? '');
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const resolve = async (action: 'approve' | 'reject') => {
+        setBusy(true);
+        setError(null);
+        try {
+            await (action === 'approve'
+                ? intelligence.approve(decision.id, reviewedBy)
+                : intelligence.reject(decision.id, reviewedBy));
+            onResolved();
+        } catch (err: any) {
+            setError(err.message);
+            setBusy(false);
+        }
+    };
+
     return (
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 flex flex-col gap-2">
             <div className="flex items-center justify-between">
@@ -36,25 +54,91 @@ function DecisionCard({ decision }: { decision: any }) {
                 <PropRow label="status" value={decision.status} />
                 <PropRow label="decidedAt" value={decision.decidedAt} />
             </div>
+            {decision.status === 'pending' ? (
+                <div className="flex items-center gap-2 pt-2 mt-1 border-t border-zinc-800/60">
+                    <select
+                        value={reviewedBy}
+                        onChange={(e) => setReviewedBy(e.target.value)}
+                        className="flex-1 min-w-0 rounded border border-zinc-700 bg-zinc-950 px-2 py-1 text-[11px] text-zinc-300"
+                    >
+                        {people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                    <button
+                        onClick={() => resolve('approve')}
+                        disabled={busy}
+                        className="shrink-0 rounded border border-emerald-700/50 bg-emerald-900/30 px-2 py-1 text-[11px] font-medium text-emerald-300 hover:bg-emerald-900/50 disabled:opacity-40"
+                    >
+                        Approve
+                    </button>
+                    <button
+                        onClick={() => resolve('reject')}
+                        disabled={busy}
+                        className="shrink-0 rounded border border-red-700/50 bg-red-900/30 px-2 py-1 text-[11px] font-medium text-red-300 hover:bg-red-900/50 disabled:opacity-40"
+                    >
+                        Reject
+                    </button>
+                </div>
+            ) : (
+                <div className="flex flex-col gap-0 pt-2 mt-1 border-t border-zinc-800/60">
+                    <PropRow label="reviewedBy" value={decision.reviewedBy} />
+                    <PropRow label="reviewedAt" value={decision.reviewedAt} />
+                </div>
+            )}
+            {error && <p className="text-[11px] text-red-400">{error}</p>}
         </div>
     );
 }
 
-function DecisionsSection({ items }: { items: any[] }) {
+function DecisionsSection({ items, people, onResolved }: { items: any[]; people: any[]; onResolved: () => void }) {
     return (
         <section className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
                 <Sparkles size={11} className="text-zinc-600" />
                 <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">Agent Decisions · {items.length}</p>
-                <p className="text-[10px] text-zinc-700">· Autonomy Level 1 — proposals only, pending human review</p>
+                <p className="text-[10px] text-zinc-700">· Autonomy Level 1 — agent recommends, human approves</p>
             </div>
             {items.length === 0 ? (
                 <p className="text-sm text-zinc-500 italic">No agent decisions yet — run an agent (e.g. `agents/index.ts control-intelligence`) to populate this.</p>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {items.map((d, i) => <DecisionCard key={d?.id ?? i} decision={d} />)}
+                    {items.map((d, i) => <DecisionCard key={d?.id ?? i} decision={d} people={people} onResolved={onResolved} />)}
                 </div>
             )}
+        </section>
+    );
+}
+
+// ── Agent-Proposed Controls (what approving a control-recommendation created) ────
+
+function AgentProposedControlCard({ control }: { control: any }) {
+    return (
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+                <p className="text-[11px] font-mono text-zinc-500">{control.id}</p>
+                {control.status && <Badge value={control.status} />}
+            </div>
+            <p className="text-sm text-zinc-200">{control.name}</p>
+            {control.description && <p className="text-xs text-zinc-400">{control.description}</p>}
+            <div className="flex flex-col gap-0">
+                <PropRow label="controlType" value={control.controlType} />
+                <PropRow label="createdAt" value={control.createdAt} />
+            </div>
+        </div>
+    );
+}
+
+function AgentProposedControlsSection({ items }: { items: any[] }) {
+    if (items.length === 0) return null;
+    return (
+        <section className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+                <ShieldCheck size={11} className="text-zinc-600" />
+                <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">Agent-Proposed Controls · {items.length}</p>
+                <p className="text-[10px] text-zinc-700">· created by approving a control-recommendation Decision above, status "proposed" — not yet counted in coverage</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {items.map((c, i) => <AgentProposedControlCard key={c?.id ?? i} control={c} />)}
+            </div>
         </section>
     );
 }
@@ -184,19 +268,24 @@ export function IntelligenceView() {
     const [risks, setRisks] = useState<any[]>([]);
     const [rcas, setRcas] = useState<any[]>([]);
     const [people, setPeople] = useState<any[]>([]);
+    const [agentProposedControls, setAgentProposedControls] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
 
     const load = () => {
         setLoading(true);
         setError(false);
-        Promise.all([intelligence.decisions(), intelligence.findings(), intelligence.risks(), intelligence.rcas(), operational.people()])
-            .then(([dec, find, risk, rca, ppl]: any[]) => {
+        Promise.all([
+            intelligence.decisions(), intelligence.findings(), intelligence.risks(),
+            intelligence.rcas(), operational.people(), knowledge.agentProposedControls(),
+        ])
+            .then(([dec, find, risk, rca, ppl, ctl]: any[]) => {
                 setDecisions(dec.decisions ?? []);
                 setFindings(find.findings ?? []);
                 setRisks(risk.risks ?? []);
                 setRcas(rca.rcas ?? []);
                 setPeople(ppl.people ?? []);
+                setAgentProposedControls(ctl.controls ?? []);
             })
             .catch(() => setError(true))
             .finally(() => setLoading(false));
@@ -255,7 +344,8 @@ export function IntelligenceView() {
 
             {/* ── Content ── */}
             <div className="flex-1 min-h-0 overflow-auto px-6 py-4 flex flex-col gap-6">
-                <DecisionsSection items={decisions} />
+                <DecisionsSection items={decisions} people={people} onResolved={load} />
+                <AgentProposedControlsSection items={agentProposedControls} />
                 <FindingsSection items={findings} />
                 <RisksSection items={risks} />
                 <RcasSection items={rcas} />

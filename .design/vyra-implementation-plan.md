@@ -21,7 +21,7 @@ An early audit found the codebase was earlier-stage than the docs suggested at t
 
 **Second data source:** `.design/__ref/entity-alignment.md` maps `.design/__ref/synthetic-data/data.csv` (a second, independent enterprise seed — Industrial Parks/Warehouse/3PL vertical, entity extraction in `.design/__ref/consolidated-entities.md`) against this plan. It was largely confirmatory for Phase 1 and partially for Phase 2 (Role/Organization/Location present in the source, Person/Identity still missing), surfaced two net-new domain concepts with no current home (`InsuranceClause`, `ComplianceArea`), and flagged a second relationship-vocabulary set — reconciled together with Phase 0's fix.
 
-This plan covers **design and sequencing**, one phase at a time. **Phases 0, 0.5, 1, 2, 3, 3.5, 4a, 4b, 5, and 6 are done** (4b on synthetic seed data — see its section below).
+This plan covers **design and sequencing**, one phase at a time. **Phases 0, 0.5, 1, 2, 3, 3.5, 4a, 4b, 5, 6, and 7 are done** (4b on synthetic seed data — see its section below). **Phases 8–11 are planned, not started** — the remainder of the "Agentic Completion Track," scoped 2026-08-16 from a drift review against the `vyra-landscape.md` operating-model claims (that review's working notes are archived at `.design/__ref/drift-from-agentic-grc-2026aug16.md`; this plan is the canonical forward reference, not that snapshot). See the dedicated section below, after Phase 6.
 
 ---
 
@@ -36,6 +36,7 @@ One line per JTBD layer (the 7-layer model defined in `vyra-landscape.md`; the f
 - **L5 Oversight** — Signal + `control-intelligence` + `signal-intelligence` all live (Phase 5) — Signals are now watched for deviations; Escalation Paths still free text, not graph-modeled
 - **L6 Assurance** — Coverage Scoring done (Phase 4a); Audit-Ready Export done on synthetic seed data (Phase 4b) — a real audit-trail source is still needed to replace the fabricated `Audit`/`EvidencePackage`/`Attestation`/`AssuranceStatement` chain
 - **L7 Risk** — Per-Finding score + portfolio rollup live (Phase 4a); Scenario Simulation gap, needs agents beyond `control-intelligence`
+- **Agentic completion** — 2 of 4 agent families live (`control-intelligence`, `signal-intelligence`); `risk-intelligence`/`assurance-intelligence` are one-line stubs. Phase 7 closed the approve/reject gap: `Decision`s now resolve to a real `Control`/`Finding` write via `POST /intelligence/decisions/:id/{approve,reject}`, with a UI reviewer picker attributing to a real `Person`. Agents still only run via manual CLI invocation (`agents/index.ts <name>`) — nothing schedules or event-triggers them yet. See **Phases 8–11** below.
 
 ---
 
@@ -224,6 +225,63 @@ Verified live: `generate-person-seed.ts` produced exactly 7/14 rows; `./ingest.s
 
 ---
 
+# Agentic Completion Track — Phases 7–11 (Phase 7 ✅ done, 8–11 🔲 planned; scoped 2026-08-16)
+
+Scoped from a drift review comparing `vyra-landscape.md`'s operating-model claims ("AI agents continuously transform regulations into operational assurance," Autonomy Levels 0–4 with Level 1 as a real human-approval gate) against what the code in `agents/` and `ui/src/features/intelligence/` actually does. That review's raw notes are archived at `.design/__ref/drift-from-agentic-grc-2026aug16.md`; this section is the live, canonical version going forward — update it in place per phase, the same discipline used for Phases 0–6, rather than letting a second status doc drift out of sync.
+
+**Scope boundary**: these five phases close the *agentic* gap specifically — reasoning, autonomy, and closed-loop decisioning. They deliberately exclude GRC-completeness gaps that don't bear on agentic-ness (`Contract` node, SOPs as a distinct catalog item, legacy `Regulation` labeling, a real central catalog service, Identity/SSO, Notifications) — those stay tracked in the Task Brief above as a separate, lower-priority track.
+
+Phases 8–11 are each blocked on a product/schema decision that hasn't been made yet — none are ready to start as "just build it." Phase 7 was the exception (fully spec'd, no open decisions) and is now done.
+
+## Phase 7 — Human-in-the-Loop Decision Gate (L4 Review) ✅ DONE (2026-08-16)
+
+**Why first**: every `Decision` node previously carried `status: 'pending'` forever — `ui/src/features/intelligence/intelligence.tsx`'s `DecisionsSection` rendered it as a read-only card with no action. Autonomy Level 1 ("Agent Recommends, Human Approves," `vyra-landscape.md`) was asserted in UI copy but not mechanized anywhere. This phase makes that claim real.
+
+**Full spec**: `.design/__ref/7-human-in-the-loop-decision-gate-plan.md` (decision-type → write mapping, schema additions, new API surface, UI changes, verification plan) — archived here now that it's folded into this doc and `vyra-graph-spine.md`, same treatment every prior pre-plan doc has gotten.
+
+**Decisions resolved 2026-08-16** (see the archived spec doc for full reasoning):
+- `control-recommendation` approval creates a real `Control` (`:AgentProposed` label, `-[:IMPLEMENTS]-> Requirement`) — **excluded** from `getCoverageScore()`'s coverage percentage, same treatment as the 15 legacy per-incident Controls, until a real "verified operational" mechanism exists (explicitly not built speculatively now).
+- `deviation-assessment` approval writes a `Finding` — `-[:AGAINST]-> Control` if the signal's asset had coverage, `-[:ABOUT]-> Signal` directly if not (no fabricated Control link for coverage-gap assets).
+- Rejection flips `status: 'rejected'` + optional `reviewNote`, no further graph mutation.
+- Approvals attribute to a real `Person` via a no-auth reviewer picker (the 7 seeded rows from Phase 6) — not waiting for SSO.
+- `POST /intelligence/decisions/:id/{approve,reject}` are purpose-built action endpoints that perform real DML, same category as the existing `POST /operational/signals` — confirmed this doesn't conflict with `CLAUDE.md`'s "No DML from UI" rule, which scopes to the `GET` read routes.
+
+**What actually got built:**
+- `agents/runtime/index.ts`'s `reasonWithLLM` gained an optional `extraSchema` second argument — splices additional JSON fields into the existing fixed-format instruction and spreads the parsed result into the returned `Reasoning` (which gained an index signature). `signal-intelligence`'s existing no-arg call is unaffected.
+- `control-intelligence` now asks the LLM to state `recommendedControlType` (`policy`/`sop`/`operational-check`) explicitly alongside its rationale, and stores it on the `Decision` (`R.defaultTo('UNKNOWN', ...)` for older/short-answer cases) — closing the "the prompt already asks for this but the response contract never captured it" gap the spec doc flagged.
+- `api/modules/intelligence/repo.ts`: `getDecision` (null-safe single fetch) and `resolveDecision(id, type, action, reviewedBy?, reviewNote?)`, dispatching to a type-agnostic reject (status flip + conditional `REVIEWED_BY`), an `approve control-recommendation` branch (`MERGE`s the `Control:AgentProposed`, reads `recommendedControlType` off the Decision itself rather than a fresh param), and an `approve deviation-assessment` branch (`UNWIND` over the triggering Signal's linked Task's `controlIds`, not `FOREACH`, since `FOREACH` cannot contain a `MATCH`).
+- `api/modules/intelligence/index.ts`: `POST /decisions/:id/approve` and `/reject`, both doing the 404 (not found) / 400 (already resolved) check before attempting the write — mirrors `getLifecycle`'s null-then-404 pattern plus `createSignal`'s try/catch-then-400.
+- `ui/src/features/intelligence/intelligence.tsx`: `DecisionCard` gained a reviewer `<select>` (sourced from the People section's existing fetch) + Approve/Reject buttons on `pending` cards, collapsing to `reviewedBy`/`reviewedAt` via the existing `PropRow` once resolved. Resolves via a full `load()` refetch, matching the header refresh button's existing pattern.
+- New `.claude/skills/verify/SKILL.md` — this repo had no project verify recipe; documented the dev-server-already-running check, the throwaway-Cypher-script pattern for direct graph verification, and the isolated-Playwright-install pattern for driving the UI, so the next session skips this cold start.
+
+Verified live against the real dev instance (Neo4j + Ollama + api + ui all already running): approved a real `control-recommendation` Decision (`DEC-OBL-0034`) — confirmed via direct Cypher the `Control:AgentProposed` node + `IMPLEMENTS` edge exist, and `GET /assurance/posture` still reports `30/34` (88.2%), unchanged, confirming the coverage-exclusion holds with no code change needed there. Approved the covered-asset `deviation-assessment` Decision (`DEC-SIG-TEST-001`) — confirmed 4 real `AGAINST` edges, no `ABOUT`. Approved the coverage-gap `deviation-assessment` Decision (`DEC-SIG-TEST-002`, the `Security`-category asset) — confirmed zero `AGAINST` edges and a real `ABOUT` edge to the Signal instead. Rejected a Decision — confirmed only `Decision.status`/`reviewedBy`/`reviewedAt`/`reviewNote` changed, no `Control` node created. Hit an invalid id (`404`), an already-approved decision (`400`), and an already-rejected decision (`400`) — all clean, no silent no-ops. Loaded `/intelligence` in a real headless browser (Playwright): screenshotted a pending card showing the picker + buttons, clicked through Approve then Reject on the two remaining pending decisions, confirmed all 6 decisions on the page ended in a resolved state with `reviewedBy`/`reviewedAt` rendered, zero console errors throughout. `tsc --noEmit` clean on `agents/`, `api/`, `ui/`.
+
+## Phase 8 — Complete the Agent Roster 🔲 PLANNED
+
+**Why**: `agents/agents/risk-intelligence/index.ts` and `agents/agents/assurance/index.ts` are one-line `console.log('Logic TBD.')` stubs. `control-intelligence` and `signal-intelligence` already prove the pattern to copy — same `runAgentLoop`/`reasonWithLLM`/`writeDecision` primitives (`agents/runtime/index.ts`).
+
+**Open decision**: `assurance-intelligence`'s stub description ("evaluate whether Requirements are met, generate EvidencePackage/AssuranceStatement") overlaps almost exactly with what `cli/scripts/generate-assurance-seed.ts` currently fabricates synthetically for Phase 4b. Building this agent to *replace* the synthetic generator, rather than duplicate it, would also close the Task Brief's outstanding "real, non-synthetic Audit-Ready Export source" item for free — worth deciding before writing it as a standalone thing.
+
+## Phase 9 — Continuous / Event-Triggered Agent Execution 🔲 PLANNED
+
+**Why**: today every agent only runs via `agents/index.ts <name>` typed manually in a terminal (`agents/index.ts`'s `main()`). A system that only reasons when a human issues a CLI command isn't autonomous — it's a script with an LLM call inside.
+
+**Open decision**: this is local-dev infra (Neo4j Desktop + Ollama on-machine, no deployment target yet) — cheapest option is firing `signal-intelligence` synchronously right inside the existing `POST /operational/signals` handler (`api/modules/operational/repo.ts`'s `createSignal`), plus a cron/launchd sweep for `control-intelligence` and the Phase 8 agents. Needs a decision on how much infra to commit to versus keeping it minimal for now.
+
+## Phase 10 — Multi-Turn Tool-Use Reasoning 🔲 PLANNED
+
+**Why**: `reasonWithLLM` (`agents/runtime/index.ts`) is one fixed prompt assembled by TypeScript, sent to Ollama once, parsed as JSON — an LLM call in a loop, not an agent deciding what to look at next. Deliberately deferred until the roster (Phase 8) and the closed loop (Phase 7) are real, since this is the highest-effort phase.
+
+**Open decision — real technical risk, not just a preference**: `llama3.1:8b` via local Ollama may not do reliable multi-turn tool-calling. The project deliberately moved off the Anthropic API to stay local/free (`vyra-implementation-plan.md`'s Phase 3 follow-up, 2026-08-16) — going deeper on tool-use may mean testing a larger local model or accepting a hosted-model fallback for this one capability specifically. A values tradeoff for the user to make explicitly, not to default silently.
+
+## Phase 11 — Scenario Simulation (L7) 🔲 PLANNED — UNSCOPED
+
+**Why last**: the one capability that needs *multiple* agent families reasoning over the same graph state together (e.g. risk + control) — the payoff phase once 7–10 are real, not a starting point. `vyra-tracker.md` already flags this as the one genuine remaining L7 gap.
+
+**Blocking**: there is currently no working definition of what a "scenario" is here (a regulation changing? a control failing? something else?) — this needs a product spec from the user before it can become a real phase rather than a placeholder name.
+
+---
+
 ## Verification approach (per phase)
 
 - Phase 0 ✅: full-repo grep for each old relationship-type string returned zero hits outside the corrected definition; re-ran existing traversal queries against the local Neo4j instance and confirmed non-empty results where they'd previously silently returned nothing.
@@ -233,5 +291,6 @@ Verified live: `generate-person-seed.ts` produced exactly 7/14 rows; `./ingest.s
 - Phase 3.5 ✅: ran the updated `convert-catalog-seed.ts`, confirmed exact 60/50 row counts for `tasks.csv`/`schedules.csv`; ran `catalog-sync.ts` live, confirmed `Task:Catalog` (60), `Schedule:Catalog` (50), `Schedule-[:APPLIES_TO]->Task` (50), `Task-[:IMPLEMENTS]->Control` (60) via direct Cypher; hit `GET /catalog/calendar` live and spot-checked occurrence counts per cadence; found and fixed a real bug this way (`Hourly` cadence produced ~24 duplicate dates per day due to `computeWindow`'s day-level granularity); loaded `/calendar` in a real headless browser (Playwright), confirmed correct rendering and drill-down, and confirmed zero console errors post-fix. This verification predates the `a26eb83` matrix-view consolidation (2026-07-29) — the UI has since changed (drill-down → hover) and hasn't been re-run through Playwright.
 - Phase 4a ✅: hit `GET /assurance/posture` live against the running dev instance; confirmed `requirements.covered` (30/34) cross-checks exactly against the 4 uncovered `Requirement`s Phase 3's agent already found independently; confirmed `assets.unmappedComplianceArea` (2) surfaces the known `Security`-category gap explicitly rather than folding it into "uncovered"; confirmed `riskRollup` matches `vyra-graph-spine.md`'s per-incident risk table exactly (Critical 2/avg 19, High 3/avg 15.3, Medium 2/avg 10.5); `tsc --noEmit` clean on `api/`.
 - Phase 4b ✅: ran `generate-assurance-seed.ts`, confirmed exact 7/7/7/7 node row counts + 18/7 edge row counts; ran `./ingest.sh` live, confirmed via direct Cypher (`EvidencePackage`/`Attestation`/`AssuranceStatement`/`Audit`: 7 each; `PART_OF`: 30, `BACKED_BY`: 7, `DERIVED_FROM`: 7, `COVERS`: 18, `PREPARED_FOR`: 7); `tsc --noEmit` clean on `api/` and `ui/`.
+- Phase 7 ✅: approved a real `control-recommendation` Decision live, confirmed the `Control:AgentProposed` node + `IMPLEMENTS` edge via direct Cypher and confirmed `GET /assurance/posture` coverage was unchanged (30/34, 88.2%); approved a `deviation-assessment` Decision against both a covered-asset signal (confirmed real `AGAINST` edges) and the `Security`-category coverage-gap signal (confirmed zero `AGAINST`, one `ABOUT`); rejected a Decision and confirmed only its own properties changed; hit both new routes with an invalid id (404) and an already-resolved decision (400, both approve and reject); drove `/intelligence` in a real headless browser (Playwright, cold-started per the new `.claude/skills/verify/SKILL.md`), clicked Approve/Reject through the actual buttons, confirmed all 6 decisions ended resolved with zero console errors; `tsc --noEmit` clean on `agents/`, `api/`, `ui/`.
 
 **Correction from the original plan**: this section originally said "each phase should end with `/dev-audit`." That skill's checks are written for a different project template (`app/module/*/edge/api/`, Koa, `dbv4x`) that doesn't exist in this repo — running it produces false negatives, not real coverage. There is no drop-in substitute gate in this repo today; live-query verification against Neo4j (as done for Phase 0/1 above) is the actual closing check until one exists.

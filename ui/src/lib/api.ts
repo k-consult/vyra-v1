@@ -6,9 +6,23 @@ const get = async <T>(path: string): Promise<T> => {
     return res.json();
 };
 
+const post = async <T>(path: string, body?: any): Promise<T> => {
+    const res = await fetch(`${BASE}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body ?? {}),
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `API ${path} ${res.status}`);
+    }
+    return res.json();
+};
+
 export const knowledge = {
     regulations: () => get<{ regulations: any[] }>('/knowledge/regulations'),
     controls:    () => get<{ controls: any[] }>('/knowledge/controls'),
+    agentProposedControls: () => get<{ controls: any[] }>('/knowledge/controls/agent-proposed'),
     traceForward: (id: string) => get(`/knowledge/trace/${id}`),
     traceReverse: (id: string) => get(`/knowledge/reverse/${id}`),
 };
@@ -36,6 +50,10 @@ export const intelligence = {
     decisions:    () => get<{ decisions: any[] }>('/intelligence/decisions'),
     rcas:         () => get<{ rcas: any[] }>('/intelligence/rcas'),
     reverseTrace: (id: string) => get<any>(`/intelligence/incidents/${id}/reverse-trace`),
+    approve: (id: string, reviewedBy?: string, reviewNote?: string) =>
+        post<any>(`/intelligence/decisions/${id}/approve`, { reviewedBy, reviewNote }),
+    reject: (id: string, reviewedBy?: string, reviewNote?: string) =>
+        post<any>(`/intelligence/decisions/${id}/reject`, { reviewedBy, reviewNote }),
 };
 
 export type ComplianceAreaCoverage = {

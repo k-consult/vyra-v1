@@ -623,6 +623,8 @@ Policies, SOPs, and operational procedures that implement requirements.
 
 **15 controls** (legacy enterprise pipeline, unlabeled, per-incident numbering `CTL-{incident}-{seq}`, from the "Policies & SOPs" column) **+ 30 controls** (`CTRL-001`–`CTRL-030`, `:Catalog` label, from `08_Operational_Controls` — a reusable control catalog, not per-incident) — same dual-origin coexistence pattern as `Regulation`/`Regulation:Catalog`.
 
+**Plus a fourth origin, `:AgentProposed` (Phase 7, 2026-08-16):** created live when a human approves a `control-recommendation` `Decision` — `id: CTL-{decisionId}`, `controlType` = the Decision's `recommendedControlType`, `description` = the Decision's `rationale`, `status: 'proposed'`. Same structural-label reasoning as Phase 0.5's `:Catalog` convention. `getCoverageScore()` filters explicitly to `Control:Catalog`, so `:AgentProposed` controls are excluded from the coverage percentage until a real "verified operational" status transition exists (deliberately out of scope for Phase 7 — see `vyra-implementation-plan.md`).
+
 ---
 
 ### `ComplianceArea`
@@ -899,6 +901,8 @@ Specific compliance gaps or failures identified during an audit.
 
 **15 findings** across 7 incidents.
 
+**Plus `:AgentProposed` Findings (Phase 7, 2026-08-16):** created live when a human approves a `deviation-assessment` `Decision` — `id: FND-{decisionId}`, `severity: 'UNKNOWN'` (no real signal to derive one from), `-[:AGAINST]-> Control` per id on the triggering Signal's linked Task if the asset had coverage, or `-[:ABOUT]-> Signal` instead if it didn't — recording the coverage gap honestly rather than fabricating a Control link. See `Decision` above and `REVIEWED_BY`/`ABOUT` in Appendix B.
+
 ---
 
 ### `Risk`
@@ -948,7 +952,7 @@ Root cause analysis entries linked to findings.
 ---
 
 ### `Decision`
-An agent's recommendation (first real agent). Autonomy Level 1 — proposes only, never mutates the graph beyond writing this node.
+An agent's recommendation (first real agent). Autonomy Level 1 — proposes only, never mutates the graph beyond writing this node at reasoning time. **Phase 7 (2026-08-16)** made `status` a real approve/reject gate instead of a permanent `pending` — see `REVIEWED_BY` in Appendix B and the `:AgentProposed` note under `Control`/`Finding` below for what approval writes.
 
 | Property | Type | Example |
 |---|---|---|
@@ -958,10 +962,14 @@ An agent's recommendation (first real agent). Autonomy Level 1 — proposes only
 | agentId | string | `control-intelligence-agent` |
 | autonomyLevel | int | `1` |
 | confidence | float | `0`–`1`, LLM-reported |
-| status | string | `pending` |
+| status | string | `pending` / `approved` / `rejected` |
 | decidedAt | datetime | |
+| recommendedControlType | string | `policy` / `sop` / `operational-check` / `UNKNOWN` — `control-recommendation` only; the LLM's own structured answer to what `rationale` already argues for, added Phase 7 so approval doesn't have to guess it back out of free text |
+| reviewedBy | string | `PER-PRIYA_NAIR` — a real seeded `Person.id`, blank if unresolved. No auth exists yet, so this is honest-but-informal: a UI picker, not a login |
+| reviewedAt | datetime | set on approve/reject |
+| reviewNote | string | optional, mainly for rejection reasons |
 
-No CSV feed — recorded live by the agent runtime when an agent reasons. See §3.3.
+No CSV feed — recorded live by the agent runtime when an agent reasons, and updated live by the API when a human resolves it (`POST /intelligence/decisions/:id/{approve,reject}`, Phase 7). See §3.3.
 
 ---
 
@@ -1113,6 +1121,9 @@ Authored at runtime (by the events sink or the agent runtime) or by a derived jo
 | `HAS_TASK` | Signal → Task | Follow-up work derived from a signal (reuses the `HAS_TASK` name used for `Incident → Task`) |
 | `COVERED_BY` | Asset → Control | Asset falls under a control, derived through the shared `ComplianceArea` |
 | `ABOUT` | Decision → * | An agent recommendation about some entity (polymorphic target — whatever the decision concerns) |
+| `REVIEWED_BY` | Decision → Person | Phase 7 — human reviewer attribution on approve/reject, written only when `reviewedBy` resolves to a real seeded `Person.id` |
+| `IMPLEMENTS` | Control:AgentProposed → Requirement | Phase 7 — approved `control-recommendation`; same relationship the catalog pipeline already uses, on a `:AgentProposed`-labeled `Control` |
+| `AGAINST` / `ABOUT` | Finding:AgentProposed → Control / Signal | Phase 7 — approved `deviation-assessment`; `AGAINST` per covered `Control`, or `ABOUT` the `Signal` directly if the asset had no coverage |
 
 ### Designed, not yet active
 Part of the designed model, awaiting the entities they connect — they carry no data today.
@@ -1287,7 +1298,7 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 
 # Appendix F · Document History
 
-**Version 1.9** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
+**Version 1.10** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
 
 | Date | Change |
 |---|---|
@@ -1300,3 +1311,4 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 | 2026-08-16 | Phase 4b — documented and fed the previously-dormant Assurance chain (`EvidencePackage`, `Attestation`, `AssuranceStatement`, `Audit`), all four **synthetic, script-generated 1:1 off the 7-incident dataset** (`cli/scripts/generate-assurance-seed.ts`) rather than a real audit-trail source — flagged explicitly as a placeholder in Appendix A. Added `PART_OF` (Evidence→EvidencePackage), `COVERS` (AssuranceStatement→Regulation), `PREPARED_FOR` (AssuranceStatement→Audit); `BACKED_BY`/`DERIVED_FROM` went live for the first time. |
 | 2026-08-16 | Agent runtime swapped from the Anthropic API to a local Ollama LLM (`llama3.1:8b`, no API key) — no schema change, but `Decision.rationale`/`Decision.confidence` descriptions reworded provider-neutral. See `vyra-implementation-plan.md`'s Phase 3 follow-up. |
 | 2026-08-16 | Phase 5 — new `signal-intelligence` agent (no schema change, reuses `Signal`/`Decision`). Phase 6 — `Person` fed for the first time (7 rows, extracted from free-text name fields already in the legacy dataset), added `roleTitle` prop, `WORKS_AT` went live as a many-valued relationship, `HAS_ROLE` remains declared-but-unfired (documented gap). |
+| 2026-08-16 | Phase 7 — Human-in-the-Loop Decision Gate. `Decision` gained `recommendedControlType`/`reviewedBy`/`reviewedAt`/`reviewNote` and a real `status` state machine (`pending → approved/rejected`) via new `POST /intelligence/decisions/:id/{approve,reject}`. New `REVIEWED_BY` (Decision→Person) went live. Approval now writes the thing the agent recommended: a `Control:AgentProposed` (`-[:IMPLEMENTS]-> Requirement`, excluded from `getCoverageScore()`) for `control-recommendation`, or a `Finding:AgentProposed` (`-[:AGAINST]-> Control` per id if covered, else `-[:ABOUT]-> Signal`) for `deviation-assessment`. `:AgentProposed` is a fourth Control/Finding origin label alongside `:Catalog`/`:Enterprise`/unlabeled-legacy. |

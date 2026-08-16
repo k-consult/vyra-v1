@@ -57,6 +57,130 @@ export const listDecisions = async () => {
     }
 };
 
+const GET_DECISION = `
+    MATCH (d:Decision {id: $id})
+    RETURN properties(d) AS decision
+`;
+
+export const getDecision = async (id: string) => {
+    try {
+        const raw: any = await db().fetch2(GET_DECISION, { id });
+        const row = Array.isArray(raw) ? raw[0] : raw;
+        return row?.decision ?? null;
+    } catch (err: any) {
+        log.error(`intelligence.repo: getDecision failed ${id}`, err.message);
+        return null;
+    }
+};
+
+// Phase 7 — Human-in-the-Loop Decision Gate. Reject is type-agnostic (just a status
+// flip); approve branches on Decision.type since control-recommendation and
+// deviation-assessment each resolve to a different graph write (see
+// .design/7-human-in-the-loop-decision-gate-plan.md). REVIEWED_BY is only merged when
+// reviewedBy resolves to a real seeded Person — no auth exists yet, so this stays
+// honest-but-informal rather than fabricating attribution.
+const REJECT_DECISION = `
+    MATCH (d:Decision {id: $id})
+    SET d.status = 'rejected',
+        d.reviewedAt = datetime(),
+        d.reviewedBy = $reviewedBy,
+        d.reviewNote = $reviewNote
+    WITH d
+    OPTIONAL MATCH (p:Person {id: $reviewedBy})
+    FOREACH (_ IN CASE WHEN p IS NOT NULL THEN [1] ELSE [] END | MERGE (d)-[:REVIEWED_BY]->(p))
+    RETURN properties(d) AS decision
+`;
+
+// New Control gets :AgentProposed alongside :Control — a fourth origin category next
+// to :Catalog/:Enterprise/unlabeled-legacy (same structural-label reasoning as Phase
+// 0.5's :Catalog convention). getCoverageScore() already filters to Control:Catalog
+// explicitly, so this is excluded from the coverage percentage with no further change.
+const APPROVE_CONTROL_RECOMMENDATION = `
+    MATCH (d:Decision {id: $id})-[:ABOUT]->(req:Requirement)
+    MERGE (ctl:Control:AgentProposed {id: $controlId})
+    ON CREATE SET
+        ctl.name = 'Proposed Control - ' + coalesce(req.name, req.id),
+        ctl.controlType = coalesce(d.recommendedControlType, 'UNKNOWN'),
+        ctl.description = d.rationale,
+        ctl.status = 'proposed',
+        ctl.createdAt = datetime()
+    MERGE (ctl)-[:IMPLEMENTS]->(req)
+    SET d.status = 'approved',
+        d.reviewedAt = datetime(),
+        d.reviewedBy = $reviewedBy,
+        d.reviewNote = $reviewNote
+    WITH d, ctl
+    OPTIONAL MATCH (p:Person {id: $reviewedBy})
+    FOREACH (_ IN CASE WHEN p IS NOT NULL THEN [1] ELSE [] END | MERGE (d)-[:REVIEWED_BY]->(p))
+    RETURN properties(d) AS decision, properties(ctl) AS control
+`;
+
+// Forks on whether the signal's asset had Control coverage, visible via the linked
+// Task's controlIds (Phase 3's createSignal already resolves this at signal-time).
+// Covered: AGAINST each real Control. Uncovered: ABOUT the Signal instead — records the
+// deviation honestly rather than fabricating a Control link that doesn't exist. UNWIND
+// (not FOREACH) is used for the per-controlId MATCH since FOREACH cannot contain a
+// MATCH clause; the [null] sentinel keeps a single pass through the uncovered branch
+// when controlIds is empty.
+const APPROVE_DEVIATION_ASSESSMENT = `
+    MATCH (d:Decision {id: $id})-[:ABOUT]->(sig:Signal)
+    OPTIONAL MATCH (sig)-[:HAS_TASK]->(tsk:Task)
+    WITH d, sig, reduce(ids = [], t IN collect(DISTINCT tsk) | ids + coalesce(t.controlIds, [])) AS controlIds
+    MERGE (f:Finding:AgentProposed {id: $findingId})
+    ON CREATE SET
+        f.name = 'Deviation - ' + coalesce(sig.type, 'UNKNOWN'),
+        f.severity = 'UNKNOWN',
+        f.detectedAt = datetime(),
+        f.status = 'open'
+    WITH d, sig, f, controlIds
+    UNWIND (CASE WHEN size(controlIds) = 0 THEN [null] ELSE controlIds END) AS cid
+    OPTIONAL MATCH (ctl:Control {id: cid})
+    FOREACH (_ IN CASE WHEN ctl IS NOT NULL THEN [1] ELSE [] END | MERGE (f)-[:AGAINST]->(ctl))
+    FOREACH (_ IN CASE WHEN cid IS NULL THEN [1] ELSE [] END | MERGE (f)-[:ABOUT]->(sig))
+    WITH DISTINCT d, f
+    SET d.status = 'approved',
+        d.reviewedAt = datetime(),
+        d.reviewedBy = $reviewedBy,
+        d.reviewNote = $reviewNote
+    WITH d, f
+    OPTIONAL MATCH (p:Person {id: $reviewedBy})
+    FOREACH (_ IN CASE WHEN p IS NOT NULL THEN [1] ELSE [] END | MERGE (d)-[:REVIEWED_BY]->(p))
+    RETURN properties(d) AS decision, properties(f) AS finding
+`;
+
+export const resolveDecision = async (
+    id: string,
+    type: string,
+    action: 'approve' | 'reject',
+    reviewedBy?: string,
+    reviewNote?: string
+) => {
+    const params = { id, reviewedBy: reviewedBy ?? null, reviewNote: reviewNote ?? null };
+    try {
+        if (action === 'reject') {
+            const raw: any = await db().exec2(REJECT_DECISION, params);
+            const row = Array.isArray(raw) ? raw[0] : raw;
+            return { decision: row?.decision };
+        }
+        if (type === 'control-recommendation') {
+            const raw: any = await db().exec2(APPROVE_CONTROL_RECOMMENDATION, { ...params, controlId: `CTL-${id}` });
+            const row = Array.isArray(raw) ? raw[0] : raw;
+            if (!row?.decision) throw new Error(`Decision ${id} has no linked Requirement to approve`);
+            return { decision: row.decision, control: row.control };
+        }
+        if (type === 'deviation-assessment') {
+            const raw: any = await db().exec2(APPROVE_DEVIATION_ASSESSMENT, { ...params, findingId: `FND-${id}` });
+            const row = Array.isArray(raw) ? raw[0] : raw;
+            if (!row?.decision) throw new Error(`Decision ${id} has no linked Signal to approve`);
+            return { decision: row.decision, finding: row.finding };
+        }
+        throw new Error(`Unknown decision type: ${type}`);
+    } catch (err: any) {
+        log.error(`intelligence.repo: resolveDecision failed ${id}`, err.message);
+        throw err;
+    }
+};
+
 const GET_REVERSE_TRACE = `
     MATCH (inc:Incident {id: $id})
     OPTIONAL MATCH (inc)-[:GOVERNED_BY]->(reg:Regulation)

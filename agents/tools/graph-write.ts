@@ -17,6 +17,7 @@ export interface DecisionPayload {
     confidence: number;
     sourceId: string;
     targetId?: string;
+    recommendedControlType?: string;
 }
 
 // (d)-[:ABOUT]->(src): written directly by agents, not the CLI pipeline — not in

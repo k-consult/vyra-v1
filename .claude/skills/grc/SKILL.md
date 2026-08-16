@@ -25,10 +25,16 @@ Each has one job — don't look for status in the vision doc, or vision in the t
 4. Read `.design/vyra-tracker.md` in full — the JTBD Layer Status table and phase rollup are the authoritative "what's live vs. gap" view.
 5. Read `.design/vyra-implementation-plan.md` in full — phase sequencing, what's ✅ done vs. not-started, verification approach.
 6. Run `git log --oneline -10` and `git status --short` — the docs describe intent, git is ground truth for what's actually committed vs. sitting uncommitted in the working tree.
-7. Report back, in this order:
+7. Report back — **every time this skill runs**, not just on first load — in this order:
    - **Phase status** — which phases are done (per the plan doc's ✅ markers + the tracker's phase rollup), which is explicitly next, and whether the working tree has uncommitted changes from the phase just finished.
    - **Open gaps/decisions** — pull directly from the tracker's JTBD Layer Status table and the plan doc's phase notes; they're already itemized, don't re-derive from scratch (e.g. `Person` unfed, the `Security`-category `ComplianceArea` gap, Phase 4b (Audit-Ready Export) blocked pending a scoping decision, `ANTHROPIC_API_KEY` not in `.env`).
    - **Recommended next step** — name the 1–2 most-ready next increments (least blocked first). If more than one is genuinely ready, state the tradeoff between them rather than silently picking one.
+8. Then **stop and ask** — don't pick a direction yourself. Use `AskUserQuestion` with options along these lines (adapt wording to what the state report actually surfaced):
+   - Understand the GRC platform — how it works
+   - Add a new feature
+   - Debug an issue
+   - Something else
+   Route the answer to the right paired skill/workflow below rather than assuming which one the user wants.
 
 ## Known staleness to flag, not silently fix
 

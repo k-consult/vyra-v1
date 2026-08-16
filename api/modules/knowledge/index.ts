@@ -1,10 +1,14 @@
 import { FastifyInstance } from 'fastify';
 import { Module } from '../../types';
-import { traceForward, traceReverse, listRegulations, listControls } from './repo';
+import { traceForward, traceReverse, listRegulations, listControls, listAgentProposedControls } from './repo';
 
 const knowledge: any = async (fastify: FastifyInstance) => {
     fastify.get('/regulations', async (_req, reply) => {
         reply.send({ regulations: await listRegulations() });
+    });
+
+    fastify.get('/controls/agent-proposed', async (_req, reply) => {
+        reply.send({ controls: await listAgentProposedControls() });
     });
 
     fastify.get('/controls', async (_req, reply) => {

@@ -18,6 +18,7 @@ export const defaultContext = (): AgentContext => ({
 export interface Reasoning {
     rationale: string;
     confidence: number;
+    [key: string]: any;
 }
 
 export interface AgentLoopSteps<T> {
@@ -47,7 +48,11 @@ export const runAgentLoop = async <T>(agentId: string, steps: AgentLoopSteps<T>)
 // tool-use/function-calling. This is the first agent proving the loop end-to-end;
 // multi-turn tool-calling is a natural follow-up once the primitive is proven.
 // Backed by a local Ollama model — no API key, no cloud billing.
-export const reasonWithLLM = async (prompt: string): Promise<Reasoning> => {
+//
+// extraSchema lets a caller ask for additional structured fields beyond
+// rationale/confidence (e.g. control-intelligence's recommendedControlType) without
+// every agent paying for a wider, agent-specific response contract on the primitive.
+export const reasonWithLLM = async (prompt: string, extraSchema?: string): Promise<Reasoning> => {
     const res = await fetch(`${OLLAMA_HOST}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -57,7 +62,7 @@ export const reasonWithLLM = async (prompt: string): Promise<Reasoning> => {
             format: 'json',
             messages: [{
                 role: 'user',
-                content: `${prompt}\n\nRespond with ONLY a JSON object of the form {"rationale": string, "confidence": number between 0 and 1}. No other text.`,
+                content: `${prompt}\n\nRespond with ONLY a JSON object of the form {"rationale": string, "confidence": number between 0 and 1${extraSchema ? `, ${extraSchema}` : ''}}. No other text.`,
             }],
         }),
     });
@@ -67,6 +72,7 @@ export const reasonWithLLM = async (prompt: string): Promise<Reasoning> => {
     try {
         const parsed = JSON.parse(text);
         return {
+            ...parsed,
             rationale: String(parsed.rationale ?? 'UNKNOWN'),
             confidence: Number(parsed.confidence ?? 0),
         };

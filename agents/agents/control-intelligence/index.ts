@@ -1,3 +1,4 @@
+import * as R from 'ramda';
 import { defaultContext, runAgentLoop, reasonWithLLM, Reasoning } from '../../runtime';
 import { fetchRequirements } from '../../tools/graph-read';
 import { writeDecision, DecisionPayload } from '../../tools/graph-write';
@@ -31,7 +32,8 @@ export const run = async (regulationId?: string): Promise<void> => {
         reason: (req): Promise<Reasoning> => reasonWithLLM(
             `A compliance requirement has no Control implementing it yet:\n` +
             `Requirement: "${req.name}" (mandatory: ${req.mandatory ?? 'UNKNOWN'}, type: ${req.obligationType ?? 'UNKNOWN'})\n` +
-            `Recommend, in one or two sentences, what kind of Control (policy, SOP, or operational check) should implement this requirement.`
+            `Recommend, in one or two sentences, what kind of Control (policy, SOP, or operational check) should implement this requirement, and state your recommended type explicitly.`,
+            `"recommendedControlType": one of "policy" | "sop" | "operational-check"`
         ),
 
         act: async (req, reasoning) => {
@@ -43,6 +45,7 @@ export const run = async (regulationId?: string): Promise<void> => {
                 autonomyLevel: ctx.autonomyLevel,
                 confidence: reasoning.confidence,
                 sourceId: req.id,
+                recommendedControlType: R.defaultTo('UNKNOWN', reasoning.recommendedControlType),
             };
             await writeDecision(decision);
         },
