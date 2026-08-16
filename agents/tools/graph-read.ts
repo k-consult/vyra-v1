@@ -34,6 +34,28 @@ export const fetchControlsForRequirement = async (requirementId: string) => {
     return rows.map((r: any) => r.control).filter(Boolean);
 };
 
+// Signals not yet reasoned about — no Decision ABOUT them yet. Joined with the
+// emitting Asset (context: category/complianceAreaId) and any auto-created Task
+// (HAS_TASK, written live by the events sink when the asset is covered) so the
+// agent can tell "covered asset, follow-up already scheduled" from "coverage gap".
+export const fetchUnassessedSignals = async () => {
+    const cypher = `
+        MATCH (s:Signal)
+        WHERE NOT (:Decision)-[:ABOUT]->(s)
+        OPTIONAL MATCH (s)-[:EMITTED_BY]->(ast:Asset)
+        OPTIONAL MATCH (s)-[:HAS_TASK]->(tsk:Task)
+        RETURN properties(s) AS signal, properties(ast) AS asset, collect(DISTINCT tsk.id) AS taskIds
+        LIMIT 100
+    `;
+    const raw: any = await db().fetch2(cypher, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.filter((r: any) => r?.signal).map((r: any) => ({
+        ...r.signal,
+        asset: r.asset ?? null,
+        taskIds: (r.taskIds ?? []).filter(Boolean),
+    }));
+};
+
 export const traceForward = async (regulationId: string) => {
     const cypher = `
         MATCH path = (:Regulation {id: $id})<-[:BELONGS_TO]-(:Clause)<-[:DEFINED_BY]-(:Requirement)<-[:IMPLEMENTS]-(:Control)

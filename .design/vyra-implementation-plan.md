@@ -21,7 +21,7 @@ An early audit found the codebase was earlier-stage than the docs suggested at t
 
 **Second data source:** `.design/__ref/entity-alignment.md` maps `.design/__ref/synthetic-data/data.csv` (a second, independent enterprise seed — Industrial Parks/Warehouse/3PL vertical, entity extraction in `.design/__ref/consolidated-entities.md`) against this plan. It was largely confirmatory for Phase 1 and partially for Phase 2 (Role/Organization/Location present in the source, Person/Identity still missing), surfaced two net-new domain concepts with no current home (`InsuranceClause`, `ComplianceArea`), and flagged a second relationship-vocabulary set — reconciled together with Phase 0's fix.
 
-This plan covers **design and sequencing**, one phase at a time. **Phases 0, 0.5, 1, 2, 3, 3.5, 4a, and 4b are done** (4b on synthetic seed data — see its section below).
+This plan covers **design and sequencing**, one phase at a time. **Phases 0, 0.5, 1, 2, 3, 3.5, 4a, 4b, and 5 are done** (4b on synthetic seed data — see its section below).
 
 ---
 
@@ -33,7 +33,7 @@ One line per JTBD layer (the 7-layer model defined in `vyra-landscape.md`; the f
 - **L2 Interpret** — Requirement→Control→Asset chain live; 2 Security-category assets still unmapped (documented gap)
 - **L3 Planning** — 52-week calendar + Org/Role live; `Person` (named individuals) unfed, task-completion tracking not built
 - **L4 Graph Spine** — complete (it's the infrastructure itself; "Review" = Autonomy Level 1 human-approval gate)
-- **L5 Oversight** — Signal + first agent (`control-intelligence`) live; nothing watches Signals for deviations yet, `signal-intelligence` still a stub
+- **L5 Oversight** — Signal + `control-intelligence` + `signal-intelligence` all live (Phase 5) — Signals are now watched for deviations; Escalation Paths still free text, not graph-modeled
 - **L6 Assurance** — Coverage Scoring done (Phase 4a); Audit-Ready Export done on synthetic seed data (Phase 4b) — a real audit-trail source is still needed to replace the fabricated `Audit`/`EvidencePackage`/`Attestation`/`AssuranceStatement` chain
 - **L7 Risk** — Per-Finding score + portfolio rollup live (Phase 4a); Scenario Simulation gap, needs agents beyond `control-intelligence`
 
@@ -185,6 +185,22 @@ Verified live: `generate-assurance-seed.ts` produced exactly 7/7/7/7 node rows +
 **Files**: `cli/scripts/generate-assurance-seed.ts` (new), `cli/semantic-contract/contracts/v2.ts`, `cli/domains/grc/ingest-hints.json`, `cli/feeds/csv/assurance/{evidence.csv,evidence-packages.csv,attestations.csv,assurance-statements.csv,audits.csv}`, `cli/feeds/csv/edges/{assurance_statement_regulation.csv,assurance_statement_audit.csv}`, `api/modules/assurance/{repo.ts,index.ts}`, `ui/src/lib/api.ts`, `ui/src/features/assurance/assurance.tsx`.
 
 **Explicitly out of scope for Phase 4 entirely**: Scenario Simulation (L7) — needs working agents beyond `control-intelligence`, unscoped, no phase names it yet.
+
+---
+
+## Phase 5 — Signal Intelligence Agent (L5 Deviation Alerts) ✅ DONE (2026-08-16)
+
+The second of the original 4 planned agent families (`control-intelligence`, `risk-`/`signal-`/`assurance-intelligence`) to go live, and the direct answer to the tracker's L5 gap: "no agent watches Signals directly for deviations." Entirely additive on top of Phase 3's agent runtime — no schema change, no new relationship, reuses `runAgentLoop`/`reasonWithLLM`/`writeDecision` as-is.
+
+**What got built**: `agents/agents/signal-intelligence/index.ts`, mirroring `control-intelligence`'s observe → reason → act → verify shape:
+- `observe()` — new `fetchUnassessedSignals()` in `agents/tools/graph-read.ts`: `Signal`s with no `Decision` `-[:ABOUT]->` them yet (same "not yet reasoned about" filter pattern as `fetchRequirements`'s "uncontrolled" filter), joined with the emitting `Asset` (category/complianceAreaId context) and any auto-created `Task` (`HAS_TASK` — its presence signals the asset had matching Control coverage; its absence signals a coverage gap, same as the `Security`-category assets already documented).
+- `reason()` — same `reasonWithLLM` call control-intelligence uses, prompted to assess whether the signal represents a compliance deviation and recommend a next step.
+- `act()` — writes a `Decision` (`type: 'deviation-assessment'`), **not** a `Finding`. `agents/tools/graph-write.ts`'s `writeFinding` was already scaffolded (declared, unused) and would have been the more literal "detected a deviation" write, but it creates a real `Finding` node directly — that's Autonomy Level 2+ (mutates the Intelligence graph without review), not the project's default Level 1. Deliberately not used here; kept the agent at the same "propose only" level as `control-intelligence`.
+- Registered in `agents/index.ts`'s agent map as `signal-intelligence`.
+
+Verified live against the graph's 2 real test `Signal`s (`SIG-TEST-001` fire-alarm-trip on a covered asset, `SIG-TEST-002` unauthorized-access on a `Security`-category coverage-gap asset, both from Phase 3's verification): both produced real, distinct `llama3.1:8b` rationale — the fire-alarm one flagged the missing `source` field and pointed at the auto-scheduled task for context; the unauthorized-access one correctly read it as a potential security breach needing escalation. Re-ran the agent a second time and confirmed it observed 0 signals — the `NOT (:Decision)-[:ABOUT]->(s)` filter makes it idempotent, matching `control-intelligence`'s already-established behavior.
+
+**Files**: `agents/tools/graph-read.ts`, new `agents/agents/signal-intelligence/index.ts`, `agents/index.ts`.
 
 ---
 

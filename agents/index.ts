@@ -5,9 +5,11 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 import log from '../lib/log';
 import { DB } from '../lib/graph-db';
 import { run as runControlIntelligence } from './agents/control-intelligence';
+import { run as runSignalIntelligence } from './agents/signal-intelligence';
 
 const agents: Record<string, (arg?: string) => Promise<void>> = {
     'control-intelligence': runControlIntelligence,
+    'signal-intelligence': runSignalIntelligence,
 };
 
 async function main() {
