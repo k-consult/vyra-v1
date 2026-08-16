@@ -18,6 +18,10 @@ export interface DecisionPayload {
     sourceId: string;
     targetId?: string;
     recommendedControlType?: string;
+    proposedLikelihood?: number;
+    proposedConsequence?: number;
+    proposedRating?: string;
+    proposedPosture?: string;
 }
 
 // (d)-[:ABOUT]->(src): written directly by agents, not the CLI pipeline — not in

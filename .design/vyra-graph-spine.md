@@ -933,6 +933,8 @@ Risk assessment derived from findings, with inherent and residual scores.
 | INC-006 (Scale Calibration) | 4 | 3 | 10 | Medium |
 | INC-007 (IoT Network) | 5 | 4 | 17 | High |
 
+**Plus `:AgentProposed` Risks (Phase 8, 2026-08-16):** created live when a human approves a `risk-assessment` `Decision` — `id: RSK-{decisionId}`, `-[:RAISED_BY]-> Finding`. `inherentScore`/`residualScore` are computed deterministically at approval time (`proposedLikelihood × proposedConsequence`, never trusted from the LLM as arithmetic) — the agent's own transparent scoring convention, not a fit to the 7 legacy scores above (those come from an un-reverse-engineerable synthetic matrix: e.g. INC-001's 4×5=18, not the straight product 20). `residual == inherent` at proposal time — no CAPA has closed yet for a newly-scored Finding, so there's no mitigation to discount. Unlike `Control:AgentProposed`, **not excluded** from `getRiskRollup()` — an approved risk assessment is real current exposure, so it counts toward the L7 portfolio rollup immediately (a deliberate asymmetry with the Coverage Score exclusion, not an inconsistency — see `vyra-implementation-plan.md` Phase 8).
+
 ---
 
 ### `RCA`
@@ -952,12 +954,12 @@ Root cause analysis entries linked to findings.
 ---
 
 ### `Decision`
-An agent's recommendation (first real agent). Autonomy Level 1 — proposes only, never mutates the graph beyond writing this node at reasoning time. **Phase 7 (2026-08-16)** made `status` a real approve/reject gate instead of a permanent `pending` — see `REVIEWED_BY` in Appendix B and the `:AgentProposed` note under `Control`/`Finding` below for what approval writes.
+An agent's recommendation (first real agent). Autonomy Level 1 — proposes only, never mutates the graph beyond writing this node at reasoning time. **Phase 7 (2026-08-16)** made `status` a real approve/reject gate instead of a permanent `pending` — see `REVIEWED_BY` in Appendix B and the `:AgentProposed` note under `Control`/`Finding` below for what approval writes. **Phase 8 (2026-08-16)** added two more decision types — `risk-assessment` and `assurance-package-proposal` — completing the agent roster to 4 of 4 families; see the `:AgentProposed` notes under `Risk` above and `EvidencePackage`/`Attestation`/`AssuranceStatement`/`Audit` below for what their approvals write.
 
 | Property | Type | Example |
 |---|---|---|
 | id | string | `DEC-OBL-0012` |
-| type | string | `control-recommendation` |
+| type | string | `control-recommendation` / `deviation-assessment` / `risk-assessment` / `assurance-package-proposal` |
 | rationale | string | the LLM's one/two-sentence recommendation |
 | agentId | string | `control-intelligence-agent` |
 | autonomyLevel | int | `1` |
@@ -965,6 +967,9 @@ An agent's recommendation (first real agent). Autonomy Level 1 — proposes only
 | status | string | `pending` / `approved` / `rejected` |
 | decidedAt | datetime | |
 | recommendedControlType | string | `policy` / `sop` / `operational-check` / `UNKNOWN` — `control-recommendation` only; the LLM's own structured answer to what `rationale` already argues for, added Phase 7 so approval doesn't have to guess it back out of free text |
+| proposedLikelihood / proposedConsequence | int | `1`–`5` — `risk-assessment` only (Phase 8); the LLM's structured likelihood/consequence answer. `inherentScore`/`residualScore` are computed from these at approval time, never trusted from the LLM as arithmetic |
+| proposedRating | string | `Low` / `Medium` / `High` / `Critical` — `risk-assessment` only (Phase 8); LLM-stated band, carried through as-is |
+| proposedPosture | string | `Compliant` / `Compliant with open corrective action` — `assurance-package-proposal` only (Phase 8); **computed**, not LLM-decided, from the real `Incident → Finding → RCA → CAPA → Verification` chain (same rule Phase 4b's `generate-assurance-seed.ts` uses) |
 | reviewedBy | string | `PER-PRIYA_NAIR` — a real seeded `Person.id`, blank if unresolved. No auth exists yet, so this is honest-but-informal: a UI picker, not a login |
 | reviewedAt | datetime | set on approve/reject |
 | reviewNote | string | optional, mainly for rejection reasons |
@@ -1004,6 +1009,8 @@ A bundle of `Evidence` assembled for a single Incident's audit period — the un
 
 **7 evidence packages**, one per Incident.
 
+**Plus `:AgentProposed` EvidencePackages (Phase 8, 2026-08-16):** created live when a human approves an `assurance-package-proposal` `Decision` — same `EPKG-{incidentId}` id shape as the synthetic batch (this is 1:1 with the Incident, not the proposal event), but the `:AgentProposed` label distinguishes a live-approved package from Phase 4b's unlabeled synthetic one, so there's no id collision. Bundles whatever `Evidence` was still unbundled at proposal time via `PART_OF`.
+
 ---
 
 ### `Attestation`
@@ -1019,6 +1026,8 @@ A named individual's formal sign-off that an `EvidencePackage` is complete and a
 | status | string | `attested` |
 
 **7 attestations**, one per EvidencePackage.
+
+**Plus `:AgentProposed` Attestations (Phase 8, 2026-08-16):** created live on `assurance-package-proposal` approval — `attestedBy` is the human reviewer who approved it (a real seeded `Person.id`, same attribution mechanism as `Decision.reviewedBy`), not a value promoted from `Incident` like the synthetic batch.
 
 ---
 
@@ -1037,6 +1046,8 @@ The auditor-facing posture statement derived from an `Attestation` — what Audi
 
 **7 assurance statements**, one per Attestation.
 
+**Plus `:AgentProposed` AssuranceStatements (Phase 8, 2026-08-16):** created live on `assurance-package-proposal` approval — `posture` is copied from the Decision's `proposedPosture`, which was itself computed live off the graph by `assurance-intelligence` at observe time using the identical rule described above, not re-derived at approval time.
+
 ---
 
 ### `Audit`
@@ -1052,6 +1063,10 @@ The formal audit engagement an `AssuranceStatement` is prepared for. **Synthetic
 | status | string | `closed` |
 
 **7 audits**, one per Incident.
+
+**Plus `:AgentProposed` Audits (Phase 8, 2026-08-16):** created live on `assurance-package-proposal` approval — same promoted-from-`Incident` shape as the synthetic batch, computed at approval time from the same `Incident` fields. Also introduces the first API-side (not batch-script) `quarterOf()` derivation for `period`, ported from `generate-assurance-seed.ts`'s `quarterOf()`.
+
+Together, Phase 8's `assurance-intelligence` agent means the Audit-Ready Export chain is no longer *only* synthetic — new Incidents (or any existing Incident that gains new unbundled Evidence) get this chain proposed live and human-approved, going through `cli/scripts/generate-assurance-seed.ts` only for the original 7-incident historical batch, which the script still owns unchanged. `origin: 'agent-proposed' | 'synthetic'`, derived from `labels(n)`, is exposed on all four `GET /assurance/*` list endpoints so the UI can tell them apart.
 
 ---
 
@@ -1124,6 +1139,8 @@ Authored at runtime (by the events sink or the agent runtime) or by a derived jo
 | `REVIEWED_BY` | Decision → Person | Phase 7 — human reviewer attribution on approve/reject, written only when `reviewedBy` resolves to a real seeded `Person.id` |
 | `IMPLEMENTS` | Control:AgentProposed → Requirement | Phase 7 — approved `control-recommendation`; same relationship the catalog pipeline already uses, on a `:AgentProposed`-labeled `Control` |
 | `AGAINST` / `ABOUT` | Finding:AgentProposed → Control / Signal | Phase 7 — approved `deviation-assessment`; `AGAINST` per covered `Control`, or `ABOUT` the `Signal` directly if the asset had no coverage |
+| `RAISED_BY` | Risk:AgentProposed → Finding | Phase 8 — approved `risk-assessment`; same relationship the legacy pipeline already uses, on a `:AgentProposed`-labeled `Risk` |
+| `PART_OF` / `BACKED_BY` / `DERIVED_FROM` / `COVERS` / `PREPARED_FOR` | EvidencePackage:AgentProposed / Attestation:AgentProposed / AssuranceStatement:AgentProposed chain | Phase 8 — approved `assurance-package-proposal`; the same five Assurance-graph relationships above, now also writable live (not only by Phase 4b's batch script) on `:AgentProposed`-labeled nodes |
 
 ### Designed, not yet active
 Part of the designed model, awaiting the entities they connect — they carry no data today.
@@ -1298,7 +1315,7 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 
 # Appendix F · Document History
 
-**Version 1.10** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
+**Version 1.11** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
 
 | Date | Change |
 |---|---|
@@ -1312,3 +1329,4 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 | 2026-08-16 | Agent runtime swapped from the Anthropic API to a local Ollama LLM (`llama3.1:8b`, no API key) — no schema change, but `Decision.rationale`/`Decision.confidence` descriptions reworded provider-neutral. See `vyra-implementation-plan.md`'s Phase 3 follow-up. |
 | 2026-08-16 | Phase 5 — new `signal-intelligence` agent (no schema change, reuses `Signal`/`Decision`). Phase 6 — `Person` fed for the first time (7 rows, extracted from free-text name fields already in the legacy dataset), added `roleTitle` prop, `WORKS_AT` went live as a many-valued relationship, `HAS_ROLE` remains declared-but-unfired (documented gap). |
 | 2026-08-16 | Phase 7 — Human-in-the-Loop Decision Gate. `Decision` gained `recommendedControlType`/`reviewedBy`/`reviewedAt`/`reviewNote` and a real `status` state machine (`pending → approved/rejected`) via new `POST /intelligence/decisions/:id/{approve,reject}`. New `REVIEWED_BY` (Decision→Person) went live. Approval now writes the thing the agent recommended: a `Control:AgentProposed` (`-[:IMPLEMENTS]-> Requirement`, excluded from `getCoverageScore()`) for `control-recommendation`, or a `Finding:AgentProposed` (`-[:AGAINST]-> Control` per id if covered, else `-[:ABOUT]-> Signal`) for `deviation-assessment`. `:AgentProposed` is a fourth Control/Finding origin label alongside `:Catalog`/`:Enterprise`/unlabeled-legacy. |
+| 2026-08-16 | Phase 8 — Complete the Agent Roster. `Decision` gained two more types: `risk-assessment` (`proposedLikelihood`/`proposedConsequence`/`proposedRating`) and `assurance-package-proposal` (`proposedPosture`, computed not LLM-decided). `:AgentProposed` now extends to `Risk` (`-[:RAISED_BY]-> Finding`, inherentScore/residualScore computed as likelihood×consequence, deliberately *not* excluded from `getRiskRollup()` unlike Control's Coverage Score exclusion) and to the full Assurance chain — `EvidencePackage`/`Attestation`/`AssuranceStatement`/`Audit` — which `assurance-intelligence` now proposes live for any Incident with unbundled Evidence, going through the same `PART_OF`/`BACKED_BY`/`DERIVED_FROM`/`COVERS`/`PREPARED_FOR` relationships Phase 4b's synthetic batch used, now also writable live. Phase 4b's `generate-assurance-seed.ts` is unchanged and still owns the original 7-incident historical batch. All four Assurance list endpoints now return an `origin: 'agent-proposed' \| 'synthetic'` field (from `labels(n)`) so callers can tell the two apart. |

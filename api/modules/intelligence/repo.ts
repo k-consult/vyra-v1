@@ -148,6 +148,89 @@ const APPROVE_DEVIATION_ASSESSMENT = `
     RETURN properties(d) AS decision, properties(f) AS finding
 `;
 
+// Risk gets :AgentProposed alongside :Risk — same fourth-origin convention as
+// Control:AgentProposed. inherentScore/residualScore are computed here in Cypher from the
+// Decision's own proposed values (never trusted from the LLM as arithmetic) — the agent's
+// own likelihood x consequence convention, not a fit to the legacy 7-incident scores (see
+// vyra-implementation-plan.md Phase 8). residual == inherent at proposal time: no CAPA has
+// closed yet for a newly-scored Finding, so there is no mitigation to discount.
+const APPROVE_RISK_ASSESSMENT = `
+    MATCH (d:Decision {id: $id})-[:ABOUT]->(f:Finding)
+    MERGE (r:Risk:AgentProposed {id: $riskId})
+    ON CREATE SET
+        r.name = 'Risk - ' + coalesce(f.name, f.id),
+        r.inherentLikelihood = toInteger(d.proposedLikelihood),
+        r.inherentConsequence = toInteger(d.proposedConsequence),
+        r.inherentScore = toInteger(d.proposedLikelihood) * toInteger(d.proposedConsequence),
+        r.inherentRating = coalesce(d.proposedRating, 'UNKNOWN'),
+        r.residualLikelihood = toInteger(d.proposedLikelihood),
+        r.residualConsequence = toInteger(d.proposedConsequence),
+        r.residualScore = toInteger(d.proposedLikelihood) * toInteger(d.proposedConsequence),
+        r.residualRating = coalesce(d.proposedRating, 'UNKNOWN'),
+        r.findingId = f.id,
+        r.status = 'proposed',
+        r.createdAt = datetime()
+    MERGE (r)-[:RAISED_BY]->(f)
+    SET d.status = 'approved',
+        d.reviewedAt = datetime(),
+        d.reviewedBy = $reviewedBy,
+        d.reviewNote = $reviewNote
+    WITH d, r
+    OPTIONAL MATCH (p:Person {id: $reviewedBy})
+    FOREACH (_ IN CASE WHEN p IS NOT NULL THEN [1] ELSE [] END | MERGE (d)-[:REVIEWED_BY]->(p))
+    RETURN properties(d) AS decision, properties(r) AS risk
+`;
+
+// Assembles the Audit-Ready Export chain (EvidencePackage/Attestation/AssuranceStatement/
+// Audit) for one Incident, live — the agent-driven replacement for
+// cli/scripts/generate-assurance-seed.ts going forward. IDs reuse that script's natural
+// EPKG-{incidentId}/ATT-{incidentId}/ASM-{incidentId}/AUD-{incidentId} shape (1:1 with the
+// Incident, not the proposal event); :AgentProposed is what distinguishes a live-approved
+// chain from Phase 4b's unlabeled synthetic one, so there is no id collision. Re-matches
+// the same unbundled-Evidence set fetchUnbundledEvidenceIncidents saw at observe time,
+// rather than trusting a possibly-stale list carried on the Decision. posture comes from
+// d.proposedPosture (computed at observe time from real CAPA/Verification state, not
+// LLM-decided — see agents/agents/assurance/index.ts). period is passed in as a param
+// (Cypher has no clean quarter function) rather than hardcoded.
+const APPROVE_ASSURANCE_PACKAGE = `
+    MATCH (d:Decision {id: $id})-[:ABOUT]->(inc:Incident)
+    MATCH (inc)-[:HAS_TASK]->(:Task)<-[:PRODUCED_BY]-(ev:Evidence)
+    WHERE NOT (ev)-[:PART_OF]->(:EvidencePackage)
+    WITH d, inc, collect(DISTINCT ev) AS evidenceList
+    MERGE (pkg:EvidencePackage:AgentProposed {id: $packageId})
+    ON CREATE SET pkg.name = 'Evidence Package - ' + inc.name, pkg.period = $period, pkg.status = 'assembled', pkg.createdAt = datetime()
+    WITH d, inc, pkg, evidenceList
+    FOREACH (e IN evidenceList | MERGE (e)-[:PART_OF]->(pkg))
+    MERGE (att:Attestation:AgentProposed {id: $attestationId})
+    ON CREATE SET att.name = 'Attestation - ' + inc.name, att.attestedBy = $reviewedBy, att.attestedAt = datetime(), att.status = 'attested'
+    MERGE (att)-[:BACKED_BY]->(pkg)
+    MERGE (asm:AssuranceStatement:AgentProposed {id: $statementId})
+    ON CREATE SET asm.name = 'Assurance Statement - ' + inc.name, asm.scope = inc.scope, asm.posture = d.proposedPosture, asm.generatedAt = datetime(), asm.status = 'issued'
+    MERGE (asm)-[:DERIVED_FROM]->(att)
+    MERGE (aud:Audit:AgentProposed {id: $auditId})
+    ON CREATE SET aud.name = inc.auditType, aud.type = inc.auditType, aud.period = $period, aud.auditor = inc.reviewedBy, aud.status = 'closed'
+    MERGE (asm)-[:PREPARED_FOR]->(aud)
+    WITH d, inc, asm
+    OPTIONAL MATCH (inc)-[:GOVERNED_BY]->(reg:Regulation)
+    FOREACH (r IN CASE WHEN reg IS NOT NULL THEN [reg] ELSE [] END | MERGE (asm)-[:COVERS]->(r))
+    SET d.status = 'approved',
+        d.reviewedAt = datetime(),
+        d.reviewedBy = $reviewedBy,
+        d.reviewNote = $reviewNote
+    WITH d
+    OPTIONAL MATCH (p:Person {id: $reviewedBy})
+    FOREACH (_ IN CASE WHEN p IS NOT NULL THEN [1] ELSE [] END | MERGE (d)-[:REVIEWED_BY]->(p))
+    RETURN properties(d) AS decision
+`;
+
+// YYYY-Qn off an incidentTime-shaped "YYYY-MM-DD HH:mm" string — same derivation
+// cli/scripts/generate-assurance-seed.ts's quarterOf() uses, ported to JS since this is a
+// live API path rather than a batch script.
+const quarterOf = (dateStr: string): string => {
+    const d = new Date(dateStr.replace(' ', 'T'));
+    return `${d.getUTCFullYear()}-Q${Math.floor(d.getUTCMonth() / 3) + 1}`;
+};
+
 export const resolveDecision = async (
     id: string,
     type: string,
@@ -173,6 +256,33 @@ export const resolveDecision = async (
             const row = Array.isArray(raw) ? raw[0] : raw;
             if (!row?.decision) throw new Error(`Decision ${id} has no linked Signal to approve`);
             return { decision: row.decision, finding: row.finding };
+        }
+        if (type === 'risk-assessment') {
+            const raw: any = await db().exec2(APPROVE_RISK_ASSESSMENT, { ...params, riskId: `RSK-${id}` });
+            const row = Array.isArray(raw) ? raw[0] : raw;
+            if (!row?.decision) throw new Error(`Decision ${id} has no linked Finding to approve`);
+            return { decision: row.decision, risk: row.risk };
+        }
+        if (type === 'assurance-package-proposal') {
+            const incRaw: any = await db().fetch2(
+                `MATCH (:Decision {id: $id})-[:ABOUT]->(inc:Incident) RETURN properties(inc) AS incident`,
+                { id }
+            );
+            const incRow = Array.isArray(incRaw) ? incRaw[0] : incRaw;
+            const incidentId = incRow?.incident?.id;
+            if (!incidentId) throw new Error(`Decision ${id} has no linked Incident to approve`);
+            const period = quarterOf(incRow.incident.incidentTime);
+            const raw: any = await db().exec2(APPROVE_ASSURANCE_PACKAGE, {
+                ...params,
+                packageId: `EPKG-${incidentId}`,
+                attestationId: `ATT-${incidentId}`,
+                statementId: `ASM-${incidentId}`,
+                auditId: `AUD-${incidentId}`,
+                period,
+            });
+            const row = Array.isArray(raw) ? raw[0] : raw;
+            if (!row?.decision) throw new Error(`Decision ${id} has no unbundled Evidence to approve`);
+            return { decision: row.decision };
         }
         throw new Error(`Unknown decision type: ${type}`);
     } catch (err: any) {

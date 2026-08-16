@@ -154,16 +154,24 @@ export const getRiskRollup = async () => {
     }
 };
 
+// origin distinguishes Phase 4b's unlabeled synthetic batch from Phase 8's live
+// assurance-intelligence agent proposals (labels() always includes the plain node label
+// plus :AgentProposed when the agent created it — see api/modules/intelligence/repo.ts's
+// APPROVE_ASSURANCE_PACKAGE).
+const originOf = (labels: string[]): 'agent-proposed' | 'synthetic' =>
+    labels.includes('AgentProposed') ? 'agent-proposed' : 'synthetic';
+
 const LIST_ATTESTATIONS = `
     MATCH (a:Attestation)
-    RETURN properties(a) AS attestation
+    RETURN properties(a) AS attestation, labels(a) AS labels
     ORDER BY a.attestedAt DESC
 `;
 
 export const listAttestations = async () => {
     try {
         const raw: any = await db().fetch2(LIST_ATTESTATIONS, {});
-        const rows = Array.isArray(raw) ? raw : [raw]; return rows.map((r: any) => r.attestation).filter(Boolean);
+        const rows = Array.isArray(raw) ? raw : [raw];
+        return rows.filter((r: any) => r?.attestation).map((r: any) => ({ ...r.attestation, origin: originOf(r.labels ?? []) }));
     } catch (err: any) {
         log.error('assurance.repo: listAttestations failed', err.message);
         return [];
@@ -172,14 +180,15 @@ export const listAttestations = async () => {
 
 const LIST_EVIDENCE_PACKAGES = `
     MATCH (p:EvidencePackage)
-    RETURN properties(p) AS evidencePackage
+    RETURN properties(p) AS evidencePackage, labels(p) AS labels
     ORDER BY p.period DESC
 `;
 
 export const listEvidencePackages = async () => {
     try {
         const raw: any = await db().fetch2(LIST_EVIDENCE_PACKAGES, {});
-        const rows = Array.isArray(raw) ? raw : [raw]; return rows.map((r: any) => r.evidencePackage).filter(Boolean);
+        const rows = Array.isArray(raw) ? raw : [raw];
+        return rows.filter((r: any) => r?.evidencePackage).map((r: any) => ({ ...r.evidencePackage, origin: originOf(r.labels ?? []) }));
     } catch (err: any) {
         log.error('assurance.repo: listEvidencePackages failed', err.message);
         return [];
@@ -190,7 +199,7 @@ const LIST_ASSURANCE_STATEMENTS = `
     MATCH (s:AssuranceStatement)
     OPTIONAL MATCH (s)-[:COVERS]->(reg:Regulation)
     WITH s, collect(DISTINCT reg.name) AS regulations
-    RETURN properties(s) AS statement, regulations
+    RETURN properties(s) AS statement, regulations, labels(s) AS labels
     ORDER BY s.generatedAt DESC
 `;
 
@@ -198,7 +207,7 @@ export const listAssuranceStatements = async () => {
     try {
         const raw: any = await db().fetch2(LIST_ASSURANCE_STATEMENTS, {});
         const rows = Array.isArray(raw) ? raw : [raw];
-        return rows.filter(Boolean).map((r: any) => ({ ...r.statement, regulations: r.regulations ?? [] }));
+        return rows.filter(Boolean).map((r: any) => ({ ...r.statement, regulations: r.regulations ?? [], origin: originOf(r.labels ?? []) }));
     } catch (err: any) {
         log.error('assurance.repo: listAssuranceStatements failed', err.message);
         return [];
@@ -209,7 +218,7 @@ const LIST_AUDITS = `
     MATCH (a:Audit)
     OPTIONAL MATCH (s:AssuranceStatement)-[:PREPARED_FOR]->(a)
     WITH a, collect(DISTINCT s.id) AS statementIds
-    RETURN properties(a) AS audit, statementIds
+    RETURN properties(a) AS audit, statementIds, labels(a) AS labels
     ORDER BY a.period DESC
 `;
 
@@ -217,7 +226,7 @@ export const listAudits = async () => {
     try {
         const raw: any = await db().fetch2(LIST_AUDITS, {});
         const rows = Array.isArray(raw) ? raw : [raw];
-        return rows.filter(Boolean).map((r: any) => ({ ...r.audit, statementIds: r.statementIds ?? [] }));
+        return rows.filter(Boolean).map((r: any) => ({ ...r.audit, statementIds: r.statementIds ?? [], origin: originOf(r.labels ?? []) }));
     } catch (err: any) {
         log.error('assurance.repo: listAudits failed', err.message);
         return [];

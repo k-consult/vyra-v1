@@ -161,6 +161,7 @@ function buildAuditChains(audits: any[], statements: any[], attestations: any[],
 function AuditChainCard({ chain }: { chain: AuditChain }) {
     const { audit, statement, attestation, evidencePackage } = chain;
     const compliant = statement?.posture === 'Compliant';
+    const agentProposed = audit?.origin === 'agent-proposed';
     return (
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 flex flex-col gap-2">
             <div className="flex items-center justify-between">
@@ -170,6 +171,14 @@ function AuditChainCard({ chain }: { chain: AuditChain }) {
                 </span>
             </div>
             <p className="text-sm text-zinc-200 font-medium">{audit?.name}</p>
+            <p
+                className="text-[10px] text-zinc-600"
+                title={agentProposed
+                    ? 'Phase 8 — proposed by assurance-intelligence, approved via the Decision gate'
+                    : 'Phase 4b — synthetic, script-generated seed data; see vyra-graph-spine.md'}
+            >
+                {agentProposed ? 'agent-proposed' : 'synthetic seed data'}
+            </p>
             <PropRow label="period" value={audit?.period} />
             <PropRow label="auditor" value={audit?.auditor} />
             {statement && <PropRow label="scope" value={statement.scope} />}
@@ -187,9 +196,6 @@ function AuditChainSection({ chains }: { chains: AuditChain[] }) {
             <div className="flex items-center gap-2">
                 <ClipboardCheck size={11} className="text-zinc-600" />
                 <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">Audit-Ready Export · {chains.length} audits</p>
-                <p className="text-[10px] text-zinc-700" title="Phase 4b — synthetic, script-generated seed data; see vyra-graph-spine.md">
-                    · synthetic seed data
-                </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {chains.map((chain, i) => <AuditChainCard key={chain.audit?.id ?? i} chain={chain} />)}
