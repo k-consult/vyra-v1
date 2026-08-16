@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "npx ts-node --transpile-only index.ts",
+    "schedule": "npx ts-node --transpile-only scheduler.ts",
     "build": "tsc"
   },
   "dependencies": {

@@ -7,16 +7,19 @@ const db = () => DB.get(config.db.twin.database, {
     password: config.db.twin.password,
 });
 
-// "Uncontrolled" — no Control implements this Requirement yet. That's the actual
-// signal control-intelligence needs; a plain unfiltered list would recommend
-// controls for requirements that already have one.
+// "Uncontrolled" — no Control implements this Requirement yet, AND no Decision
+// already proposed for it — the Control check alone isn't enough for idempotency,
+// since a Control only exists after approval (Control:AgentProposed). Without the
+// Decision check, continuous polling would re-observe and re-reason over the same
+// Requirement every cycle forever. Same no-Decision guard the other three fetchers
+// below already use.
 export const fetchRequirements = async (regulationId?: string) => {
     const cypher = regulationId
         ? `MATCH (reg:Regulation {id: $id})<-[:BELONGS_TO]-(:Clause)<-[:DEFINED_BY]-(req:Requirement)
-           WHERE NOT (req)<-[:IMPLEMENTS]-(:Control)
+           WHERE NOT (req)<-[:IMPLEMENTS]-(:Control) AND NOT (:Decision)-[:ABOUT]->(req)
            RETURN properties(req) AS requirement`
         : `MATCH (req:Requirement)
-           WHERE NOT (req)<-[:IMPLEMENTS]-(:Control)
+           WHERE NOT (req)<-[:IMPLEMENTS]-(:Control) AND NOT (:Decision)-[:ABOUT]->(req)
            RETURN properties(req) AS requirement LIMIT 100`;
     const args = regulationId ? { id: regulationId } : {};
     const raw: any = await db().fetch2(cypher, args);
