@@ -10,7 +10,7 @@
 
 ## Phase rollup
 
-**Phases 0, 0.5, 1, 2, 3, 3.5, and 4a are ✅ done.** **Phase 4b (Audit-Ready Export) is blocked**, pending a scoping decision on what feeds the Assurance graph. Full sequencing, verification approach, and per-phase detail live in `vyra-implementation-plan.md`.
+**Phases 0, 0.5, 1, 2, 3, 3.5, 4a, and 4b are ✅ done.** Phase 4b (Audit-Ready Export) shipped on **synthetic, script-generated seed data** — a real audit-trail source is still needed to replace it. Full sequencing, verification approach, and per-phase detail live in `vyra-implementation-plan.md`.
 
 ---
 
@@ -34,11 +34,11 @@ Status key: **🟢 live** = real data, working queries · **🟡 partial** = mod
 | L5 | **Oversight** | Deviation Alerts | 🟡 partial | Both original blockers are gone: `Signal` is live (`POST /operational/signals`, Phase 3) and `agents/` is no longer 0% implemented (`control-intelligence` is wired end-to-end, verified against real graph data — pending only the user's `ANTHROPIC_API_KEY` for live Claude calls). Not fully live yet: no agent watches Signals directly for deviations — `control-intelligence` reasons over uncontrolled Requirements, and `signal-intelligence` itself is still a stub |
 | | | Escalation Paths | 🟡 partial | `Incident.escalationPath` is free text, not a graph-modeled chain to Role/Person |
 | L6 | **Assurance** | Coverage Scoring | 🟢 live | Phase 4a — `GET /assurance/posture` returns Requirement coverage (30/34) + Asset coverage (29/31, 2 `Security`-category unmapped) + per-`ComplianceArea` breakdown; UI at `/assurance`. Catalog-origin data only (legacy per-incident Controls excluded by label filter) |
-| | | Audit-Ready Export | 🔴 gap | `Audit`/`AssuranceStatement`/`Attestation`/`EvidencePackage` entirely dormant. **Phase 4b — blocked**: nothing in Phases 1–3 seeds the Assurance graph; needs an explicit scoping decision on what feeds these nodes before any code |
+| | | Audit-Ready Export | 🟡 partial | Phase 4b — `Audit`/`AssuranceStatement`/`Attestation`/`EvidencePackage` all live and queryable (`GET /assurance/{audits,assurance-statements,attestations,evidence-packages}`, UI at `/assurance`), but seeded with **synthetic, script-generated data** (`generate-assurance-seed.ts`, 1:1 off the 7 existing Incidents), not a real audit-management source |
 | L7 | **Risk** | Residual Risk Score | 🟡 partial | `Risk.residualScore` live per-Finding; Phase 4a added a portfolio rollup (`getRiskRollup()` — count + avg score per rating, count-weighted overall). Still partial: the Risk-taxonomy-vs-instance split (`entity-alignment.md`) remains unscoped |
 | | | Scenario Simulation | 🔴 gap | Needs working agents beyond `control-intelligence` — unscoped, no phase names this explicitly |
 
-**Net**: Phases 0–4a are done. L1 (minus Contracts/SOPs), L2, L3, **L6 Coverage Scoring** (Phase 4a), and half of L5/L7 now have real data underneath them — several are still "partial" against the full capability described (full Applicability Scoping, a named individual for `Person`, an agent that actually watches Signals for deviations, task-completion tracking against the calendar). The remaining genuine gaps are **L6 Audit-Ready Export** and **L7 Scenario Simulation** — plus three items that no phase currently claims: Contracts, Audit-Ready Export's data layer, and Scenario Simulation. Raise those as an explicit scoping decision before assuming Phase 4b will "just" cover them.
+**Net**: Phases 0–4b are done. L1 (minus Contracts/SOPs), L2, L3, **L6 Coverage Scoring** (Phase 4a), **L6 Audit-Ready Export** (Phase 4b, synthetic), and half of L5/L7 now have real data underneath them — several are still "partial" against the full capability described (full Applicability Scoping, a named individual for `Person`, an agent that actually watches Signals for deviations, task-completion tracking against the calendar, and Audit-Ready Export's synthetic-vs-real data gap). The one remaining genuine gap is **L7 Scenario Simulation** — plus two items no phase currently claims: Contracts, and a real (non-synthetic) source for Audit-Ready Export.
 
 ---
 

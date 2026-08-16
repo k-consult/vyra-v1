@@ -15,7 +15,11 @@
     "intelligence/findings.csv":      "Finding",
     "intelligence/risks.csv":         "Risk",
     "intelligence/rcas.csv":          "RCA",
-    "assurance/evidence.csv":         "Evidence"
+    "assurance/evidence.csv":         "Evidence",
+    "assurance/evidence-packages.csv":     "EvidencePackage",
+    "assurance/attestations.csv":          "Attestation",
+    "assurance/assurance-statements.csv":  "AssuranceStatement",
+    "assurance/audits.csv":                "Audit"
   },
   "edgeMap": {
     "edges/incident_regulation.csv":  { "relType": "GOVERNED_BY",    "sourceCol": "incidentId",      "sourceLabel": "Incident",    "targetCol": "regulationId",    "targetLabel": "Regulation" },
@@ -26,7 +30,9 @@
     "edges/incident_task.csv":        { "relType": "HAS_TASK",       "sourceCol": "incidentId",      "sourceLabel": "Incident",    "targetCol": "taskId",          "targetLabel": "Task" },
     "edges/finding_rca.csv":          { "relType": "ANALYSED_BY",    "sourceCol": "findingId",       "sourceLabel": "Finding",     "targetCol": "rcaId",           "targetLabel": "RCA" },
     "edges/rca_capa.csv":             { "relType": "REQUIRES_CAPA",  "sourceCol": "rcaId",           "sourceLabel": "RCA",         "targetCol": "capaId",          "targetLabel": "CAPA" },
-    "edges/capa_verification.csv":    { "relType": "CLOSES",         "sourceCol": "verificationId",  "sourceLabel": "Verification","targetCol": "capaId",          "targetLabel": "CAPA" }
+    "edges/capa_verification.csv":    { "relType": "CLOSES",         "sourceCol": "verificationId",  "sourceLabel": "Verification","targetCol": "capaId",          "targetLabel": "CAPA" },
+    "edges/assurance_statement_regulation.csv": { "relType": "COVERS",        "sourceCol": "assuranceStatementId", "sourceLabel": "AssuranceStatement", "targetCol": "regulationId", "targetLabel": "Regulation" },
+    "edges/assurance_statement_audit.csv":      { "relType": "PREPARED_FOR",  "sourceCol": "assuranceStatementId", "sourceLabel": "AssuranceStatement", "targetCol": "auditId",      "targetLabel": "Audit" }
   },
   "defaults": {
     "status": "active",

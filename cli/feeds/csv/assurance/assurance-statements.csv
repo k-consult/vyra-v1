@@ -1,0 +1,8 @@
+id,name,scope,posture,generatedAt,attestationId,status,version
+ASM-INC-001,Assurance Statement - Quarterly EHS Audit,Warehouse Zone B | Fire Safety | Insurance Compliance,Compliant with open corrective action,2026-05-08 12:06,ATT-INC-001,issued,1.0
+ASM-INC-002,Assurance Statement - Monthly GMP Audit,Biotech Unit 3 | Sterile Manufacturing | GMP Critical Process,Compliant with open corrective action,2026-05-09 16:15,ATT-INC-002,issued,1.0
+ASM-INC-003,Assurance Statement - Food Safety Audit,Dairy Packaging Line | Hygiene Compliance | Food Safety,Compliant with open corrective action,2026-05-10 13:42,ATT-INC-003,issued,1.0
+ASM-INC-004,Assurance Statement - Utility Health Audit,Purified Water Loop | Utility Compliance | Sterile Operations,Compliant with open corrective action,2026-05-11 17:23,ATT-INC-004,issued,1.0
+ASM-INC-005,Assurance Statement - Operational Safety Walkthrough,Packaging Hall | Worker Safety | Wet Floor Zone,Compliant with open corrective action,2026-05-12 12:53,ATT-INC-005,issued,1.0
+ASM-INC-006,Assurance Statement - Calibration Audit,Packaging QA | Calibration Compliance | Product Weight Accuracy,Compliant with open corrective action,2026-05-13 13:57,ATT-INC-006,issued,1.0
+ASM-INC-007,Assurance Statement - Cyber-Physical Security Audit,Cold Storage IoT Network | OT Security | Monitoring Systems,Compliant with open corrective action,2026-05-14 19:13,ATT-INC-007,issued,1.0

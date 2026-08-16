@@ -154,12 +154,72 @@ export const getRiskRollup = async () => {
     }
 };
 
+const LIST_ATTESTATIONS = `
+    MATCH (a:Attestation)
+    RETURN properties(a) AS attestation
+    ORDER BY a.attestedAt DESC
+`;
+
 export const listAttestations = async () => {
     try {
-        const cypher = `MATCH (a:Attestation) RETURN properties(a) AS attestation ORDER BY a.attestedAt DESC LIMIT 50`;
-        return await db().fetch2(cypher, {});
+        const raw: any = await db().fetch2(LIST_ATTESTATIONS, {});
+        const rows = Array.isArray(raw) ? raw : [raw]; return rows.map((r: any) => r.attestation).filter(Boolean);
     } catch (err: any) {
         log.error('assurance.repo: listAttestations failed', err.message);
+        return [];
+    }
+};
+
+const LIST_EVIDENCE_PACKAGES = `
+    MATCH (p:EvidencePackage)
+    RETURN properties(p) AS evidencePackage
+    ORDER BY p.period DESC
+`;
+
+export const listEvidencePackages = async () => {
+    try {
+        const raw: any = await db().fetch2(LIST_EVIDENCE_PACKAGES, {});
+        const rows = Array.isArray(raw) ? raw : [raw]; return rows.map((r: any) => r.evidencePackage).filter(Boolean);
+    } catch (err: any) {
+        log.error('assurance.repo: listEvidencePackages failed', err.message);
+        return [];
+    }
+};
+
+const LIST_ASSURANCE_STATEMENTS = `
+    MATCH (s:AssuranceStatement)
+    OPTIONAL MATCH (s)-[:COVERS]->(reg:Regulation)
+    WITH s, collect(DISTINCT reg.name) AS regulations
+    RETURN properties(s) AS statement, regulations
+    ORDER BY s.generatedAt DESC
+`;
+
+export const listAssuranceStatements = async () => {
+    try {
+        const raw: any = await db().fetch2(LIST_ASSURANCE_STATEMENTS, {});
+        const rows = Array.isArray(raw) ? raw : [raw];
+        return rows.filter(Boolean).map((r: any) => ({ ...r.statement, regulations: r.regulations ?? [] }));
+    } catch (err: any) {
+        log.error('assurance.repo: listAssuranceStatements failed', err.message);
+        return [];
+    }
+};
+
+const LIST_AUDITS = `
+    MATCH (a:Audit)
+    OPTIONAL MATCH (s:AssuranceStatement)-[:PREPARED_FOR]->(a)
+    WITH a, collect(DISTINCT s.id) AS statementIds
+    RETURN properties(a) AS audit, statementIds
+    ORDER BY a.period DESC
+`;
+
+export const listAudits = async () => {
+    try {
+        const raw: any = await db().fetch2(LIST_AUDITS, {});
+        const rows = Array.isArray(raw) ? raw : [raw];
+        return rows.filter(Boolean).map((r: any) => ({ ...r.audit, statementIds: r.statementIds ?? [] }));
+    } catch (err: any) {
+        log.error('assurance.repo: listAudits failed', err.message);
         return [];
     }
 };

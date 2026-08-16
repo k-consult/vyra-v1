@@ -159,7 +159,6 @@ graph TB
     classDef intel  fill:#fef2f2,stroke:#dc2626,color:#450a0a,stroke-width:1.5px;
     classDef exec   fill:#fefce8,stroke:#ca8a04,color:#422006,stroke-width:1.5px;
     classDef assure fill:#f0fdf4,stroke:#16a34a,color:#052e16,stroke-width:1.5px;
-    classDef dormant fill:#f4f4f5,stroke:#a1a1aa,color:#3f3f46,stroke-dasharray:4 3;
 
     subgraph KNOW["📘 KNOWLEDGE · what must be done?"]
         AUTH[Authority]:::know
@@ -195,9 +194,10 @@ graph TB
 
     subgraph ASSURE["✅ ASSURANCE · what can we prove?"]
         EVD[Evidence]:::assure
-        EPKG[EvidencePackage]:::dormant
-        ATT[Attestation]:::dormant
-        ASM[AssuranceStatement]:::dormant
+        EPKG[EvidencePackage]:::assure
+        ATT[Attestation]:::assure
+        ASM[AssuranceStatement]:::assure
+        AUD[Audit]:::assure
     end
 
     %% Knowledge internal spine
@@ -236,14 +236,16 @@ graph TB
 
     %% Execution -> Assurance
     EVD -->|PRODUCED_BY| TSK
-    ATT -.->|BACKED_BY| EPKG
-    ASM -.->|DERIVED_FROM| ATT
+    EVD -->|PART_OF| EPKG
+    ATT -->|BACKED_BY| EPKG
+    ASM -->|DERIVED_FROM| ATT
+    ASM -->|COVERS| REG
+    ASM -->|PREPARED_FOR| AUD
 ```
 
 **Reading the diagram:**
 - **Five bands** = the five graph domains, stacked in operating-loop order.
-- **Solid arrows** = relationships that are live today (all names/directions match Appendix B, including its runtime & derived relationships).
-- **Dashed arrows + grey nodes** = the Assurance chain (`EvidencePackage`/`Attestation`/`AssuranceStatement`) — part of the designed model, not yet carrying data (rollout is tracked in the plan, not here).
+- **Solid arrows** = relationships that are live today (all names/directions match Appendix B, including its runtime & derived relationships). The Assurance chain (`EvidencePackage`/`Attestation`/`AssuranceStatement`/`Audit`) is live as of Phase 4b but carries **synthetic, script-generated seed data**, not a real audit-trail source — see Appendix A.
 - `Decision -->|ABOUT| Requirement` is drawn to `Requirement` as the representative target, but `ABOUT` is polymorphic (`Decision → *`, whatever `sourceId` resolves to).
 
 ## 2.3 Mapping to the 7-Layer Operating Model
@@ -310,7 +312,7 @@ graph LR
 | **L3 Planning** | Execution (+ enterprise context) | `Schedule -[:APPLIES_TO]-> Task -[:IMPLEMENTS]-> Control`; `Organization`/`Role`/`Facility` |
 | **L4 Graph Spine** | **all five** | the graph itself — this document; "Review" = the Autonomy Level 1 approval gate |
 | **L5 Oversight** | Operational → Intelligence | `Signal`/`Incident` feeding `Finding` (`HAS_FINDING`) |
-| **L6 Assurance** | Assurance | `Evidence` live; `EvidencePackage`/`Attestation`/`AssuranceStatement` dormant, not yet built |
+| **L6 Assurance** | Assurance | `Evidence`/`EvidencePackage`/`Attestation`/`AssuranceStatement`/`Audit` all live; the latter four are synthetic seed data (Phase 4b), not a real audit-trail source |
 | **L7 Risk** | Intelligence | `Risk -[:RAISED_BY]-> Finding`, `RCA`, `Decision` |
 
 ---
@@ -963,7 +965,70 @@ Artifacts collected during the incident/audit that prove compliance activities.
 | taskId | string | FK to Task |
 | status | string | `collected` |
 
-**30 evidence items** across 7 incidents.
+**30 evidence items** across 7 incidents. Each carries a `packageId` FK (Phase 4b) into its `EvidencePackage`.
+
+---
+
+### `EvidencePackage`
+A bundle of `Evidence` assembled for a single Incident's audit period — the unit an `Attestation` signs off on. **Synthetic, Phase 4b (2026-08-16):** script-generated 1:1 per Incident (`cli/scripts/generate-assurance-seed.ts`), not sourced from a real audit-management system — a placeholder shape for when one exists.
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `EPKG-INC-001` |
+| name | string | `Evidence Package - Quarterly EHS Audit` |
+| period | string | `2026-Q2` — derived from `Incident.incidentTime` |
+| status | string | `assembled` |
+
+**7 evidence packages**, one per Incident.
+
+---
+
+### `Attestation`
+A named individual's formal sign-off that an `EvidencePackage` is complete and accurate. **Synthetic, Phase 4b:** `attestedBy` reuses the real `Incident.reviewedBy` value already on the incident record (not invented); `attestedAt` = `Incident.incidentTime` + 3 days.
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `ATT-INC-001` |
+| name | string | `Attestation - Quarterly EHS Audit` |
+| attestedBy | string | `Karthik Iyer - Corporate EHS` |
+| attestedAt | datetime | |
+| packageId | string | FK to EvidencePackage |
+| status | string | `attested` |
+
+**7 attestations**, one per EvidencePackage.
+
+---
+
+### `AssuranceStatement`
+The auditor-facing posture statement derived from an `Attestation` — what Audit-Ready Export actually exports. **Synthetic, Phase 4b:** `scope` reuses `Incident.scope`; `posture` is **computed, not asserted** — walked live from the real CAPA-closure chain (`Incident -[:HAS_FINDING]-> Finding -[:ANALYSED_BY]-> RCA -[:REQUIRES_CAPA]-> CAPA -[:CLOSES]<- Verification`): `"Compliant"` only if every CAPA reachable from the incident has a Verification, else `"Compliant with open corrective action"`. All 7 incidents resolve to the latter — each has 2–4 CAPAs but only 1 Verification apiece in the underlying seed data, a real (if coincidental) gap the computation surfaces rather than hides.
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `ASM-INC-001` |
+| name | string | `Assurance Statement - Quarterly EHS Audit` |
+| scope | string | `Warehouse Zone B \| Fire Safety \| Insurance Compliance` |
+| posture | string | `Compliant with open corrective action` |
+| generatedAt | datetime | |
+| attestationId | string | FK to Attestation |
+| status | string | `issued` |
+
+**7 assurance statements**, one per Attestation.
+
+---
+
+### `Audit`
+The formal audit engagement an `AssuranceStatement` is prepared for. **Synthetic, Phase 4b:** promoted 1:1 from the audit metadata already sitting unused on `Incident` (`auditType`, `incidentTime`, `reviewedBy`) — `Incident` itself models "an audit-triggered compliance incident," so `Audit` is that same engagement made a first-class node rather than a free-text field.
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `AUD-INC-001` |
+| name | string | `Quarterly EHS Audit` |
+| type | string | `Incident.auditType` |
+| period | string | `2026-Q2` |
+| auditor | string | `Incident.reviewedBy` |
+| status | string | `closed` |
+
+**7 audits**, one per Incident.
 
 ---
 
@@ -1017,6 +1082,11 @@ All relationships below are **live** and are the relationships the API actually 
 | Relationship | From → To | Meaning |
 |---|---|---|
 | `PRODUCED_BY` | Evidence → Task | Evidence was generated by this task |
+| `PART_OF` | Evidence → EvidencePackage | Evidence is bundled into this package (Phase 4b, synthetic) |
+| `BACKED_BY` | Attestation → EvidencePackage | Attestation signs off on this evidence package (Phase 4b, synthetic) |
+| `DERIVED_FROM` | AssuranceStatement → Attestation | Statement is derived from this attestation (Phase 4b, synthetic) |
+| `COVERS` | AssuranceStatement → Regulation | Statement's posture claim covers this regulation (Phase 4b, synthetic — reuses `incident_regulation.csv`'s mapping) |
+| `PREPARED_FOR` | AssuranceStatement → Audit | Statement was prepared as this audit's exportable proof (Phase 4b, synthetic) |
 
 ### Runtime & derived relationships
 Authored at runtime (by the events sink or the agent runtime) or by a derived join, rather than by the batch ingest — see §3.3.
@@ -1056,7 +1126,11 @@ All feeds live under `cli/feeds/csv/<domain>/`.
 | intelligence | findings.csv | 15 | Audit findings |
 | intelligence | risks.csv | 7 | Risk assessments |
 | intelligence | rcas.csv | 15 | Root cause analyses |
-| assurance | evidence.csv | 30 | Evidence artifacts |
+| assurance | evidence.csv | 30 | Evidence artifacts (gained `packageId` FK, Phase 4b) |
+| assurance | evidence-packages.csv | 7 | **Synthetic (Phase 4b)** — one bundle per Incident |
+| assurance | attestations.csv | 7 | **Synthetic (Phase 4b)** — one sign-off per package |
+| assurance | assurance-statements.csv | 7 | **Synthetic (Phase 4b)** — one posture statement per attestation |
+| assurance | audits.csv | 7 | **Synthetic (Phase 4b)** — one engagement per Incident |
 
 **Catalog feeds** (`cli/feeds/csv/catalog/`, loaded by `cli/orchestration/catalog-sync.ts` via `cli/domains/catalog/ingest-hints.json`, generated by `cli/scripts/convert-catalog-seed.ts` from `.design/__ref/synthetic-data/data.csv`):
 
@@ -1098,8 +1172,10 @@ No `edgeMap` for enterprise feeds either — same embedded-FK mechanism.
 | rca_capa.csv | 20 | RCA → REQUIRES_CAPA → CAPA |
 | capa_verification.csv | 13 | Verification → CLOSES → CAPA |
 | incident_task.csv | 24 | Incident → HAS_TASK → Task |
+| assurance_statement_regulation.csv | 18 | **Synthetic (Phase 4b)** — AssuranceStatement → COVERS → Regulation |
+| assurance_statement_audit.csv | 7 | **Synthetic (Phase 4b)** — AssuranceStatement → PREPARED_FOR → Audit |
 
-**Enterprise pipeline total: 179 nodes, 141 edges** (134 original + 7 `LOCATED_AT` on the legacy `Asset` rows). **Catalog pipeline total: 249 nodes, 268 edges** (`:Catalog`-labeled, separate `catalog-sync.ts` run — 99 original + 10 `ComplianceArea` + 30 `Control` + 60 `Task` + 50 `Schedule`; 98 original edges + 30 `IMPLEMENTS` (Control→Requirement) + 30 `BELONGS_TO` + 60 `IMPLEMENTS` (Task→Control) + 50 `APPLIES_TO` (Schedule→Task)). **Enterprise Context pipeline total: 79 nodes, 47 edges** (`:Enterprise`-labeled, separate `enterprise-sync.ts` run — 12 Organization, 16 Role, 20 Facility, 31 Asset; 16 `BELONGS_TO` + 31 `LOCATED_AT` — plus 29 `IN_COMPLIANCE_AREA` edges). **Derived/live-write total: 101 `COVERED_BY` edges** (`backfill-asset-control.ts`, one-time) **+ Signal/Task/Decision created ad hoc via the API and agent runtime** (no fixed count — driven by live events, not seed data).
+**Enterprise pipeline total: 207 nodes, 210 edges** (179 nodes + 141 edges through Phase 2, plus Phase 4b's 28 synthetic Assurance nodes (7 each of `EvidencePackage`/`Attestation`/`AssuranceStatement`/`Audit`) + 69 synthetic edges (30 `PART_OF` + 7 `BACKED_BY` + 7 `DERIVED_FROM` + 18 `COVERS` + 7 `PREPARED_FOR`)). **Catalog pipeline total: 249 nodes, 268 edges** (`:Catalog`-labeled, separate `catalog-sync.ts` run — 99 original + 10 `ComplianceArea` + 30 `Control` + 60 `Task` + 50 `Schedule`; 98 original edges + 30 `IMPLEMENTS` (Control→Requirement) + 30 `BELONGS_TO` + 60 `IMPLEMENTS` (Task→Control) + 50 `APPLIES_TO` (Schedule→Task)). **Enterprise Context pipeline total: 79 nodes, 47 edges** (`:Enterprise`-labeled, separate `enterprise-sync.ts` run — 12 Organization, 16 Role, 20 Facility, 31 Asset; 16 `BELONGS_TO` + 31 `LOCATED_AT` — plus 29 `IN_COMPLIANCE_AREA` edges). **Derived/live-write total: 101 `COVERED_BY` edges** (`backfill-asset-control.ts`, one-time) **+ Signal/Task/Decision created ad hoc via the API and agent runtime** (no fixed count — driven by live events, not seed data).
 
 ---
 
@@ -1192,7 +1268,7 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 
 # Appendix F · Document History
 
-**Version 1.6** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
+**Version 1.7** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
 
 | Date | Change |
 |---|---|
@@ -1202,3 +1278,4 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 | 2026-07-25 | Extended with Enterprise Context (`Organization`/`Role`/`Facility`/`Asset` + `:Enterprise` convention, `LOCATED_AT`). |
 | 2026-07-26 | Extended with Live Operational Context + the first real agent (`Signal`, `Decision`, `COVERED_BY`, live write paths), and the 52-Week Compliance Calendar (`Task`/`Schedule` catalog batch, `APPLIES_TO`, `IMPLEMENTS`). |
 | 2026-08-08 | Restructured into narrative Parts (Orientation → Conceptual Model → Data Flow & Ownership → Working with the Graph) + reference Appendices A–F, for standalone stakeholder reading. Added the Layered Graph Model, 7-Layer mapping, and traceability-flow diagrams. Raised Part III to a conceptual data-flow/ownership view (implementation and build-status detail moved to the plan/appendices). **No schema facts changed.** |
+| 2026-08-16 | Phase 4b — documented and fed the previously-dormant Assurance chain (`EvidencePackage`, `Attestation`, `AssuranceStatement`, `Audit`), all four **synthetic, script-generated 1:1 off the 7-incident dataset** (`cli/scripts/generate-assurance-seed.ts`) rather than a real audit-trail source — flagged explicitly as a placeholder in Appendix A. Added `PART_OF` (Evidence→EvidencePackage), `COVERS` (AssuranceStatement→Regulation), `PREPARED_FOR` (AssuranceStatement→Audit); `BACKED_BY`/`DERIVED_FROM` went live for the first time. |

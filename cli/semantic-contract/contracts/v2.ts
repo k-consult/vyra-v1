@@ -306,9 +306,12 @@ export const v2: Contract = {
         Evidence: {
             label: 'Evidence',
             graph: Graph.Operational,
-            props: { ...baseProps, type: 'type', source: 'source', collectedAt: 'collectedAt', taskId: 'taskId' },
+            props: { ...baseProps, type: 'type', source: 'source', collectedAt: 'collectedAt', taskId: 'taskId', packageId: 'packageId' },
             axes: [Axis.Process, Axis.Assurance],
-            rels: [{ type: 'PRODUCED_BY', targetLabel: 'Task', sourceField: 'taskId' }],
+            rels: [
+                { type: 'PRODUCED_BY', targetLabel: 'Task', sourceField: 'taskId' },
+                { type: 'PART_OF', targetLabel: 'EvidencePackage', sourceField: 'packageId' },
+            ],
         },
 
         // ── Intelligence Graph ───────────────────────────────────────────

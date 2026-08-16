@@ -21,7 +21,7 @@ An early audit found the codebase was earlier-stage than the docs suggested at t
 
 **Second data source:** `.design/__ref/entity-alignment.md` maps `.design/__ref/synthetic-data/data.csv` (a second, independent enterprise seed — Industrial Parks/Warehouse/3PL vertical, entity extraction in `.design/__ref/consolidated-entities.md`) against this plan. It was largely confirmatory for Phase 1 and partially for Phase 2 (Role/Organization/Location present in the source, Person/Identity still missing), surfaced two net-new domain concepts with no current home (`InsuranceClause`, `ComplianceArea`), and flagged a second relationship-vocabulary set — reconciled together with Phase 0's fix.
 
-This plan covers **design and sequencing**, one phase at a time. **Phases 0, 0.5, 1, 2, 3, and 3.5 are done.** Confirm before starting Phase 4.
+This plan covers **design and sequencing**, one phase at a time. **Phases 0, 0.5, 1, 2, 3, 3.5, 4a, and 4b are done** (4b on synthetic seed data — see its section below).
 
 ---
 
@@ -34,7 +34,7 @@ One line per JTBD layer (the 7-layer model defined in `vyra-landscape.md`; the f
 - **L3 Planning** — 52-week calendar + Org/Role live; `Person` (named individuals) unfed, task-completion tracking not built
 - **L4 Graph Spine** — complete (it's the infrastructure itself; "Review" = Autonomy Level 1 human-approval gate)
 - **L5 Oversight** — Signal + first agent (`control-intelligence`) live; nothing watches Signals for deviations yet, `signal-intelligence` still a stub
-- **L6 Assurance** — Coverage Scoring done (Phase 4a); Audit-Ready Export blocked — Assurance graph unfed, needs a scoping decision (Phase 4b)
+- **L6 Assurance** — Coverage Scoring done (Phase 4a); Audit-Ready Export done on synthetic seed data (Phase 4b) — a real audit-trail source is still needed to replace the fabricated `Audit`/`EvidencePackage`/`Attestation`/`AssuranceStatement` chain
 - **L7 Risk** — Per-Finding score + portfolio rollup live (Phase 4a); Scenario Simulation gap, needs agents beyond `control-intelligence`
 
 ---
@@ -164,9 +164,23 @@ Verified live via headless browser (Playwright): `/assurance` renders all four s
 
 **Files**: `api/modules/assurance/{repo.ts,index.ts}`, `ui/src/lib/api.ts`, new `ui/src/features/assurance/assurance.tsx`, `ui/src/app/assurance/page.tsx`, `ui/src/features/landscape/landscape.tsx` (nav link).
 
-### Phase 4b — Audit-Ready Export — blocked, needs a scoping decision before any code
+### Phase 4b — Audit-Ready Export ✅ DONE (2026-08-16, synthetic data)
 
-`Audit`, `AssuranceStatement`, `Attestation`, `EvidencePackage` are declared in `v2.ts` but have **zero seed data** — nothing in Phases 1–3 feeds the Assurance graph. This was already flagged in `vyra-landscape.md` as a gap Phase 4 does not automatically cover just by existing. Before writing any code here, need an explicit decision: what feeds these nodes (real data source vs. derived from existing `Evidence`/CAPA-closure data vs. deferred), and whether that's in scope for this pass at all. Do not start this without raising it first.
+**Scoping decision**: fabricate, don't defer. The user confirmed it's fine to seed `Audit`/`EvidencePackage`/`Attestation`/`AssuranceStatement` with synthetic data now, on the condition that the CSV schema producing it is documented well enough (`vyra-graph-spine.md` Appendix A/B/C) to swap in a real audit-trail source later without a redesign. Every fabricated value reuses a real field already sitting unused in the 7-incident dataset (`Incident.reviewedBy`, `Incident.auditType`, real CAPA/Verification closure state, real `GOVERNED_BY` regulation links) rather than inventing unrelated data — the same "grounded, not random" discipline as Phase 1's `Schedule` and Phase 3's `ComplianceArea`/`Control` backfill.
+
+**What got built**: new `cli/scripts/generate-assurance-seed.ts` derives, one of each per existing Incident (7 of each, 28 nodes total):
+- `EvidencePackage` — bundles that incident's `Evidence` (new `Evidence.packageId` FK + `PART_OF` rel, added to `Evidence` in `v2.ts`)
+- `Attestation` — `attestedBy` = the incident's real `reviewedBy`, `-[:BACKED_BY]->` the package (this rel was declared in `v2.ts` since the original Phase 1 pass but never fed until now)
+- `AssuranceStatement` — `posture` is **computed, not asserted**: walked live from the real `Incident -> Finding -> RCA -> CAPA -> Verification` chain, `"Compliant"` only if every reachable CAPA has a Verification. All 7 incidents resolve to `"Compliant with open corrective action"` — a real, if coincidental, finding (each incident has 2–4 CAPAs but only 1 Verification apiece in the seed data), not a scripting bug. `-[:DERIVED_FROM]->` Attestation (also newly fed), `-[:COVERS]->` Regulation (new edge CSV, reuses `incident_regulation.csv`'s mapping) and `-[:PREPARED_FOR]->` Audit (new edge CSV)
+- `Audit` — promoted 1:1 from audit metadata already sitting unused on `Incident` (`auditType`, `incidentTime`, `reviewedBy`)
+
+Wired into the base `grc` ingestion pipeline (unlabeled, same origin as the rest of the 7-incident data — no `:Catalog`/`:Enterprise` label). API: `listAttestations()`'s pre-existing unmapped-response bug fixed, plus new `listEvidencePackages()`/`listAssuranceStatements()`/`listAudits()` and matching `GET /assurance/{evidence-packages,assurance-statements,audits}` routes. UI: `assurance.tsx`'s "Attestations — blocked" placeholder replaced with a real `AuditChainSection` (7 cards, `Audit → AssuranceStatement → Attestation → EvidencePackage`), explicitly labeled "synthetic seed data" in the UI itself, not just the docs.
+
+**Explicitly not done**: no real audit-management data source — this is fabricated data with a documented, regenerable shape (`generate-assurance-seed.ts`), not a solved integration. Swapping in a real source later means replacing that script's inputs, not redesigning the schema.
+
+Verified live: `generate-assurance-seed.ts` produced exactly 7/7/7/7 node rows + 18 `COVERS` + 7 `PREPARED_FOR` edge rows; `./ingest.sh` confirmed via direct Cypher (`EvidencePackage`/`Attestation`/`AssuranceStatement`/`Audit`: 7 each; `PART_OF`: 30, `BACKED_BY`: 7, `DERIVED_FROM`: 7, `COVERS`: 18, `PREPARED_FOR`: 7); `tsc --noEmit` clean on `api/` and `ui/`.
+
+**Files**: `cli/scripts/generate-assurance-seed.ts` (new), `cli/semantic-contract/contracts/v2.ts`, `cli/domains/grc/ingest-hints.json`, `cli/feeds/csv/assurance/{evidence.csv,evidence-packages.csv,attestations.csv,assurance-statements.csv,audits.csv}`, `cli/feeds/csv/edges/{assurance_statement_regulation.csv,assurance_statement_audit.csv}`, `api/modules/assurance/{repo.ts,index.ts}`, `ui/src/lib/api.ts`, `ui/src/features/assurance/assurance.tsx`.
 
 **Explicitly out of scope for Phase 4 entirely**: Scenario Simulation (L7) — needs working agents beyond `control-intelligence`, unscoped, no phase names it yet.
 
@@ -180,6 +194,6 @@ Verified live via headless browser (Playwright): `/assurance` renders all four s
 - Phase 3 ✅: ran `catalog-sync.ts`/`enterprise-sync.ts` live, confirmed `ComplianceArea` (10), `Control:Catalog` (30), `IN_COMPLIANCE_AREA` (29) counts; ran `backfill-asset-control.ts`, confirmed 101 `COVERED_BY` edges and spot-checked `AST-001` resolves to its 4 real Controls; POSTed test Signals via the live API against both a covered asset (`controlIds`/`requirementIds` populated) and a Security-gap asset (correctly empty), plus an invalid-payload case (clean 400); ran `agents/index.ts control-intelligence` live and confirmed `fetchRequirements` returns 4 real uncontrolled `Requirement`s from Neo4j, with a clean failure (not a hang, not silent) at the Claude call since `ANTHROPIC_API_KEY` isn't configured — the live Claude round-trip itself is deferred to the user, who needs to add that key.
 - Phase 3.5 ✅: ran the updated `convert-catalog-seed.ts`, confirmed exact 60/50 row counts for `tasks.csv`/`schedules.csv`; ran `catalog-sync.ts` live, confirmed `Task:Catalog` (60), `Schedule:Catalog` (50), `Schedule-[:APPLIES_TO]->Task` (50), `Task-[:IMPLEMENTS]->Control` (60) via direct Cypher; hit `GET /catalog/calendar` live and spot-checked occurrence counts per cadence; found and fixed a real bug this way (`Hourly` cadence produced ~24 duplicate dates per day due to `computeWindow`'s day-level granularity); loaded `/calendar` in a real headless browser (Playwright), confirmed correct rendering and drill-down, and confirmed zero console errors post-fix. This verification predates the `a26eb83` matrix-view consolidation (2026-07-29) — the UI has since changed (drill-down → hover) and hasn't been re-run through Playwright.
 - Phase 4a ✅: hit `GET /assurance/posture` live against the running dev instance; confirmed `requirements.covered` (30/34) cross-checks exactly against the 4 uncovered `Requirement`s Phase 3's agent already found independently; confirmed `assets.unmappedComplianceArea` (2) surfaces the known `Security`-category gap explicitly rather than folding it into "uncovered"; confirmed `riskRollup` matches `vyra-graph-spine.md`'s per-incident risk table exactly (Critical 2/avg 19, High 3/avg 15.3, Medium 2/avg 10.5); `tsc --noEmit` clean on `api/`.
-- Phase 4b: not started — blocked on the scoping decision above.
+- Phase 4b ✅: ran `generate-assurance-seed.ts`, confirmed exact 7/7/7/7 node row counts + 18/7 edge row counts; ran `./ingest.sh` live, confirmed via direct Cypher (`EvidencePackage`/`Attestation`/`AssuranceStatement`/`Audit`: 7 each; `PART_OF`: 30, `BACKED_BY`: 7, `DERIVED_FROM`: 7, `COVERS`: 18, `PREPARED_FOR`: 7); `tsc --noEmit` clean on `api/` and `ui/`.
 
 **Correction from the original plan**: this section originally said "each phase should end with `/dev-audit`." That skill's checks are written for a different project template (`app/module/*/edge/api/`, Koa, `dbv4x`) that doesn't exist in this repo — running it produces false negatives, not real coverage. There is no drop-in substitute gate in this repo today; live-query verification against Neo4j (as done for Phase 0/1 above) is the actual closing check until one exists.

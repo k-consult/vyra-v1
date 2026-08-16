@@ -60,9 +60,12 @@ export type RiskRollup = {
 };
 
 export const assurance = {
-    posture:      () => get<{ coverage: CoverageScore; riskRollup: RiskRollup }>('/assurance/posture'),
-    attestations: () => get('/assurance/attestations'),
-    evidence:     () => get<{ evidence: any[] }>('/assurance/evidence'),
+    posture:             () => get<{ coverage: CoverageScore; riskRollup: RiskRollup }>('/assurance/posture'),
+    attestations:        () => get<{ attestations: any[] }>('/assurance/attestations'),
+    evidence:            () => get<{ evidence: any[] }>('/assurance/evidence'),
+    evidencePackages:    () => get<{ evidencePackages: any[] }>('/assurance/evidence-packages'),
+    assuranceStatements: () => get<{ assuranceStatements: any[] }>('/assurance/assurance-statements'),
+    audits:              () => get<{ audits: any[] }>('/assurance/audits'),
 };
 
 export const dashboard = {

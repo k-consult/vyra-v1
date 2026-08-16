@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
     AlertTriangle, RefreshCw, ShieldCheck, ArrowLeft,
-    Gauge, TrendingUp, FileText, Lock,
+    Gauge, TrendingUp, FileText, ClipboardCheck,
 } from 'lucide-react';
 import { assurance, CoverageScore, RiskRollup } from '@/lib/api';
 import { PropRow } from '@/features/landscape/landscape';
@@ -136,22 +136,63 @@ function EvidenceSection({ items }: { items: any[] }) {
     );
 }
 
-// ── Attestations (blocked) ────────────────────────────────────────────────────
+// ── Audit-Ready Export chain (Phase 4b, synthetic seed data) ───────────────────
 
-function AttestationsSection() {
+type AuditChain = {
+    audit: any;
+    statement: any;
+    attestation: any;
+    evidencePackage: any;
+};
+
+function buildAuditChains(audits: any[], statements: any[], attestations: any[], evidencePackages: any[]): AuditChain[] {
+    const statementById = new Map(statements.map(s => [s.id, s]));
+    const attestationById = new Map(attestations.map(a => [a.id, a]));
+    const packageById = new Map(evidencePackages.map(p => [p.id, p]));
+
+    return audits.map(audit => {
+        const statement = statementById.get(audit.statementIds?.[0]);
+        const attestation = attestationById.get(statement?.attestationId);
+        const evidencePackage = packageById.get(attestation?.packageId);
+        return { audit, statement, attestation, evidencePackage };
+    });
+}
+
+function AuditChainCard({ chain }: { chain: AuditChain }) {
+    const { audit, statement, attestation, evidencePackage } = chain;
+    const compliant = statement?.posture === 'Compliant';
+    return (
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+                <p className="text-[11px] font-mono text-zinc-500">{audit?.id}</p>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${compliant ? 'border-emerald-800 bg-emerald-950/50 text-emerald-300' : 'border-amber-800 bg-amber-950/50 text-amber-300'}`}>
+                    {statement?.posture ?? 'Unknown'}
+                </span>
+            </div>
+            <p className="text-sm text-zinc-200 font-medium">{audit?.name}</p>
+            <PropRow label="period" value={audit?.period} />
+            <PropRow label="auditor" value={audit?.auditor} />
+            {statement && <PropRow label="scope" value={statement.scope} />}
+            {statement?.regulations?.length > 0 && <PropRow label="regulations" value={statement.regulations.join(', ')} />}
+            {attestation && <PropRow label="attestedBy" value={attestation.attestedBy} />}
+            {attestation && <PropRow label="attestedAt" value={attestation.attestedAt} />}
+            {evidencePackage && <PropRow label="evidencePackage" value={`${evidencePackage.id} (${evidencePackage.period})`} />}
+        </div>
+    );
+}
+
+function AuditChainSection({ chains }: { chains: AuditChain[] }) {
     return (
         <section className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
-                <Lock size={11} className="text-zinc-600" />
-                <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">Attestations</p>
-            </div>
-            <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-900/20 px-5 py-4">
-                <p className="text-sm text-zinc-400">Not yet available</p>
-                <p className="text-xs text-zinc-600 mt-1">
-                    Blocked on Phase 4b — the Assurance graph (<code className="text-zinc-500">Audit</code>, <code className="text-zinc-500">AssuranceStatement</code>,{' '}
-                    <code className="text-zinc-500">Attestation</code>, <code className="text-zinc-500">EvidencePackage</code>) has no seed data yet.
-                    See <code className="text-zinc-500">vyra-implementation-plan.md</code>.
+                <ClipboardCheck size={11} className="text-zinc-600" />
+                <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">Audit-Ready Export · {chains.length} audits</p>
+                <p className="text-[10px] text-zinc-700" title="Phase 4b — synthetic, script-generated seed data; see vyra-graph-spine.md">
+                    · synthetic seed data
                 </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {chains.map((chain, i) => <AuditChainCard key={chain.audit?.id ?? i} chain={chain} />)}
             </div>
         </section>
     );
@@ -163,17 +204,25 @@ export function AssuranceView() {
     const [coverage, setCoverage]   = useState<CoverageScore | null>(null);
     const [riskRollup, setRiskRollup] = useState<RiskRollup | null>(null);
     const [evidence, setEvidence]   = useState<any[]>([]);
+    const [auditChains, setAuditChains] = useState<AuditChain[]>([]);
     const [loading, setLoading]     = useState(true);
     const [error, setError]         = useState(false);
 
     const load = () => {
         setLoading(true);
         setError(false);
-        Promise.all([assurance.posture(), assurance.evidence()])
-            .then(([posture, evd]) => {
+        Promise.all([
+            assurance.posture(), assurance.evidence(),
+            assurance.audits(), assurance.assuranceStatements(), assurance.attestations(), assurance.evidencePackages(),
+        ])
+            .then(([posture, evd, audits, statements, attestations, evidencePackages]) => {
                 setCoverage(posture.coverage);
                 setRiskRollup(posture.riskRollup);
                 setEvidence(evd.evidence ?? []);
+                setAuditChains(buildAuditChains(
+                    audits.audits ?? [], statements.assuranceStatements ?? [],
+                    attestations.attestations ?? [], evidencePackages.evidencePackages ?? [],
+                ));
             })
             .catch(() => setError(true))
             .finally(() => setLoading(false));
@@ -235,7 +284,7 @@ export function AssuranceView() {
                 <CoverageSection data={coverage} />
                 <RiskRollupSection data={riskRollup} />
                 <EvidenceSection items={evidence} />
-                <AttestationsSection />
+                <AuditChainSection chains={auditChains} />
             </div>
 
             {/* ── Footer ── */}
