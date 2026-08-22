@@ -24,6 +24,22 @@ const slug = (...parts: string[]): string =>
 const orgId = (company: string, businessUnit: string, department: string): string =>
     `ORG-${slug(company, businessUnit, department)}`;
 
+// "Sites Covered" is always one of exactly 3 regular shapes across all 12
+// 20_Vendor_Master rows — "India Sites (LOC-001 to LOC-010)", "UK Sites
+// (LOC-011 to LOC-020)", "All Sites (LOC-001 to LOC-020)" — a mechanical range
+// expansion against real, already-seeded Facility ids, not a guess.
+const parseSiteRange = (sitesCovered: string): string[] => {
+    const match = sitesCovered.match(/LOC-(\d+) to LOC-(\d+)/);
+    if (!match) return [];
+    const [, startStr, endStr] = match;
+    const width = startStr.length;
+    const start = Number(startStr);
+    const end = Number(endStr);
+    const ids: string[] = [];
+    for (let n = start; n <= end; n++) ids.push(`LOC-${String(n).padStart(width, '0')}`);
+    return ids;
+};
+
 // Manual, name/description-backed mapping — not derivable from the source data directly.
 // 'Security' has no corresponding ComplianceArea in 07_Compliance_Areas; left unmapped on purpose.
 const categoryToComplianceArea: Record<string, string> = {
@@ -42,8 +58,9 @@ const writeCSV = (fileName: string, rows: Row[]): void => {
     const cols = Object.keys(rows[0]);
     const esc = (v: string) => (v.includes(',') || v.includes('"') ? `"${v.replace(/"/g, '""')}"` : v);
     const lines = [cols.join(','), ...rows.map(r => cols.map(c => esc(r[c] ?? '')).join(','))];
-    fs.mkdirSync(outDir, { recursive: true });
-    fs.writeFileSync(path.join(outDir, fileName), lines.join('\n') + '\n');
+    const outPath = path.join(outDir, fileName);
+    fs.mkdirSync(path.dirname(outPath), { recursive: true });
+    fs.writeFileSync(outPath, lines.join('\n') + '\n');
     log.info(`convert-enterprise-seed: ${fileName} <- ${rows.length} rows`);
 };
 
@@ -54,6 +71,7 @@ const convert = (): void => {
     const spatialRows = extractWorksheet(raw, '11_Spatial_Mapping');
     const rolesRows = extractWorksheet(raw, '18_Roles_Master');
     const assetRows = extractWorksheet(raw, '19_Asset_Equipment_Master');
+    const vendorRows = extractWorksheet(raw, '20_Vendor_Master');
 
     // ── Organization — dedupe Company/BusinessUnit/Department combos ──────
     const orgCombos = new Map<string, { company: string; businessUnit: string; department: string }>();
@@ -108,6 +126,37 @@ const convert = (): void => {
         roomId: r['RoomID'],
         complianceAreaId: categoryToComplianceArea[r['Category']] ?? '',
     })));
+
+    // ── Vendor (second, non-colliding batch — VEN-nnn vs legacy VND-nnnn) ──
+    writeCSV('vendors.csv', vendorRows.map(r => ({
+        id: r['VendorID'],
+        name: r['Vendor Name'],
+    })));
+
+    // ── Contract — the AMC/service agreement, kept separate from Vendor since
+    // AMC dates/SLA are contract-lifecycle facts, not vendor-identity facts.
+    // id reuses the real Contract Reference (already a unique natural key),
+    // not a synthesized id, since one exists in the source.
+    writeCSV('contracts.csv', vendorRows.map(r => ({
+        id: r['Contract Reference'],
+        name: r['Service Type'],
+        serviceType: r['Service Type'],
+        slaResponseTime: r['SLA (Response Time)'],
+        amcStartDate: r['AMC Start Date'],
+        amcExpiryDate: r['AMC Expiry Date'],
+        vendorId: r['VendorID'],
+        coordinatorRoleId: r['Internal Coordinator (RoleID)'],
+    })));
+
+    // ── Contract -> Facility (many-valued — same edges-CSV mechanism Phase 6
+    // used for Person's many-valued WORKS_AT) ──
+    const contractFacilityEdges: Row[] = [];
+    for (const r of vendorRows) {
+        for (const facilityId of parseSiteRange(r['Sites Covered'])) {
+            contractFacilityEdges.push({ contractId: r['Contract Reference'], facilityId });
+        }
+    }
+    writeCSV('edges/contract_facility.csv', contractFacilityEdges);
 };
 
 convert();

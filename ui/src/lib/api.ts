@@ -103,4 +103,6 @@ export const enterprise = {
     organizations: () => get<{ organizations: any[] }>('/enterprise/organizations'),
     roles:         () => get<{ roles: any[] }>('/enterprise/roles'),
     orgChart:      (id: string) => get(`/enterprise/org-chart/${id}`),
+    vendors:       () => get<{ vendors: any[] }>('/enterprise/vendors'),
+    contracts:     () => get<{ contracts: any[] }>('/enterprise/contracts'),
 };

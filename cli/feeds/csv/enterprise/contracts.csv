@@ -1,0 +1,13 @@
+id,name,serviceType,slaResponseTime,amcStartDate,amcExpiryDate,vendorId,coordinatorRoleId
+AMC-FS-IND-2026-01,Fire Suppression AMC (Hydrant/Sprinkler/Pump),Fire Suppression AMC (Hydrant/Sprinkler/Pump),4 hours (critical fault),2026-01-01,2027-12-31,VEN-001,ROLE-016
+AMC-FA-UK-2026-02,Fire Detection & Alarm AMC,Fire Detection & Alarm AMC,4 hours (critical fault),2026-01-01,2027-12-31,VEN-002,ROLE-016
+AMC-FE-IND-2026-03,"Fire Extinguisher Supply, Inspection & Recharge","Fire Extinguisher Supply, Inspection & Recharge",48 hours (routine),2026-01-01,2026-12-31,VEN-003,ROLE-016
+AMC-FE-UK-2026-04,Fire Extinguisher & Hose Reel Servicing,Fire Extinguisher & Hose Reel Servicing,48 hours (routine),2026-01-01,2026-12-31,VEN-004,ROLE-016
+SEC-ALL-2026-05,"CCTV, Access Control & Manned Guarding","CCTV, Access Control & Manned Guarding",2 hours (breach/alarm),2026-01-01,2027-06-30,VEN-005,ROLE-013
+WM-IND-2026-06,General & Hazardous Waste Collection and Disposal,General & Hazardous Waste Collection and Disposal,24 hours (collection),2026-01-01,2026-12-31,VEN-006,ROLE-011
+WM-UK-2026-07,"Hazardous Waste Collection, Manifest & Disposal","Hazardous Waste Collection, Manifest & Disposal",24 hours (collection),2026-01-01,2026-12-31,VEN-007,ROLE-011
+MEP-ALL-2026-08,"DG Set, Transformer & Electrical Panel AMC","DG Set, Transformer & Electrical Panel AMC",6 hours (critical fault),2026-01-01,2027-12-31,VEN-008,ROLE-009
+HVAC-ALL-2026-09,HVAC / Ventilation Preventive Maintenance,HVAC / Ventilation Preventive Maintenance,24 hours (routine),2026-01-01,2026-12-31,VEN-009,ROLE-009
+RACK-ALL-2026-10,Racking Structural Safety Inspection (SEMA/RSI Certified),Racking Structural Safety Inspection (SEMA/RSI Certified),10 business days (scheduled),2026-01-01,2026-12-31,VEN-010,ROLE-007
+LAB-ALL-2026-11,"Effluent, STP & Air Emission Testing Laboratory","Effluent, STP & Air Emission Testing Laboratory",5 business days (report turnaround),2026-01-01,2026-12-31,VEN-011,ROLE-010
+INS-ALL-2026-12,Insurance Risk Engineering Survey & Warranty Advisory,Insurance Risk Engineering Survey & Warranty Advisory,30 days (survey cycle),2026-01-01,2026-12-31,VEN-012,ROLE-014

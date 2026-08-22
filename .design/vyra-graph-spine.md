@@ -864,6 +864,26 @@ Third-party suppliers of assets or services involved in incidents.
 
 **7 vendors:** VND-2002 through VND-2008.
 
+**Plus 12 vendors (`VEN-001`–`VEN-012`, `:Enterprise` label, from `20_Vendor_Master`)** — a second, non-colliding ID space, same dual-origin pattern as `Regulation`/`Control`/`Facility`/`Asset`. Only `id`/`name` populated for this batch — `riskTier`/`contactEmail` stay blank (source has no such fields), same treatment as `Person.email`.
+
+---
+
+### `Contract`
+A vendor service agreement (AMC/SLA) — kept as its own node rather than fields on `Vendor`, since AMC start/expiry and SLA are contract-lifecycle facts (a vendor can hold multiple contracts/renewals over time), not vendor-identity facts. Sits in the Operational graph, not Knowledge — despite `vyra-landscape.md`'s L1 JTBD layer naming "Contracts" as a Knowledge-layer capability, its only real relationships are to `Vendor`/`Facility`/`Role`, all Operational-graph nodes; §2.3 already establishes that a JTBD-layer name doesn't force its backing node into the matching sub-graph (`Control` is the existing precedent).
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `AMC-FS-IND-2026-01` (reuses the real `Contract Reference` value — already a unique natural key, not synthesized) |
+| name | string | `Fire Suppression AMC (Hydrant/Sprinkler/Pump)` (= `serviceType`) |
+| serviceType | string | `Fire Suppression AMC (Hydrant/Sprinkler/Pump)` |
+| slaResponseTime | string | `4 hours (critical fault)` |
+| amcStartDate | string | `2026-01-01` |
+| amcExpiryDate | string | `2027-12-31` |
+| vendorId | string | `VEN-001` — FK to Vendor |
+| coordinatorRoleId | string | `ROLE-016` — FK to Role |
+
+**12 contracts**, 1:1 from `20_Vendor_Master`. `Sites Covered` (`"India Sites (LOC-001 to LOC-010)"` / `"UK Sites (LOC-011 to LOC-020)"` / `"All Sites (LOC-001 to LOC-020)"` — exactly 3 regular patterns across all 12 rows) is expanded via a mechanical regex range parse into real `COVERS -> Facility` edges against the 20 `:Enterprise` Facility rows already seeded in Phase 2 — not a guess, since the pattern is 100% regular and the `LOC-` ids already exist. **Explicitly not done**: no `Contract -> Control` link — `serviceType` free text plausibly relates to specific Controls, but there's no clean FK for it in the source data, same discipline as the unmapped `Security`-category assets. A separate, unrelated concept surfaced during this work — `InsuranceClause` (`21_Insurance_Risk_Clauses`, 15 rows) — was explicitly kept out of scope; it belongs in the Assurance graph as a warranty/attestation instrument linked to `Risk`/`Control`, not here.
+
 ---
 
 ### `Signal`
@@ -1108,6 +1128,9 @@ All relationships below are **live** and are the relationships the API actually 
 | `BELONGS_TO` | Role → Organization | Role's org unit (reuses the `BELONGS_TO` name already used for Clause→Regulation/Standard; safe since `cli/projection/index.ts` groups edge batches by `(relType, sourceLabel, targetLabel)`, not `relType` alone) |
 | `IN_COMPLIANCE_AREA` | Asset → ComplianceArea | Asset's compliance domain (mapped from `category`; `:Enterprise` rows only, 29 of 31 — `Security`-category assets have no mapping) |
 | `WORKS_AT` | Person → Facility | Person has appeared at this facility (many-valued — every seeded Person WORKS_AT 2-4 facilities, no single "home" is supported by the data) |
+| `WITH_VENDOR` | Contract → Vendor | The vendor this service agreement is with |
+| `COORDINATED_BY` | Contract → Role | Internal role coordinating this contract |
+| `COVERS` | Contract → Facility | Facility(ies) this contract's site coverage applies to (many-valued — expanded from `Sites Covered`; reuses the `COVERS` name already used for `AssuranceStatement → Regulation`, safe under the same `(relType, sourceLabel, targetLabel)` grouping) |
 
 ### Intelligence Graph
 | Relationship | From → To | Meaning |
@@ -1203,8 +1226,10 @@ No `edgeMap` for catalog feeds — every catalog relationship is an embedded FK 
 | enterprise | roles.csv | 16 | `18_Roles_Master`, 1:1 |
 | enterprise | facilities.csv | 20 | Deduped to Site granularity from `11_Spatial_Mapping` |
 | enterprise | assets.csv | 31 | `19_Asset_Equipment_Master`, carries `LOCATED_AT` FK to Facility + `complianceAreaId` (29 of 31 rows — `Security` category unmapped) |
+| enterprise | vendors.csv | 12 | `20_Vendor_Master`, second `Vendor` batch (`VEN-001`–`VEN-012`), id/name only |
+| enterprise | contracts.csv | 12 | `20_Vendor_Master`, 1:1, id reuses the real `Contract Reference` value, embedded FKs `WITH_VENDOR`/`COORDINATED_BY` |
 
-No `edgeMap` for enterprise feeds either — same embedded-FK mechanism.
+**One `edgeMap` entry for enterprise feeds** (`cli/feeds/csv/enterprise/edges/contract_facility.csv`, 180 rows) — `Contract → COVERS → Facility`, many-valued, expanded from `Sites Covered` via a regex range parse (same edges-CSV mechanism the `grc` domain already uses for `person_facility.csv`). Every other enterprise relationship is an embedded FK.
 
 **Edge files** (`cli/feeds/csv/edges/`):
 | File | Rows | Relationship |
@@ -1222,7 +1247,7 @@ No `edgeMap` for enterprise feeds either — same embedded-FK mechanism.
 | assurance_statement_audit.csv | 7 | **Synthetic (Phase 4b)** — AssuranceStatement → PREPARED_FOR → Audit |
 | person_facility.csv | 14 | Phase 6 — Person → WORKS_AT → Facility (many-valued, see `Person` in Appendix A) |
 
-**Enterprise pipeline total: 214 nodes, 224 edges** (179 nodes + 141 edges through Phase 2, plus Phase 4b's 28 synthetic Assurance nodes (7 each of `EvidencePackage`/`Attestation`/`AssuranceStatement`/`Audit`) + 69 synthetic edges (30 `PART_OF` + 7 `BACKED_BY` + 7 `DERIVED_FROM` + 18 `COVERS` + 7 `PREPARED_FOR`), plus Phase 6's 7 `Person` nodes + 14 `WORKS_AT` edges). **Catalog pipeline total: 249 nodes, 268 edges** (`:Catalog`-labeled, separate `catalog-sync.ts` run — 99 original + 10 `ComplianceArea` + 30 `Control` + 60 `Task` + 50 `Schedule`; 98 original edges + 30 `IMPLEMENTS` (Control→Requirement) + 30 `BELONGS_TO` + 60 `IMPLEMENTS` (Task→Control) + 50 `APPLIES_TO` (Schedule→Task)). **Enterprise Context pipeline total: 79 nodes, 47 edges** (`:Enterprise`-labeled, separate `enterprise-sync.ts` run — 12 Organization, 16 Role, 20 Facility, 31 Asset; 16 `BELONGS_TO` + 31 `LOCATED_AT` — plus 29 `IN_COMPLIANCE_AREA` edges). **Derived/live-write total: 101 `COVERED_BY` edges** (`backfill-asset-control.ts`, one-time) **+ Signal/Task/Decision created ad hoc via the API and agent runtime** (no fixed count — driven by live events, not seed data).
+**Enterprise pipeline total: 214 nodes, 224 edges** (179 nodes + 141 edges through Phase 2, plus Phase 4b's 28 synthetic Assurance nodes (7 each of `EvidencePackage`/`Attestation`/`AssuranceStatement`/`Audit`) + 69 synthetic edges (30 `PART_OF` + 7 `BACKED_BY` + 7 `DERIVED_FROM` + 18 `COVERS` + 7 `PREPARED_FOR`), plus Phase 6's 7 `Person` nodes + 14 `WORKS_AT` edges). **Catalog pipeline total: 249 nodes, 268 edges** (`:Catalog`-labeled, separate `catalog-sync.ts` run — 99 original + 10 `ComplianceArea` + 30 `Control` + 60 `Task` + 50 `Schedule`; 98 original edges + 30 `IMPLEMENTS` (Control→Requirement) + 30 `BELONGS_TO` + 60 `IMPLEMENTS` (Task→Control) + 50 `APPLIES_TO` (Schedule→Task)). **Enterprise Context pipeline total: 103 nodes, 280 edges** (`:Enterprise`-labeled, separate `enterprise-sync.ts` run — 12 Organization, 16 Role, 20 Facility, 31 Asset, 12 Vendor, 12 Contract; 16 `BELONGS_TO` + 31 `LOCATED_AT` + 29 `IN_COMPLIANCE_AREA` + 12 `WITH_VENDOR` + 12 `COORDINATED_BY` + 180 `COVERS`). **Derived/live-write total: 101 `COVERED_BY` edges** (`backfill-asset-control.ts`, one-time) **+ Signal/Task/Decision created ad hoc via the API and agent runtime** (no fixed count — driven by live events, not seed data).
 
 ---
 
@@ -1315,7 +1340,7 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 
 # Appendix F · Document History
 
-**Version 1.11** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
+**Version 1.12** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
 
 | Date | Change |
 |---|---|
@@ -1330,3 +1355,4 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 | 2026-08-16 | Phase 5 — new `signal-intelligence` agent (no schema change, reuses `Signal`/`Decision`). Phase 6 — `Person` fed for the first time (7 rows, extracted from free-text name fields already in the legacy dataset), added `roleTitle` prop, `WORKS_AT` went live as a many-valued relationship, `HAS_ROLE` remains declared-but-unfired (documented gap). |
 | 2026-08-16 | Phase 7 — Human-in-the-Loop Decision Gate. `Decision` gained `recommendedControlType`/`reviewedBy`/`reviewedAt`/`reviewNote` and a real `status` state machine (`pending → approved/rejected`) via new `POST /intelligence/decisions/:id/{approve,reject}`. New `REVIEWED_BY` (Decision→Person) went live. Approval now writes the thing the agent recommended: a `Control:AgentProposed` (`-[:IMPLEMENTS]-> Requirement`, excluded from `getCoverageScore()`) for `control-recommendation`, or a `Finding:AgentProposed` (`-[:AGAINST]-> Control` per id if covered, else `-[:ABOUT]-> Signal`) for `deviation-assessment`. `:AgentProposed` is a fourth Control/Finding origin label alongside `:Catalog`/`:Enterprise`/unlabeled-legacy. |
 | 2026-08-16 | Phase 8 — Complete the Agent Roster. `Decision` gained two more types: `risk-assessment` (`proposedLikelihood`/`proposedConsequence`/`proposedRating`) and `assurance-package-proposal` (`proposedPosture`, computed not LLM-decided). `:AgentProposed` now extends to `Risk` (`-[:RAISED_BY]-> Finding`, inherentScore/residualScore computed as likelihood×consequence, deliberately *not* excluded from `getRiskRollup()` unlike Control's Coverage Score exclusion) and to the full Assurance chain — `EvidencePackage`/`Attestation`/`AssuranceStatement`/`Audit` — which `assurance-intelligence` now proposes live for any Incident with unbundled Evidence, going through the same `PART_OF`/`BACKED_BY`/`DERIVED_FROM`/`COVERS`/`PREPARED_FOR` relationships Phase 4b's synthetic batch used, now also writable live. Phase 4b's `generate-assurance-seed.ts` is unchanged and still owns the original 7-incident historical batch. All four Assurance list endpoints now return an `origin: 'agent-proposed' \| 'synthetic'` field (from `labels(n)`) so callers can tell the two apart. |
+| 2026-08-22 | L1 Knowledge — Contracts. New `Contract` node (Operational graph, 12 rows from `20_Vendor_Master`, id reuses the real `Contract Reference` value) plus a second `Vendor` batch (`:Enterprise`, `VEN-001`–`VEN-012`). New relationships `WITH_VENDOR` (Contract→Vendor), `COORDINATED_BY` (Contract→Role), and `COVERS` (Contract→Facility, many-valued, 180 edges, expanded from `Sites Covered` via a mechanical range parse against the 20 `:Enterprise` Facility rows already seeded in Phase 2). `enterprise-sync.ts` gained its first-ever `edgeMap` processing step (previously only `catalog-sync.ts`/the base `grc` pipeline processed `edgeMap`; enterprise's was declared but unused). `InsuranceClause` (`21_Insurance_Risk_Clauses`) surfaced during scoping but stays explicitly out — it belongs in the Assurance graph, a separate future decision. |

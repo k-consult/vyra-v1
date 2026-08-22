@@ -20,6 +20,23 @@ const LIST_ROLES = `
     ORDER BY n.name
 `;
 
+const LIST_VENDORS = `
+    MATCH (n:Vendor)
+    RETURN properties(n) AS vendor
+    ORDER BY n.name
+`;
+
+// WITH before RETURN, not RETURN ... ORDER BY c.name directly — ORDER BY can't
+// reference a pre-aggregation variable once collect() is in the RETURN (same
+// bug hit in listAssuranceStatements/listAudits/listPeople).
+const LIST_CONTRACTS = `
+    MATCH (c:Contract)
+    OPTIONAL MATCH (c)-[:COVERS]->(fac:Facility)
+    WITH c, collect(DISTINCT fac.id) AS facilityIds
+    RETURN properties(c) AS contract, facilityIds
+    ORDER BY c.name
+`;
+
 const TRACE_ORG_CHART = `
     MATCH (org:Organization {id: $id})<-[:BELONGS_TO]-(role:Role)
     OPTIONAL MATCH (role)<-[:HAS_ROLE]-(person:Person)
@@ -45,6 +62,31 @@ export const listRoles = async () => {
         return rows.map((r: any) => r.role).filter(Boolean);
     } catch (err: any) {
         log.error('enterprise.repo: listRoles failed', err.message);
+        return [];
+    }
+};
+
+export const listVendors = async () => {
+    try {
+        const raw: any = await db().fetch2(LIST_VENDORS, {});
+        const rows = Array.isArray(raw) ? raw : [raw];
+        return rows.map((r: any) => r.vendor).filter(Boolean);
+    } catch (err: any) {
+        log.error('enterprise.repo: listVendors failed', err.message);
+        return [];
+    }
+};
+
+export const listContracts = async () => {
+    try {
+        const raw: any = await db().fetch2(LIST_CONTRACTS, {});
+        const rows = Array.isArray(raw) ? raw : [raw];
+        return rows.filter((r: any) => r?.contract).map((r: any) => ({
+            ...r.contract,
+            facilityIds: (r.facilityIds ?? []).filter(Boolean),
+        }));
+    } catch (err: any) {
+        log.error('enterprise.repo: listContracts failed', err.message);
         return [];
     }
 };

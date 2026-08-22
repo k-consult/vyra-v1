@@ -333,6 +333,7 @@ export function LandscapeView() {
                             <Link href="/calendar"                className="hover:text-zinc-100 transition-colors">Calendar</Link>
                             <Link href="/assurance"               className="hover:text-zinc-100 transition-colors">Assurance</Link>
                             <Link href="/intelligence"             className="hover:text-zinc-100 transition-colors">Intelligence</Link>
+                            <Link href="/enterprise/contracts"     className="hover:text-zinc-100 transition-colors">Contracts</Link>
                         </nav>
                     </div>
                 </div>

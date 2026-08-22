@@ -5,8 +5,8 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 import { v2 } from '../semantic-contract';
 import hints from '../domains/enterprise/ingest-hints.json';
 import { parseCSV } from '../parser';
-import { buildIR, compile } from '../compiler';
-import { GraphEdge, GraphNode } from '../compiler/types';
+import { buildIR, compile, compileEdges } from '../compiler';
+import { EdgeDef, GraphEdge, GraphNode } from '../compiler/types';
 import { project } from '../projection';
 import { run } from '../runtime';
 import { dumpIR, spotCheck } from '../observability';
@@ -50,7 +50,22 @@ async function main() {
         log.debug(`[compiler] ${feedFile} → ${nodes.length} nodes, ${edges.length} rel-edges`);
     }
 
-    // ── 2. Build combined IR ──────────────────────────────────────────────
+    // ── 2. Compile edge feeds ────────────────────────────────────────────
+    for (const [feedFile, edgeDef] of Object.entries(hints.edgeMap)) {
+        const feedPath = path.join(feedsDir, feedFile);
+        const { rows, errors } = parseCSV(feedPath, false); // edge CSVs have no id/name columns
+
+        if (!rows.length) {
+            errors.forEach(e => log.warn(`[parser] ${feedFile}: ${e}`));
+            continue;
+        }
+
+        const edges = compileEdges(edgeDef as EdgeDef, rows);
+        allEdges.push(...edges);
+        log.debug(`[compiler] ${feedFile} → ${edges.length} edges (${edgeDef.relType})`);
+    }
+
+    // ── 3. Build combined IR ──────────────────────────────────────────────
     const ir = buildIR(v2.version, allNodes, allEdges);
     spotCheck(ir);
 
@@ -67,11 +82,11 @@ async function main() {
         return;
     }
 
-    // ── 3. Project ────────────────────────────────────────────────────────
+    // ── 4. Project ────────────────────────────────────────────────────────
     const projection = project(ir);
     log.info(`[projection] ${projection.nodeBatches.length} node batches, ${projection.edgeBatches.length} edge batches (CSVs in cli/out/ for debug)`);
 
-    // ── 4. Load into Neo4j, stamped with the :Enterprise origin label ──────
+    // ── 5. Load into Neo4j, stamped with the :Enterprise origin label ──────
     await run(projection, { originLabel: 'Enterprise' });
     await DB.closeAll();
 }

@@ -262,6 +262,28 @@ export const v2: Contract = {
             rels: [],
         },
 
+        // Vendor service agreement (AMC/SLA) — its own node, not fields on Vendor,
+        // since AMC start/expiry and SLA are contract-lifecycle facts (a vendor can
+        // have multiple contracts/renewals over time), not vendor-identity facts.
+        Contract: {
+            label: 'Contract',
+            graph: Graph.Operational,
+            props: {
+                ...baseProps,
+                serviceType: 'serviceType',
+                slaResponseTime: 'slaResponseTime',
+                amcStartDate: 'amcStartDate',
+                amcExpiryDate: 'amcExpiryDate',
+                vendorId: 'vendorId',
+                coordinatorRoleId: 'coordinatorRoleId',
+            },
+            axes: [Axis.Enterprise],
+            rels: [
+                { type: 'WITH_VENDOR', targetLabel: 'Vendor', sourceField: 'vendorId' },
+                { type: 'COORDINATED_BY', targetLabel: 'Role', sourceField: 'coordinatorRoleId' },
+            ],
+        },
+
         Organization: {
             label: 'Organization',
             graph: Graph.Operational,

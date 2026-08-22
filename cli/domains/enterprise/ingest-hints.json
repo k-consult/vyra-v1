@@ -6,7 +6,11 @@
     "enterprise/organizations.csv": "Organization",
     "enterprise/roles.csv":         "Role",
     "enterprise/facilities.csv":    "Facility",
-    "enterprise/assets.csv":        "Asset"
+    "enterprise/assets.csv":        "Asset",
+    "enterprise/vendors.csv":       "Vendor",
+    "enterprise/contracts.csv":     "Contract"
   },
-  "edgeMap": {}
+  "edgeMap": {
+    "enterprise/edges/contract_facility.csv": { "relType": "COVERS", "sourceCol": "contractId", "sourceLabel": "Contract", "targetCol": "facilityId", "targetLabel": "Facility" }
+  }
 }
