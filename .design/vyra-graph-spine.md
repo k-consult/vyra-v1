@@ -625,6 +625,8 @@ Policies, SOPs, and operational procedures that implement requirements.
 
 **Plus a fourth origin, `:AgentProposed` (Phase 7, 2026-08-16):** created live when a human approves a `control-recommendation` `Decision` — `id: CTL-{decisionId}`, `controlType` = the Decision's `recommendedControlType`, `description` = the Decision's `rationale`, `status: 'proposed'`. Same structural-label reasoning as Phase 0.5's `:Catalog` convention. `getCoverageScore()` filters explicitly to `Control:Catalog`, so `:AgentProposed` controls are excluded from the coverage percentage until a real "verified operational" status transition exists (deliberately out of scope for Phase 7 — see `vyra-implementation-plan.md`).
 
+**`controlType` doesn't split Policy from SOP, and can't (investigated 2026-08-23)** — neither Control origin's source data carries a real document-type discriminator; see `vyra-implementation-plan.md`'s Gap Review for the evidence.
+
 ---
 
 ### `ComplianceArea`
@@ -748,6 +750,8 @@ The central operational node. Represents an audit-triggered compliance incident,
 | status | string | `closed` |
 
 **7 incidents** in seed data.
+
+**`escalationPath` stays free text, not a graph-modeled chain (investigated 2026-08-23)** — zero real title matches against the 16 seeded `Role` rows, and no ordering/hierarchy property exists to hang a chain on; see `vyra-implementation-plan.md`'s Gap Review for the evidence.
 
 ---
 
