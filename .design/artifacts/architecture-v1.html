@@ -1,0 +1,867 @@
+<title>Vyra — The Feedback Loop</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    /* ---- light (default) tokens ---- */
+    --ink:        #F1F3F7;
+    --surface:    #FFFFFF;
+    --surface-2:  #F7F8FB;
+    --line:       #D7DBE4;
+    --line-soft:  #E4E7EE;
+    --text:       #171A21;
+    --text-muted: #5B6472;
+    --brass:      #8F6A22;
+    --brass-bg:   rgba(143, 106, 34, 0.10);
+    --sage:       #4C7A5C;
+    --sage-bg:    rgba(76, 122, 92, 0.10);
+    --redink:     #8C3A34;
+    --redink-bg:  rgba(140, 58, 52, 0.08);
+
+    --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Noto Serif", Georgia, serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace;
+
+    --fs-eyebrow: 0.6875rem;
+    --fs-small: 0.8125rem;
+    --fs-caption: 0.875rem;
+    --fs-body: 1rem;
+    --fs-h3: 1.0625rem;
+    --fs-h2: 1.375rem;
+    --fs-h1: clamp(2rem, 3.4vw + 1rem, 2.75rem);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink:        #0A0D13;
+      --surface:    #12161F;
+      --surface-2:  #161B26;
+      --line:       #262C3A;
+      --line-soft:  #1C212C;
+      --text:       #E6E9F0;
+      --text-muted: #8991A6;
+      --brass:      #D3A657;
+      --brass-bg:   rgba(211, 166, 87, 0.12);
+      --sage:       #7FB08F;
+      --sage-bg:    rgba(127, 176, 143, 0.10);
+      --redink:     #C97169;
+      --redink-bg:  rgba(201, 113, 105, 0.10);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ink:        #0A0D13;
+    --surface:    #12161F;
+    --surface-2:  #161B26;
+    --line:       #262C3A;
+    --line-soft:  #1C212C;
+    --text:       #E6E9F0;
+    --text-muted: #8991A6;
+    --brass:      #D3A657;
+    --brass-bg:   rgba(211, 166, 87, 0.12);
+    --sage:       #7FB08F;
+    --sage-bg:    rgba(127, 176, 143, 0.10);
+    --redink:     #C97169;
+    --redink-bg:  rgba(201, 113, 105, 0.10);
+  }
+
+  :root[data-theme="light"] {
+    --ink:        #F1F3F7;
+    --surface:    #FFFFFF;
+    --surface-2:  #F7F8FB;
+    --line:       #D7DBE4;
+    --line-soft:  #E4E7EE;
+    --text:       #171A21;
+    --text-muted: #5B6472;
+    --brass:      #8F6A22;
+    --brass-bg:   rgba(143, 106, 34, 0.10);
+    --sage:       #4C7A5C;
+    --sage-bg:    rgba(76, 122, 92, 0.10);
+    --redink:     #8C3A34;
+    --redink-bg:  rgba(140, 58, 52, 0.08);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: var(--fs-body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: 3px;
+  }
+
+  .mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--fs-eyebrow);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .doc {
+    max-width: 840px;
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 4.5rem) clamp(1.25rem, 4vw, 2rem) 4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3.25rem;
+  }
+
+  /* ---------------- masthead ---------------- */
+
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--line);
+    animation: rise 700ms ease both;
+  }
+
+  .masthead h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: var(--fs-h1);
+    line-height: 1.08;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+
+  .masthead .dek {
+    margin: 0;
+    max-width: 46rem;
+    font-size: 1.0625rem;
+    color: var(--text-muted);
+    text-wrap: balance;
+  }
+
+  .stats-line {
+    margin-top: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: var(--fs-small);
+    color: var(--brass);
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .masthead { animation: none; }
+  }
+
+  /* ---------------- band (section) scaffolding ---------------- */
+
+  .band-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.1rem;
+  }
+
+  .band-head .eyebrow { white-space: nowrap; }
+
+  .band-head h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: var(--fs-h2);
+    text-wrap: balance;
+  }
+
+  .band-caption {
+    margin: 0.6rem 0 0;
+    font-size: var(--fs-caption);
+    color: var(--text-muted);
+    max-width: 52rem;
+  }
+
+  /* ---------------- connectors ---------------- */
+
+  .connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    margin: -1.6rem 0 -1.6rem;
+    color: var(--text-muted);
+  }
+  .connector .connector-line {
+    width: 1px;
+    height: 1.6rem;
+    background: var(--line);
+  }
+  .connector svg { width: 11px; height: 8px; color: var(--text-muted); }
+  .connector .connector-label {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+  }
+
+  /* ---------------- generic chip grid ---------------- */
+
+  .chip-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 0.85rem;
+  }
+
+  .chip {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 1rem 1.1rem;
+    transition: transform 150ms ease, border-color 150ms ease;
+  }
+  .chip:hover { transform: translateY(-2px); border-color: var(--brass); }
+
+  .chip .chip-title {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--text);
+  }
+  .chip .chip-caption {
+    margin-top: 0.4rem;
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .chip .chip-caption em {
+    font-style: normal;
+    color: var(--text);
+  }
+
+  /* ---------------- the graph chain (layer 1) ---------------- */
+
+  .graph-chain {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0.6rem;
+    row-gap: 0.9rem;
+  }
+
+  .domain-pill {
+    flex: 1 1 140px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-top: 2px solid var(--line);
+    border-radius: 3px;
+    padding: 0.9rem 1rem;
+    min-width: 130px;
+  }
+  .domain-pill .domain-name {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+  .domain-pill .domain-q {
+    margin-top: 0.35rem;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+  }
+  .domain-pill.accent {
+    border-top-color: var(--brass);
+    background: var(--brass-bg);
+  }
+  .domain-pill .domain-flag {
+    display: block;
+    margin-top: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--brass);
+    letter-spacing: 0.02em;
+  }
+
+  .chain-arrow {
+    align-self: center;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    flex: 0 0 auto;
+  }
+
+  .graph-note {
+    margin: 1rem 0 0;
+    font-size: var(--fs-caption);
+    color: var(--text-muted);
+    border-left: 2px solid var(--line);
+    padding-left: 0.85rem;
+  }
+
+  /* ---------------- decision object card ---------------- */
+
+  .decision-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1.25rem 1.4rem;
+    max-width: 30rem;
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    line-height: 1.9;
+  }
+  .decision-card .brace { color: var(--text-muted); }
+  .decision-card .k { color: var(--text-muted); }
+  .decision-card .v { color: var(--text); }
+  .decision-card .status-pending { color: var(--brass); font-weight: 600; }
+
+  /* ---------------- governance gate ---------------- */
+
+  .gate-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 620px) {
+    .gate-row { grid-template-columns: 1fr; }
+  }
+
+  .gate-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--line);
+    border-radius: 3px;
+    padding: 1.15rem 1.25rem 1.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .gate-card.approve { border-top-color: var(--sage); }
+  .gate-card.reject { border-top-color: var(--redink); }
+
+  .gate-verb {
+    font-family: var(--font-mono);
+    font-size: var(--fs-small);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .gate-card.approve .gate-verb { color: var(--sage); }
+  .gate-card.reject .gate-verb { color: var(--redink); }
+
+  .gate-card p {
+    margin: 0;
+    font-size: var(--fs-caption);
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+  .gate-card .gate-write {
+    color: var(--text);
+  }
+
+  .loop-note {
+    margin-top: 0.35rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    padding: 0.7rem 0.8rem;
+    background: var(--sage-bg);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+  }
+  .loop-note svg {
+    width: 15px; height: 15px;
+    color: var(--sage);
+    flex: 0 0 auto;
+    margin-top: 0.1rem;
+  }
+  .loop-note p { color: var(--text); font-size: 0.8125rem; }
+
+  .dead-end {
+    margin-top: 0.35rem;
+    padding: 0.7rem 0.8rem;
+    background: var(--redink-bg);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+  }
+
+  /* ---------------- traceability band ---------------- */
+
+  .trace-band {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1.5rem 1.6rem;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 27px,
+      var(--line-soft) 27px,
+      var(--line-soft) 28px
+    );
+  }
+
+  .trace-row { margin-bottom: 1.1rem; }
+  .trace-row:last-child { margin-bottom: 0; }
+
+  .trace-label {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .trace-scroll {
+    overflow-x: auto;
+    padding-bottom: 0.2rem;
+  }
+
+  .trace-chain {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    white-space: nowrap;
+  }
+  .trace-chain .node {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 0.3rem 0.6rem;
+  }
+  .trace-chain .node.bridge {
+    border-color: var(--brass);
+    color: var(--brass);
+  }
+  .trace-chain .arrow { color: var(--text-muted); }
+
+  .trace-q {
+    margin: 0.9rem 0 0;
+    font-size: var(--fs-caption);
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  /* ---------------- outputs ---------------- */
+
+  .output-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 0.85rem;
+  }
+  .output-tile {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 1rem 1.1rem;
+    text-align: left;
+  }
+  .output-tile .t-name {
+    font-family: var(--font-display);
+    font-size: 1rem;
+  }
+  .output-tile .t-caption {
+    margin-top: 0.3rem;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+  }
+
+  /* ---------------- prose ---------------- */
+
+  .prose {
+    max-width: 42rem;
+  }
+  .prose p {
+    font-size: 1rem;
+    color: var(--text);
+    line-height: 1.7;
+  }
+  .prose p + p { margin-top: 1rem; }
+  .prose code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 0.05em 0.35em;
+  }
+
+  /* ---------------- open gap ---------------- */
+
+  .gap-box {
+    border: 1px dashed var(--line);
+    border-radius: 4px;
+    padding: 1.15rem 1.3rem;
+    max-width: 46rem;
+  }
+  .gap-box .gap-tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    color: var(--redink);
+    border: 1px solid var(--redink);
+    border-radius: 2px;
+    padding: 0.15rem 0.4rem;
+    margin-bottom: 0.6rem;
+  }
+  .gap-box p {
+    margin: 0;
+    font-size: var(--fs-caption);
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .gap-box p code {
+    font-family: var(--font-mono);
+    color: var(--text);
+  }
+
+  /* ---------------- five-things strip ---------------- */
+
+  .five-strip {
+    border-top: 1px solid var(--line);
+    padding-top: 1.75rem;
+  }
+  .five-strip .eyebrow { margin-bottom: 0.9rem; display: block; }
+  .five-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.7rem;
+  }
+  .five-item {
+    padding: 0.85rem 0.9rem;
+    background: var(--surface-2);
+    border-radius: 3px;
+  }
+  .five-item .num {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--brass);
+  }
+  .five-item .label {
+    margin-top: 0.25rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+  .five-item .desc {
+    margin-top: 0.2rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+
+  /* ---------------- footer ---------------- */
+
+  .doc-footer {
+    border-top: 1px solid var(--line);
+    padding-top: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+</style>
+
+<div class="doc">
+
+  <header class="masthead">
+    <span class="eyebrow">Vyra · System Architecture</span>
+    <h1>The Feedback Loop</h1>
+    <p class="dek">How a regulation becomes provable assurance — and why every approved decision leaves the next reasoning cycle sharper than the last.</p>
+    <p class="stats-line">5 graph domains · 4 agent families · 1 governance gate</p>
+  </header>
+
+  <main style="display:flex; flex-direction:column; gap:3.25rem;">
+
+    <!-- LAYER 0 — SOURCES -->
+    <section>
+      <div class="band-head">
+        <span class="eyebrow">Layer 0</span>
+        <h2>Sources — the world Vyra observes</h2>
+      </div>
+      <div class="chip-row">
+        <div class="chip">
+          <div class="chip-title">Regulators &amp; Catalog</div>
+          <div class="chip-caption">Regulations, standards, obligations — maintained centrally, synced down on a cadence.</div>
+        </div>
+        <div class="chip">
+          <div class="chip-title">Enterprise Records</div>
+          <div class="chip-caption">Organization, role, facility, asset, vendor — the enterprise's own context.</div>
+        </div>
+        <div class="chip">
+          <div class="chip-title">Floor &amp; IoT Signals</div>
+          <div class="chip-caption">Live events, posted as they happen — not a batch snapshot.</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="connector" aria-hidden="true">
+      <span class="connector-line"></span>
+      <svg viewBox="0 0 12 8" fill="none"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+
+    <!-- LAYER 1 — THE GRAPH -->
+    <section>
+      <div class="band-head">
+        <span class="eyebrow">Layer 1</span>
+        <h2>The Graph — shared memory, five domains</h2>
+      </div>
+      <div class="graph-chain">
+        <div class="domain-pill">
+          <div class="domain-name">Knowledge</div>
+          <div class="domain-q">what must be done?</div>
+        </div>
+        <span class="chain-arrow">→</span>
+        <div class="domain-pill">
+          <div class="domain-name">Operational</div>
+          <div class="domain-q">what is happening?</div>
+        </div>
+        <span class="chain-arrow">→</span>
+        <div class="domain-pill accent">
+          <div class="domain-name">Intelligence</div>
+          <div class="domain-q">what do we understand?</div>
+          <span class="domain-flag">★ also where agents reason — Layer 2, below</span>
+        </div>
+        <span class="chain-arrow">→</span>
+        <div class="domain-pill">
+          <div class="domain-name">Execution</div>
+          <div class="domain-q">what are we doing?</div>
+        </div>
+        <span class="chain-arrow">→</span>
+        <div class="domain-pill">
+          <div class="domain-name">Assurance</div>
+          <div class="domain-q">what can we prove?</div>
+        </div>
+      </div>
+      <p class="graph-note">Every agent reads and writes this same graph. Nothing is agent-private, nothing is re-derived from scratch — a fact recorded on cycle one is still there, unchanged, on cycle one thousand.</p>
+    </section>
+
+    <div class="connector" aria-hidden="true">
+      <span class="connector-line"></span>
+      <svg viewBox="0 0 12 8" fill="none"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="connector-label">observe</span>
+    </div>
+
+    <!-- LAYER 2 — AGENT INTELLIGENCE -->
+    <section>
+      <div class="band-head">
+        <span class="eyebrow">Layer 2</span>
+        <h2>Agent Intelligence — continuous, unprompted</h2>
+      </div>
+      <p class="band-caption">Polls the graph every 60 seconds. No agent waits to be asked a question.</p>
+      <div class="chip-row">
+        <div class="chip">
+          <div class="chip-title">control-intelligence</div>
+          <div class="chip-caption">watches for <em>uncontrolled Requirement</em></div>
+        </div>
+        <div class="chip">
+          <div class="chip-title">signal-intelligence</div>
+          <div class="chip-caption">watches for <em>unassessed Signal</em></div>
+        </div>
+        <div class="chip">
+          <div class="chip-title">risk-intelligence</div>
+          <div class="chip-caption">watches for <em>unscored Finding</em></div>
+        </div>
+        <div class="chip">
+          <div class="chip-title">assurance-intelligence</div>
+          <div class="chip-caption">watches for <em>unbundled Evidence</em></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="connector" aria-hidden="true">
+      <span class="connector-line"></span>
+      <svg viewBox="0 0 12 8" fill="none"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="connector-label">reasons via local LLM, writes →</span>
+    </div>
+
+    <!-- LAYER 3 — DECISION -->
+    <section>
+      <div class="band-head">
+        <span class="eyebrow">Layer 3</span>
+        <h2>Decision — a proposal, never a direct write</h2>
+      </div>
+      <div class="decision-card">
+        <div><span class="brace">Decision {</span></div>
+        <div>&nbsp;&nbsp;<span class="k">type:</span> <span class="v">"control-recommendation"</span></div>
+        <div>&nbsp;&nbsp;<span class="k">rationale:</span> <span class="v">"…"</span></div>
+        <div>&nbsp;&nbsp;<span class="k">confidence:</span> <span class="v">0.82</span></div>
+        <div>&nbsp;&nbsp;<span class="k">status:</span> <span class="status-pending">PENDING</span></div>
+        <div><span class="brace">}</span></div>
+      </div>
+    </section>
+
+    <div class="connector" aria-hidden="true">
+      <span class="connector-line"></span>
+      <svg viewBox="0 0 12 8" fill="none"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+
+    <!-- LAYER 4 — GOVERNANCE GATE -->
+    <section>
+      <div class="band-head">
+        <span class="eyebrow">Layer 4</span>
+        <h2>Human Governance Gate — Autonomy Level 1</h2>
+      </div>
+      <p class="band-caption">A real, named reviewer resolves every Decision. Nothing commits to the graph of record without this step.</p>
+      <div class="gate-row">
+        <div class="gate-card approve">
+          <span class="gate-verb">Approve</span>
+          <p>Writes a real graph node — <span class="gate-write">Control, Finding, Risk, or the full Assurance chain</span> — attributed to the reviewer.</p>
+          <div class="loop-note">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 1 1 2.5 5.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4 12v5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <p>Feeds back into Layer 1 — the next cycle reasons over a strictly larger graph.</p>
+          </div>
+        </div>
+        <div class="gate-card reject">
+          <span class="gate-verb">Reject</span>
+          <p><span class="gate-write">status → REJECTED</span>, with an optional note.</p>
+          <div class="dead-end">No graph mutation. The loop stops here — cleanly, not silently.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CROSS-CUTTING — TRACEABILITY -->
+    <section>
+      <div class="band-head">
+        <span class="eyebrow">Cross-cutting</span>
+        <h2>Traceability — reads the whole graph, either direction, any time</h2>
+      </div>
+      <div class="trace-band">
+        <div class="trace-row">
+          <div class="trace-label">Forward</div>
+          <div class="trace-scroll">
+            <div class="trace-chain">
+              <span class="node">Regulation</span><span class="arrow">→</span>
+              <span class="node">Requirement</span><span class="arrow">→</span>
+              <span class="node bridge">Control</span><span class="arrow">→</span>
+              <span class="node">Asset</span><span class="arrow">→</span>
+              <span class="node bridge">Incident</span><span class="arrow">→</span>
+              <span class="node bridge">Finding</span><span class="arrow">→</span>
+              <span class="node">Risk</span><span class="arrow">→</span>
+              <span class="node bridge">CAPA</span><span class="arrow">→</span>
+              <span class="node">Verification</span><span class="arrow">→</span>
+              <span class="node bridge">Evidence</span>
+            </div>
+          </div>
+          <p class="trace-q">"What do we do about this rule, and can we prove it?"</p>
+        </div>
+        <div class="trace-row">
+          <div class="trace-label">Reverse</div>
+          <div class="trace-scroll">
+            <div class="trace-chain">
+              <span class="node bridge">Evidence</span><span class="arrow">←</span>
+              <span class="node">Verification</span><span class="arrow">←</span>
+              <span class="node bridge">CAPA</span><span class="arrow">←</span>
+              <span class="node">Risk</span><span class="arrow">←</span>
+              <span class="node bridge">Finding</span><span class="arrow">←</span>
+              <span class="node bridge">Incident</span><span class="arrow">←</span>
+              <span class="node">Asset</span><span class="arrow">←</span>
+              <span class="node bridge">Control</span><span class="arrow">←</span>
+              <span class="node">Requirement</span><span class="arrow">←</span>
+              <span class="node">Regulation</span>
+            </div>
+          </div>
+          <p class="trace-q">"Which obligation does this failure implicate?"</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- LAYER 5 — OUTPUTS -->
+    <section>
+      <div class="band-head">
+        <span class="eyebrow">Layer 5</span>
+        <h2>Assurance &amp; Trust — what gets exported</h2>
+      </div>
+      <div class="output-row">
+        <div class="output-tile">
+          <div class="t-name">Coverage Score</div>
+          <div class="t-caption">Requirement &amp; asset coverage, per compliance area</div>
+        </div>
+        <div class="output-tile">
+          <div class="t-name">Risk Rollup</div>
+          <div class="t-caption">Portfolio exposure by rating, count-weighted</div>
+        </div>
+        <div class="output-tile">
+          <div class="t-name">Audit-Ready Export</div>
+          <div class="t-caption">The full Evidence → Attestation → Statement chain</div>
+        </div>
+        <div class="output-tile">
+          <div class="t-name">Attestation</div>
+          <div class="t-caption">A named sign-off, backed by a bundled package</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WHY IT COMPOUNDS -->
+    <section class="prose">
+      <div class="band-head">
+        <span class="eyebrow">Why it compounds</span>
+        <h2>This is a loop, not a pipeline</h2>
+      </div>
+      <p>Every agent observes with a filter along the lines of <code>NOT (:Decision)-[:ABOUT]-&gt;(x)</code> — <code>fetchRequirements</code>, <code>fetchUnassessedSignals</code>, <code>fetchUnscoredFindings</code>, <code>fetchUnbundledEvidenceIncidents</code> all work this way. That means every approval at Layer 4 doesn't just record one outcome — it permanently shrinks next cycle's observe set, and permanently grows the traceability chains in the cross-cutting layer above.</p>
+      <p>The graph an agent reasons over on cycle <em>N+1</em> is strictly richer than the one on cycle <em>N</em>: more resolved controls, more scored risks, more bundled evidence, sitting right there as precedent. That's the learning — not weight updates, but a self-narrowing, compounding graph that every future cycle, and every future audit, inherits for free.</p>
+    </section>
+
+    <!-- OPEN GAP -->
+    <section>
+      <div class="gap-box">
+        <span class="gap-tag">Open</span>
+        <p>The loop above closes within one agent's lane — it doesn't yet close <em>across</em> agents. An approved Risk doesn't currently retrigger <code>control-intelligence</code> to reconsider a Control. Closing that is Scenario Simulation, and it's still unscoped: there's no working definition yet of what a "scenario" is in this domain.</p>
+      </div>
+    </section>
+
+    <!-- FIVE THINGS -->
+    <section class="five-strip">
+      <span class="eyebrow">What makes this agentic — not just "AI-assisted"</span>
+      <div class="five-grid">
+        <div class="five-item">
+          <div class="num">01</div>
+          <div class="label">Shared memory</div>
+          <div class="desc">One graph, read and written by every agent — not a chat session.</div>
+        </div>
+        <div class="five-item">
+          <div class="num">02</div>
+          <div class="label">Continuous observation</div>
+          <div class="desc">The system initiates. Nobody has to ask it a question.</div>
+        </div>
+        <div class="five-item">
+          <div class="num">03</div>
+          <div class="label">Governed autonomy</div>
+          <div class="desc">Agents propose; a named human decides what commits.</div>
+        </div>
+        <div class="five-item">
+          <div class="num">04</div>
+          <div class="label">Traceability</div>
+          <div class="desc">Structurally guaranteed, forward and reverse — not a report.</div>
+        </div>
+        <div class="five-item">
+          <div class="num">05</div>
+          <div class="label">Full-loop coverage</div>
+          <div class="desc">Four agents span Interpret through Assurance, on one substrate.</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="doc-footer">
+    <span>Vyra — Compliance. Handled.</span>
+    <span>Architecture brief · 2026-08-23</span>
+  </footer>
+
+</div>
