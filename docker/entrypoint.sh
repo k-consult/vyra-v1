@@ -32,8 +32,11 @@ case "$MODE" in
   ui)
     cd ui && exec npx next start -p 3002
     ;;
+  agents)
+    cd agents && exec npx ts-node --transpile-only scheduler.ts
+    ;;
   *)
-    echo "Unknown mode: $MODE (expected: ingest | api | ui)" >&2
+    echo "Unknown mode: $MODE (expected: ingest | api | ui | agents)" >&2
     exit 1
     ;;
 esac

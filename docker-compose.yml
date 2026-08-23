@@ -7,6 +7,11 @@ x-app-env: &app-env
   DB_PASSWORD: vyra-ai@2025
   DB_NAME: agentic-grc
   API_PORT: "4001"
+  # Ollama runs on the host machine, not in a container — host.docker.internal
+  # is mapped to the host gateway below so agents/ can reach it from inside compose.
+  OLLAMA_HOST: http://host.docker.internal:11434
+  OLLAMA_MODEL: llama3.1:8b
+  AGENT_POLL_INTERVAL_MS: "60000"
 
 services:
   neo4j:
@@ -54,6 +59,17 @@ services:
       - "3002:3002"
     depends_on:
       - api
+
+  agents:
+    image: vyra-app
+    command: ["agents"]
+    environment: *app-env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      ingest:
+        condition: service_completed_successfully
+    restart: unless-stopped
 
 volumes:
   neo4j-data:
