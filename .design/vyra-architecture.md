@@ -28,7 +28,7 @@ Everything below the API — the agent runtime, the ingestion pipeline, the API 
 
 | Layer | Workspace | Port | Components | Talks to |
 |---|---|---|---|---|
-| **Presentation** | `ui/` | 3002 | Next.js + React feature views — `landscape`, `dashboard`, `knowledge`, `execution`, `intelligence`, `assurance`, `calendar`, `validation` | API (HTTP) only — **never** Neo4j |
+| **Presentation** | `ui/` | 3002 | Next.js + React feature views — `landscape`, `dashboard`, `knowledge`, `execution`, `intelligence`, `assurance`, `calendar`, `validation`, `enterprise`, `simulator` | API (HTTP) only — **never** Neo4j |
 | **API / Service** | `api/` | 4001 | Fastify; domain modules — `knowledge`, `execution`, `operational`, `intelligence`, `assurance`, `catalog`, `enterprise`, `dashboard` | `lib/graph-db` |
 | **Agent Runtime** | `agents/` | — | `runtime` (observe→reason→act→verify loop + `reasonWithLLM` helper), `tools` (graph-read / graph-write), agent families — `control-intelligence` (live), `risk-`/`signal-`/`assurance-intelligence` (stubs) | `lib/graph-db` + local Ollama (`localhost:11434`) — **never** the API |
 | **Ingestion** | `cli/` | — | Pipeline: `parser` → `compiler` → `projection` → `runtime`; orchestrators `index.ts` / `catalog-sync.ts` / `enterprise-sync.ts`; `semantic-contract/v2.ts` (column→node contract); `scripts/` (converters, backfill) | `lib/graph-db` (via `LOAD CSV`) |
@@ -59,7 +59,7 @@ graph TB
     %% ═══════ TOP EDGE · presentation (spans left → right) ═══════
     subgraph EDGE_TOP["🖥️ EDGE · Presentation — ui/ · :3002"]
         direction LR
-        UI[Next.js + React &nbsp;·&nbsp; landscape · dashboard · knowledge · execution · intelligence · assurance · calendar]:::ui
+        UI[Next.js + React &nbsp;·&nbsp; landscape · dashboard · knowledge · execution · intelligence · assurance · calendar · enterprise · simulator]:::ui
     end
 
     %% ═══════ LEFT EDGE · integration (top → bottom) ═══════

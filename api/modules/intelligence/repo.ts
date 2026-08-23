@@ -46,11 +46,31 @@ export const listRcas = async () => {
     }
 };
 
+// Marker labels aren't the entity's real type — strip them so origin/result surface
+// the same label a human would use ("Requirement", not "Requirement:Catalog").
+const MARKER_LABELS = new Set(['Catalog', 'Enterprise', 'AgentProposed']);
+const primaryLabel = (labels: string[] | null | undefined): string | null =>
+    labels?.find((l) => !MARKER_LABELS.has(l)) ?? labels?.[0] ?? null;
+
+const LIST_DECISIONS = `
+    MATCH (d:Decision)
+    OPTIONAL MATCH (d)-[:ABOUT]->(origin)
+    OPTIONAL MATCH (d)-[:RESULTED_IN]->(result)
+    RETURN properties(d) AS decision,
+           labels(origin) AS originLabels, properties(origin) AS origin,
+           labels(result) AS resultLabels, properties(result) AS result
+    ORDER BY d.decidedAt DESC LIMIT 100
+`;
+
 export const listDecisions = async () => {
     try {
-        const cypher = `MATCH (d:Decision) RETURN properties(d) AS decision ORDER BY d.decidedAt DESC LIMIT 100`;
-        const raw: any = await db().fetch2(cypher, {});
-        const rows = Array.isArray(raw) ? raw : [raw]; return rows.map((r: any) => r.decision).filter(Boolean);
+        const raw: any = await db().fetch2(LIST_DECISIONS, {});
+        const rows = Array.isArray(raw) ? raw : [raw];
+        return rows.filter((r: any) => r?.decision).map((r: any) => ({
+            ...r.decision,
+            origin: r.origin ? { ...r.origin, label: primaryLabel(r.originLabels) } : null,
+            result: r.result ? { ...r.result, label: primaryLabel(r.resultLabels) } : null,
+        }));
     } catch (err: any) {
         log.error('intelligence.repo: listDecisions failed', err.message);
         return [];
@@ -105,6 +125,7 @@ const APPROVE_CONTROL_RECOMMENDATION = `
         ctl.status = 'proposed',
         ctl.createdAt = datetime()
     MERGE (ctl)-[:IMPLEMENTS]->(req)
+    MERGE (d)-[:RESULTED_IN]->(ctl)
     SET d.status = 'approved',
         d.reviewedAt = datetime(),
         d.reviewedBy = $reviewedBy,
@@ -138,6 +159,7 @@ const APPROVE_DEVIATION_ASSESSMENT = `
     FOREACH (_ IN CASE WHEN ctl IS NOT NULL THEN [1] ELSE [] END | MERGE (f)-[:AGAINST]->(ctl))
     FOREACH (_ IN CASE WHEN cid IS NULL THEN [1] ELSE [] END | MERGE (f)-[:ABOUT]->(sig))
     WITH DISTINCT d, f
+    MERGE (d)-[:RESULTED_IN]->(f)
     SET d.status = 'approved',
         d.reviewedAt = datetime(),
         d.reviewedBy = $reviewedBy,
@@ -171,6 +193,7 @@ const APPROVE_RISK_ASSESSMENT = `
         r.status = 'proposed',
         r.createdAt = datetime()
     MERGE (r)-[:RAISED_BY]->(f)
+    MERGE (d)-[:RESULTED_IN]->(r)
     SET d.status = 'approved',
         d.reviewedAt = datetime(),
         d.reviewedBy = $reviewedBy,
@@ -191,7 +214,9 @@ const APPROVE_RISK_ASSESSMENT = `
 // rather than trusting a possibly-stale list carried on the Decision. posture comes from
 // d.proposedPosture (computed at observe time from real CAPA/Verification state, not
 // LLM-decided — see agents/agents/assurance/index.ts). period is passed in as a param
-// (Cypher has no clean quarter function) rather than hardcoded.
+// (Cypher has no clean quarter function) rather than hardcoded. RESULTED_IN points only at
+// Audit, the top of the chain, not all 4 nodes — the rest are already reachable from it via
+// PREPARED_FOR/DERIVED_FROM/BACKED_BY/PART_OF, so linking all 4 would be redundant.
 const APPROVE_ASSURANCE_PACKAGE = `
     MATCH (d:Decision {id: $id})-[:ABOUT]->(inc:Incident)
     MATCH (inc)-[:HAS_TASK]->(:Task)<-[:PRODUCED_BY]-(ev:Evidence)
@@ -210,7 +235,8 @@ const APPROVE_ASSURANCE_PACKAGE = `
     MERGE (aud:Audit:AgentProposed {id: $auditId})
     ON CREATE SET aud.name = inc.auditType, aud.type = inc.auditType, aud.period = $period, aud.auditor = inc.reviewedBy, aud.status = 'closed'
     MERGE (asm)-[:PREPARED_FOR]->(aud)
-    WITH d, inc, asm
+    WITH d, inc, asm, aud
+    MERGE (d)-[:RESULTED_IN]->(aud)
     OPTIONAL MATCH (inc)-[:GOVERNED_BY]->(reg:Regulation)
     FOREACH (r IN CASE WHEN reg IS NOT NULL THEN [reg] ELSE [] END | MERGE (asm)-[:COVERS]->(r))
     SET d.status = 'approved',

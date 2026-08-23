@@ -34,6 +34,15 @@ export const execution = {
     verifications: () => get<{ verifications: any[] }>('/execution/verifications'),
 };
 
+export type CreateSignalInput = {
+    id: string;
+    assetId: string;
+    type: string;
+    name?: string;
+    source?: string;
+    payload?: string;
+};
+
 export const operational = {
     assets:    () => get('/operational/assets'),
     signals:   (assetId?: string) => get(`/operational/signals${assetId ? `?assetId=${assetId}` : ''}`),
@@ -42,6 +51,7 @@ export const operational = {
     vendors:   () => get<{ vendors: any[] }>('/operational/vendors'),
     people:    () => get<{ people: any[] }>('/operational/people'),
     lifecycle: (id: string) => get<any>(`/operational/incidents/${id}/lifecycle`),
+    createSignal: (input: CreateSignalInput) => post<{ signal: any; task: any }>('/operational/signals', input),
 };
 
 export const intelligence = {
