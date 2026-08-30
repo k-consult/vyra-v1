@@ -6,11 +6,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /Users/krishnan/work/projects/vyra-v1/.claude/hooks/eslint-fix.sh",
+            "command": "bash /Users/krishnan/_ks/work/projects/vyra-v1/.claude/hooks/eslint-fix.sh",
             "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "bash /Users/krishnan/_ks/work/projects/vyra-v1/.claude/hooks/typecheck.sh",
+            "timeout": 90,
+            "statusMessage": "Typechecking workspace..."
           }
         ]
-      }
+      }      
     ]
   }
 }

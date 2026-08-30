@@ -40,6 +40,12 @@ Prerequisites: Node 20 (`.nvmrc`), Neo4j Desktop running with password `vyra-ai@
 
 ---
 
+## Packaging / Docker
+
+For Docker/packaging tasks, default to producing a lean final prebuilt app image with minimal instructions — do not include full source code or skippable base images unless explicitly asked.
+
+---
+
 ## CLI Ingestion Pipeline
 
 Entry point: `cli/orchestration/index.ts`
@@ -111,6 +117,12 @@ Default autonomy level: **Level 1 (Agent Recommends, Human Approves)** unless ex
 
 ---
 
+## UI
+
+Ensure any UI-facing output and in-app copy is accurate and actually surfaced in a working page; verify that data unwraps correctly (no `[object Object]` or double-wrapped DB results) and that instructional copy reflects real system behavior.
+
+---
+
 ## Skill Guide
 
 | Working on | Invoke |
@@ -132,3 +144,15 @@ Default autonomy level: **Level 1 (Agent Recommends, Human Approves)** unless ex
 - **Plan first.** For non-trivial tasks, outline the approach and wait for approval before writing code.
 - **Be terse.** No trailing summaries after completing work — the diff speaks for itself.
 - **Reference the spine.** Before proposing graph schema or agent architecture changes, verify alignment with `.design/vyra-graph-spine.md` (schema) and `.design/vyra-landscape.md` (operating model).
+
+---
+
+## Verification
+
+Always verify changes end-to-end against the live graph/DB (run typecheck, build, and query the live data) before reporting a task as done.
+
+---
+
+## File & Doc Conventions
+
+When saving generated plans or docs, always confirm the exact target filename and directory (typically `.design/`) before writing — do not guess placement.
