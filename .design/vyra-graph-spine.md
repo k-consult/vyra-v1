@@ -1,30 +1,30 @@
 # Vyra Graph Spine
 
-**The compliance digital twin — Vyra's canonical graph model.** This is the single source of truth for *what* Vyra stores, *how* the five compliance domains connect, and *how far* each part is actually built. Every schema, Cypher, and agent-design decision aligns to this document.
+**The compliance digital twin — Vyra's canonical graph model.** This is the **technical reference**: the single source of truth for *what* Vyra stores, *how* the five compliance domains connect, and *how far* each part is actually built. Every schema, Cypher, and agent-design decision aligns to this document.
+
+> **Read `vyra-foundation.md` first.** That is the capability specification — what Vyra is, the 7-layer operating model, the value case, and the guarantees the design must satisfy. This document deliberately does not restate them; it says what the graph has to look like for them to hold. `vyra-architecture.md` is the companion reference for the software layers built *around* this graph. Full reading order: `.design/README.md`.
 
 ### Who should read this
 
-- **Compliance & domain experts** — read **Part I–II**. In plain terms: what Vyra models, and how a regulation becomes provable assurance. You can stop after Part II.
-- **Graph modelers / architects** — add **Part III** (where the data comes from, and what's live today vs. planned) for the full conceptual + provenance picture.
+- **Graph modelers / architects** — **Parts I–III**: the domain model, how the graph is populated, and what's live today vs. declared-but-not-yet-built.
 - **Graph / Node.js developers** — **Part IV** and the **Appendices** (node catalog, relationship catalog, feeds, constraints) are your working reference.
+- **Agent designers** — **Part II** for which domain owns what, **Part IV** for traversal, **Appendix B** for the relationship vocabulary an agent is allowed to write.
 
 ### How to read
 
 | | | |
 |---|---|---|
-| **Part I** | Orientation | What Vyra models — the digital twin, the operating loop, the five domains. |
+| **Part I** | Orientation | The five domains, their anchor nodes, and the operating loop at node granularity. |
 | **Part II** | The conceptual model | How the domains overlap and map to the operating model — in diagrams. |
 | **Part III** | How the graph is populated | Data sources, reference-vs-enterprise data, and what's live vs. declared-but-not-yet-built. |
 | **Part IV** | Working with the graph | Query and traversal patterns. |
 | **Appendices A–F** | Reference | Every node, every relationship, feeds, constraints, lineage, and document history. |
 
-> Optional companions: `vyra-foundation.md` gives the underlying agentic-GRC requirements this schema exists to satisfy; `vyra-landscape.md` gives the business-value / operating-model view; `vyra-architecture.md` shows the software layers and components built *around* this graph (how the API, agents, ingestion, and UI read and write it). This document stands on its own — you don't need any of them to understand the graph. Full reading order: `.design/README.md`.
-
 ---
 
 ## Contents
 
-- [Part I · Orientation — What Vyra Models](#part-i--orientation--what-vyra-models)
+- [Part I · Orientation — The Domains and the Loop](#part-i--orientation--the-domains-and-the-loop)
   - [1.1 The Compliance Digital Twin](#11-the-compliance-digital-twin)
   - [1.2 The Operating Loop](#12-the-operating-loop)
 - [Part II · The Conceptual Model](#part-ii--the-conceptual-model)
@@ -45,13 +45,13 @@
 
 ---
 
-# Part I · Orientation — What Vyra Models
+# Part I · Orientation — The Domains and the Loop
 
 ## 1.1 The Compliance Digital Twin
 
-Vyra models an organization's compliance posture as a **continuously evolving property graph** across five interconnected domains. Every compliance event — a regulation change, an incident, a failed control, an audit finding — is a node, and the relationships between them enable full **forward and reverse traceability**: from any regulation down to the evidence that proves it, and from any finding back to the regulation it implicates.
+Vyra models an organization's compliance posture as a **continuously evolving property graph** across five interconnected domains. (*Why* it must work this way is `vyra-foundation.md`'s argument; this section fixes the *shape*.) Every compliance event — a regulation change, an incident, a failed control, an audit finding — is a node, and the relationships between them enable full **forward and reverse traceability**: from any regulation down to the evidence that proves it, and from any finding back to the regulation it implicates.
 
-The five domains each answer one question:
+Each domain answers one question and has one **anchor node** — the node type a traversal in that domain normally starts from:
 
 | Domain | Question it answers | Anchor node |
 |---|---|---|
@@ -63,7 +63,7 @@ The five domains each answer one question:
 
 ## 1.2 The Operating Loop
 
-Read left to right, the domains form a single compliance loop. A regulation becomes an obligation; the obligation becomes a control; the control is exercised against a real asset; the asset throws a signal or an incident; the incident yields a finding; the finding drives risk scoring and a corrective action; and the closed-out action produces the evidence that proves compliance:
+`vyra-foundation.md` states this loop at concept granularity (Regulations → … → Trust). Here it is at **node granularity** — the actual labels a traversal passes through. Read left to right, the domains form a single compliance loop. A regulation becomes an obligation; the obligation becomes a control; the control is exercised against a real asset; the asset throws a signal or an incident; the incident yields a finding; the finding drives risk scoring and a corrective action; and the closed-out action produces the evidence that proves compliance:
 
 ```
 Regulation → Clause → Requirement → Control → Asset → Signal/Incident → Finding → Risk → CAPA → Verification → Assurance
@@ -250,7 +250,7 @@ graph TB
 
 ## 2.3 Mapping to the 7-Layer Operating Model
 
-The five graph domains and `vyra-landscape.md`'s 7-layer operating model are **orthogonal views, not a 1:1 mapping**. The 7 layers are persona/job tiers (who does the work); the 5 domains are the graph substrate itself. **Layer 4 (the Knowledge Graph Spine) *is* the whole graph — all five domains** — sitting at the center as every other layer's shared memory. The surrounding six layers each read/write a slice of it, and one domain can serve multiple layers (Intelligence backs both L5 and L7).
+The five graph domains and `vyra-foundation.md`'s 7-layer operating model are **orthogonal views, not a 1:1 mapping**. The 7 layers are persona/job tiers (who does the work); the 5 domains are the graph substrate itself. **Layer 4 (the Knowledge Graph Spine) *is* the whole graph — all five domains** — sitting at the center as every other layer's shared memory. The surrounding six layers each read/write a slice of it, and one domain can serve multiple layers (Intelligence backs both L5 and L7).
 
 ```mermaid
 graph LR
@@ -305,7 +305,7 @@ graph LR
 - **Dashed arrow** = secondary reach (L3 Planning also pulls enterprise context — `Organization`/`Role`/`Facility` — from Operational).
 - Note the many-to-many: L2 and L5 each touch two domains, and Operational + Intelligence are each read by multiple layers — this is why the mapping is *not* 1:1.
 
-| JTBD Layer (`vyra-landscape.md`) | Graph domain(s) it reads/writes | Anchoring nodes / path |
+| JTBD Layer (`vyra-foundation.md`) | Graph domain(s) it reads/writes | Anchoring nodes / path |
 |---|---|---|
 | **L1 Knowledge** | Knowledge | `Regulation`/`Standard`/`Clause`/`Requirement`/`Control` |
 | **L2 Interpret** | Knowledge ∩ Operational | applicability chain: `Asset -[:COVERED_BY]-> Control -[:IMPLEMENTS]-> Requirement` |
@@ -882,7 +882,7 @@ Third-party suppliers of assets or services involved in incidents.
 ---
 
 ### `Contract`
-A vendor service agreement (AMC/SLA) — kept as its own node rather than fields on `Vendor`, since AMC start/expiry and SLA are contract-lifecycle facts (a vendor can hold multiple contracts/renewals over time), not vendor-identity facts. Sits in the Operational graph, not Knowledge — despite `vyra-landscape.md`'s L1 JTBD layer naming "Contracts" as a Knowledge-layer capability, its only real relationships are to `Vendor`/`Facility`/`Role`, all Operational-graph nodes; §2.3 already establishes that a JTBD-layer name doesn't force its backing node into the matching sub-graph (`Control` is the existing precedent).
+A vendor service agreement (AMC/SLA) — kept as its own node rather than fields on `Vendor`, since AMC start/expiry and SLA are contract-lifecycle facts (a vendor can hold multiple contracts/renewals over time), not vendor-identity facts. Sits in the Operational graph, not Knowledge — despite `vyra-foundation.md`'s L1 JTBD layer naming "Contracts" as a Knowledge-layer capability, its only real relationships are to `Vendor`/`Facility`/`Role`, all Operational-graph nodes; §2.3 already establishes that a JTBD-layer name doesn't force its backing node into the matching sub-graph (`Control` is the existing precedent).
 
 | Property | Type | Example |
 |---|---|---|
@@ -1374,3 +1374,4 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 | 2026-08-22 | L1 Knowledge — Contracts. New `Contract` node (Operational graph, 12 rows from `20_Vendor_Master`, id reuses the real `Contract Reference` value) plus a second `Vendor` batch (`:Enterprise`, `VEN-001`–`VEN-012`). New relationships `WITH_VENDOR` (Contract→Vendor), `COORDINATED_BY` (Contract→Role), and `COVERS` (Contract→Facility, many-valued, 180 edges, expanded from `Sites Covered` via a mechanical range parse against the 20 `:Enterprise` Facility rows already seeded in Phase 2). `enterprise-sync.ts` gained its first-ever `edgeMap` processing step (previously only `catalog-sync.ts`/the base `grc` pipeline processed `edgeMap`; enterprise's was declared but unused). `InsuranceClause` (`21_Insurance_Risk_Clauses`) surfaced during scoping but stays explicitly out — it belongs in the Assurance graph, a separate future decision. |
 | 2026-08-23 | New `RESULTED_IN` (Decision → Control/Finding/Risk/Audit), the reverse of `ABOUT`, written only on approval. Backs a horizontal origin→reasoned→reviewed→result timeline on the Intelligence UI's Decision cards — `GET /intelligence/decisions` now resolves both `ABOUT` and `RESULTED_IN` server-side (`api/modules/intelligence/repo.ts`'s `listDecisions`) instead of the UI guessing either end from `Decision.id`/result-id naming conventions. No new node types; purely a traceability relationship on top of the existing Phase 7/8 approval writes. |
 | 2026-09-06 | Added a third traversal pattern to Part IV, **Execution Traceability — Task to Regulation** (`Task -[:IMPLEMENTS]-> Control -[:IMPLEMENTS]-> Requirement -[:DEFINED_BY]-> Clause -[:BELONGS_TO]-> Regulation\|Standard`), closing the `artifacts/TODO.md` item tracked since the 2026-08-23 architecture diagrams. No schema change — purely documenting an existing chain. Also: `.design/` doc set consolidated — new `.design/README.md` front door, `vyra-foundation.md` cross-linked everywhere (previously orphaned), `vyra-implementation-plan.md` trimmed to sequencing/open-decisions only, `vyra-tracker.md` row prose condensed, full historical build narrative (Phases 0–9) relocated verbatim to new `.design/__ref/implementation-history.md`. |
+| 2026-09-06 | Repositioned as a **technical reference** following the `.design` consolidation: `vyra-landscape.md` was retired into `vyra-foundation.md`, which is now the capability specification (what Vyra is, the 7-layer operating model, the value case, the guarantees). This doc's header, audience list and Part I were retuned accordingly — the "compliance experts can stop after Part II" reading path was removed, and Part I now points at the foundation doc for the *why* rather than restating it. All four `vyra-landscape.md` citations repointed to `vyra-foundation.md`. **No schema change.** |

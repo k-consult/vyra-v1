@@ -1,6 +1,6 @@
 ---
 name: grc
-description: Single authoritative entry point for resuming work on Vyra across sessions. Reads the five canonical docs (vyra-landscape, vyra-architecture, vyra-graph-spine's header, vyra-tracker, vyra-implementation-plan), cross-checks against git log/status, and reports current phase, what's done, what's explicitly next, and open decisions/gaps the docs already flag. INVOKE at the start of a new session, after a context reset, or whenever asked "where were we" / "what's next" on this project.
+description: Single authoritative entry point for resuming work on Vyra across sessions. Reads the five canonical docs (vyra-foundation, vyra-architecture, vyra-graph-spine's header, vyra-tracker, vyra-implementation-plan), cross-checks against git log/status, and reports current phase, what's done, what's explicitly next, and open decisions/gaps the docs already flag. INVOKE at the start of a new session, after a context reset, or whenever asked "where were we" / "what's next" on this project.
 ---
 
 # grc — Session Resume
@@ -11,7 +11,7 @@ Load this first when starting or resuming a Vyra session with no prior context. 
 
 Each has one job — don't look for status in the vision doc, or vision in the tracker:
 
-1. **`.design/vyra-landscape.md`** — overall platform vision, the operating model, the 7-layer JTBD (persona + capabilities). Sets context. **Carries no build-status.**
+1. **`.design/vyra-foundation.md`** — the capability specification: what Vyra is, the 7-layer operating model (persona + capabilities), the two central assets and how they're monetized, and the requirement tables. Sets context. **Carries no build-status.**
 2. **`.design/vyra-architecture.md`** — the software layers and components (Presentation / API / Agents / Ingestion / Foundation / Data) built around the graph.
 3. **`.design/vyra-graph-spine.md`** — the ground-truth graph schema (nodes, relationships, feeds).
 4. **`.design/vyra-tracker.md`** — the project/build tracker: per-JTBD-layer status (live / partial / gap) + phase rollup. **This is where "what's done" lives now**, not the landscape doc.
@@ -19,7 +19,7 @@ Each has one job — don't look for status in the vision doc, or vision in the t
 
 ## What to do when invoked
 
-1. Read `.design/vyra-landscape.md` in full — vision, operating model, the 7-layer JTBD (persona/capability only, no status).
+1. Read `.design/vyra-foundation.md` in full — what Vyra is, the 7-layer operating model (persona/capability only, no status), the two central assets, and the requirement tables.
 2. Read `.design/vyra-architecture.md`'s Orientation + "Layers at a Glance" table — the component map. Stable across phases; skim unless the task is architectural.
 3. Read only `.design/vyra-graph-spine.md`'s header (Version / Status / Source data lines) — not the full schema. If schema detail is actually needed for the task at hand, invoke `/vyra-graph` separately rather than reading the whole spine doc here.
 4. Read `.design/vyra-tracker.md` in full — the JTBD Layer Status table and phase rollup are the authoritative "what's live vs. gap" view.

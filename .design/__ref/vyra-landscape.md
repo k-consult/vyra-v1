@@ -1,3 +1,7 @@
+> **RETIRED — 2026-09-06.** Superseded by `../vyra-foundation.md`, which absorbed this doc's 7-layer operating model, operating principles, and "What Vyra Is" orientation when it became Vyra's capability specification. Kept for history only; **nothing here is ground truth.** Anything this file says that the foundation doc does not is stale by definition.
+
+---
+
 # Vyra Landscape
 
 Second stop in Vyra's canonical reading path (see `.design/README.md` for the full order, and `vyra-foundation.md` first for *why* this has to be agentic at all) — a stakeholder-facing read on its own: the vision, the operating model, and how a regulation becomes provable assurance. It carries **no build-status** — for what's live vs. planned, see `vyra-tracker.md`. Also: `vyra-graph-spine.md` for the ground-truth schema, `vyra-architecture.md` for the software layers, `vyra-implementation-plan.md` for phase sequencing.

@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Vyra v1** — an Agentic Risk & Compliance Infrastructure platform. AI agents continuously transform regulations into operational assurance by reasoning over a shared enterprise graph.
 
-Canonical docs: @.design/README.md (start here — full reading order and doc map), @.design/vyra-landscape.md (vision + operating model), @.design/vyra-graph-spine.md (schema ground truth), @.design/vyra-implementation-plan.md (sequencing + status). Also see `.design/vyra-foundation.md` (why this must be agentic, not just workflow automation with AI attached) and `.design/vyra-architecture.md` (software layers + access rules) — read as needed, not auto-loaded here.
+Canonical docs: @.design/README.md (start here — full reading order and doc map), @.design/vyra-foundation.md (the capability specification — operating model, value, and the guarantees the design must satisfy), @.design/vyra-graph-spine.md (schema ground truth), @.design/vyra-implementation-plan.md (sequencing + status). Also see `.design/vyra-architecture.md` (software layers + access rules) and `.design/vyra-tracker.md` (current build status) — read as needed, not auto-loaded here.
 
-Before any graph schema, agent design, or domain-model decision, read the landscape doc, then the spine. They are the source of truth — not `.design/__ref/blueprint.md`, which is retired/historical.
+Before any graph schema, agent design, or domain-model decision, read the foundation doc, then the spine. They are the source of truth — not anything under `.design/__ref/` (including the retired `blueprint.md` and `vyra-landscape.md`), which is historical.
 
 ---
 
@@ -143,7 +143,7 @@ Ensure any UI-facing output and in-app copy is accurate and actually surfaced in
 
 - **Plan first.** For non-trivial tasks, outline the approach and wait for approval before writing code.
 - **Be terse.** No trailing summaries after completing work — the diff speaks for itself.
-- **Reference the spine.** Before proposing graph schema or agent architecture changes, verify alignment with `.design/vyra-graph-spine.md` (schema) and `.design/vyra-landscape.md` (operating model).
+- **Reference the spine.** Before proposing graph schema or agent architecture changes, verify alignment with `.design/vyra-graph-spine.md` (schema) and `.design/vyra-foundation.md` (operating model + guarantees).
 - **Address all open items.** When asked about session state or open gaps, address all of them rather than picking one — ask a clarifying question only if scope is genuinely ambiguous.
 
 ---

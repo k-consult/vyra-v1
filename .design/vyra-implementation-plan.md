@@ -67,7 +67,7 @@ The one capability that needs *multiple* agent families reasoning over the same 
 ## Where to go next
 
 - **Why this must be agentic at all** → `vyra-foundation.md`
-- **Vision / operating model** (no status) → `vyra-landscape.md`
+- **Model, value and guarantees** (no status) → `vyra-foundation.md`
 - **Current build status** → `vyra-tracker.md`
 - **Schema, relationships, Cypher patterns** → `vyra-graph-spine.md`
 - **Software layers & components** → `vyra-architecture.md`

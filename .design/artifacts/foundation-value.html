@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vyra Foundation — The Two Assets That Compound</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-soft:    #7a8399;
+      --color-accent:  #eb6c36;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono); font-size: 0.66rem; font-weight: 500;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--color-muted); margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400; letter-spacing: -0.02em; line-height: 1.15;
+      color: var(--color-ink); margin-bottom: 0.5rem;
+    }
+    .subtitle {
+      font-size: 0.9rem; color: var(--color-muted);
+      margin-bottom: 1.5rem; max-width: 72ch;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Value · Vyra Foundation</p>
+    <h1>The two assets that compound</h1>
+    <p class="subtitle">Vyra sells access to two centrally-held assets. The <strong>catalog</strong> is authored once and amortized across a whole sector. <strong>Collective intelligence</strong> is harvested from every enterprise that runs the loop and fed back to all of them — corroborated, typed, identifier-free. Data stays inside the tenant; reasoning circulates. That asymmetry is the moat: a single-tenant competitor can buy a catalog, but cannot accumulate the second asset at all.</p>
+
+    <svg viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="fval-title fval-desc">
+      <title id="fval-title">Vyra's two central assets and the flywheel between them and its tenants</title>
+      <desc id="fval-desc">Vyra Central holds two licensed assets: the Catalog, authored and ingested from authorities and standards bodies, and Collective Intelligence, harvested as corroborated patterns across enterprises. Partner catalog and agent packs extend the centre through the ecosystem. Both assets sync down across the tenant boundary into each enterprise's own isolated graph. Patterns flow back up from each enterprise through a corroboration gate that admits only typed, identifier-free patterns corroborated across several unrelated tenants — no customer data ever crosses the boundary. Each enterprise keeps its own operational context private while receiving the sector's accumulated reasoning.</desc>
+
+      <defs>
+        <marker id="fv-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#2d3142"/>
+        </marker>
+        <marker id="fv-arr-coral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#eb6c36"/>
+        </marker>
+        <marker id="fv-arr-muted" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#7a8399"/>
+        </marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- ═══ VYRA CENTRAL ═══ -->
+      <rect x="230" y="70" width="540" height="172" rx="10" fill="rgba(45,49,66,0.03)" stroke="#2d3142" stroke-width="1"/>
+      <text x="246" y="90" fill="#4f5d75" font-size="8.5" font-family="'Geist Mono', monospace" letter-spacing="0.16em">VYRA CENTRAL</text>
+
+      <!-- Catalog asset -->
+      <rect x="250" y="104" width="243" height="120" rx="7" fill="rgba(45,49,66,0.055)" stroke="#2d3142" stroke-width="0.9"/>
+      <text x="371" y="136" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">◆ Catalog</text>
+      <text x="371" y="154" fill="#4f5d75" font-size="7.8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.10em">REGULATIONS · STANDARDS · CONTROLS</text>
+      <text x="371" y="180" fill="#4f5d75" font-size="10" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="middle">authored once, versioned,</text>
+      <text x="371" y="196" fill="#4f5d75" font-size="10" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="middle">amortized across the sector</text>
+      <text x="371" y="214" fill="#2d3142" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.10em" opacity="0.7">SOLD BY SUBSCRIPTION</text>
+
+      <!-- Collective intelligence asset -->
+      <rect x="507" y="104" width="243" height="120" rx="7" fill="rgba(235,108,54,0.075)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="628" y="136" fill="#c2551f" font-size="14" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">◆ Collective Intelligence</text>
+      <text x="628" y="154" fill="#c2551f" font-size="7.8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.10em" opacity="0.9">CORROBORATED PATTERNS</text>
+      <text x="628" y="180" fill="#4f5d75" font-size="10" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="middle">cannot be bought or authored —</text>
+      <text x="628" y="196" fill="#4f5d75" font-size="10" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="middle">it only accrues from running the loop</text>
+      <text x="628" y="214" fill="#c2551f" font-size="7.5" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.10em" opacity="0.8">SOLD AS A TIER</text>
+
+      <!-- Authorities (left input) -->
+      <rect x="40" y="122" width="152" height="76" rx="7" fill="rgba(45,49,66,0.025)" stroke="#7a8399" stroke-width="0.8"/>
+      <text x="116" y="152" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Authorities</text>
+      <text x="116" y="169" fill="#4f5d75" font-size="7.2" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">REGULATORS · STANDARDS BODIES</text>
+      <text x="116" y="184" fill="#4f5d75" font-size="9.5" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="middle">API feeds · documents · forms</text>
+      <path d="M 194 160 L 244 160" fill="none" stroke="#7a8399" stroke-width="1.2" marker-end="url(#fv-arr-muted)"/>
+
+      <!-- Ecosystem (right input) -->
+      <rect x="808" y="122" width="152" height="76" rx="7" fill="rgba(45,49,66,0.025)" stroke="#7a8399" stroke-width="0.8" stroke-dasharray="5,4"/>
+      <text x="884" y="152" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Ecosystem</text>
+      <text x="884" y="169" fill="#4f5d75" font-size="7.2" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PARTNER + AGENT PACKS</text>
+      <text x="884" y="184" fill="#4f5d75" font-size="9.5" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="middle">extends without forking</text>
+      <path d="M 806 160 L 756 160" fill="none" stroke="#7a8399" stroke-width="1.2" marker-end="url(#fv-arr-muted)"/>
+
+      <!-- ═══ TENANT BOUNDARY ═══ -->
+      <line x1="40" y1="330" x2="960" y2="330" stroke="#4f5d75" stroke-width="1" stroke-dasharray="6,5" opacity="0.7"/>
+      <text x="44" y="322" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.13em">TENANT BOUNDARY</text>
+      <text x="44" y="346" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.13em" opacity="0.8">NO CUSTOMER DATA CROSSES</text>
+
+      <!-- ═══ DOWN: sync (central → tenants) ═══ -->
+      <path d="M 430 244 L 430 356" fill="none" stroke="#2d3142" stroke-width="1.6"/>
+      <path d="M 180 358 L 785 358" fill="none" stroke="#2d3142" stroke-width="1.6" opacity="0.85"/>
+      <path d="M 180 358 L 180 396" fill="none" stroke="#2d3142" stroke-width="1.6" marker-end="url(#fv-arr)"/>
+      <path d="M 465 358 L 465 396" fill="none" stroke="#2d3142" stroke-width="1.6" marker-end="url(#fv-arr)"/>
+      <path d="M 750 358 L 750 396" fill="none" stroke="#2d3142" stroke-width="1.6" marker-end="url(#fv-arr)"/>
+      <text x="418" y="284" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="end" letter-spacing="0.13em">SYNC DOWN</text>
+      <text x="418" y="298" fill="#4f5d75" font-size="7.6" font-family="'Geist Mono', monospace" text-anchor="end" letter-spacing="0.08em">CATALOG REVISIONS + REINFORCED REASONING</text>
+      <text x="418" y="313" fill="#4f5d75" font-size="9.5" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="end">additive — local extensions survive re-sync</text>
+
+      <!-- ═══ UP: harvest (tenants → central), gated ═══ -->
+      <path d="M 250 396 L 250 388" fill="none" stroke="#eb6c36" stroke-width="1.4" stroke-dasharray="5,4"/>
+      <path d="M 535 396 L 535 388" fill="none" stroke="#eb6c36" stroke-width="1.4" stroke-dasharray="5,4"/>
+      <path d="M 820 396 L 820 388" fill="none" stroke="#eb6c36" stroke-width="1.4" stroke-dasharray="5,4"/>
+      <path d="M 250 388 L 820 388" fill="none" stroke="#eb6c36" stroke-width="1.4" stroke-dasharray="5,4" opacity="0.85"/>
+      <path d="M 640 388 L 640 246" fill="none" stroke="#eb6c36" stroke-width="1.6" stroke-dasharray="5,4" marker-end="url(#fv-arr-coral)"/>
+
+      <!-- corroboration gate, sitting exactly on the boundary -->
+      <path d="M 640 318 L 653 330 L 640 342 L 627 330 Z" fill="#f5f5f5" stroke="#eb6c36" stroke-width="1.4"/>
+      <circle cx="640" cy="330" r="2.6" fill="#eb6c36"/>
+      <text x="662" y="325" fill="#c2551f" font-size="9" font-weight="600" font-family="'Geist Mono', monospace" letter-spacing="0.12em">CORROBORATION GATE</text>
+      <text x="662" y="338" fill="#4f5d75" font-size="7.4" font-family="'Geist Mono', monospace" letter-spacing="0.07em">TYPED PATTERNS · NO ROWS · NO IDENTIFIERS</text>
+      <text x="662" y="351" fill="#4f5d75" font-size="7.4" font-family="'Geist Mono', monospace" letter-spacing="0.07em">CORROBORATED ACROSS N UNRELATED TENANTS</text>
+
+      <!-- ═══ ENTERPRISES ═══ -->
+      <g>
+        <rect x="60" y="396" width="240" height="150" rx="8" fill="rgba(79,93,117,0.05)" stroke="#4f5d75" stroke-width="0.9"/>
+        <text x="180" y="426" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Enterprise A</text>
+        <text x="180" y="443" fill="#4f5d75" font-size="7.2" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">OWN GRAPH · OWN BLUEPRINT</text>
+        <line x1="86" y1="456" x2="274" y2="456" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <text x="86" y="476" fill="#2d3142" font-size="7.6" font-family="'Geist Mono', monospace" letter-spacing="0.06em" opacity="0.8">◆ CATALOG — LICENSED</text>
+        <text x="86" y="492" fill="#c2551f" font-size="7.6" font-family="'Geist Mono', monospace" letter-spacing="0.06em" opacity="0.9">◆ INTELLIGENCE — LICENSED</text>
+        <text x="86" y="508" fill="#4f5d75" font-size="7.6" font-family="'Geist Mono', monospace" letter-spacing="0.06em">▪ OPERATIONAL CONTEXT</text>
+        <text x="180" y="529" fill="#4f5d75" font-size="9.5" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="middle">its data never leaves this graph</text>
+      </g>
+
+      <g>
+        <rect x="345" y="396" width="240" height="150" rx="8" fill="rgba(79,93,117,0.05)" stroke="#4f5d75" stroke-width="0.9"/>
+        <text x="465" y="426" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Enterprise B</text>
+        <text x="465" y="443" fill="#4f5d75" font-size="7.2" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">OWN GRAPH · OWN BLUEPRINT</text>
+        <line x1="371" y1="456" x2="559" y2="456" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <text x="371" y="476" fill="#2d3142" font-size="7.6" font-family="'Geist Mono', monospace" letter-spacing="0.06em" opacity="0.8">◆ CATALOG — LICENSED</text>
+        <text x="371" y="492" fill="#c2551f" font-size="7.6" font-family="'Geist Mono', monospace" letter-spacing="0.06em" opacity="0.9">◆ INTELLIGENCE — LICENSED</text>
+        <text x="371" y="508" fill="#4f5d75" font-size="7.6" font-family="'Geist Mono', monospace" letter-spacing="0.06em">▪ OPERATIONAL CONTEXT</text>
+        <text x="465" y="529" fill="#4f5d75" font-size="9.5" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="middle">its data never leaves this graph</text>
+      </g>
+
+      <g>
+        <rect x="630" y="396" width="240" height="150" rx="8" fill="rgba(79,93,117,0.05)" stroke="#4f5d75" stroke-width="0.9"/>
+        <text x="750" y="426" fill="#2d3142" font-size="13" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Enterprise C</text>
+        <text x="750" y="443" fill="#4f5d75" font-size="7.2" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">OWN GRAPH · OWN BLUEPRINT</text>
+        <line x1="656" y1="456" x2="844" y2="456" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <text x="656" y="476" fill="#2d3142" font-size="7.6" font-family="'Geist Mono', monospace" letter-spacing="0.06em" opacity="0.8">◆ CATALOG — LICENSED</text>
+        <text x="656" y="492" fill="#c2551f" font-size="7.6" font-family="'Geist Mono', monospace" letter-spacing="0.06em" opacity="0.9">◆ INTELLIGENCE — LICENSED</text>
+        <text x="656" y="508" fill="#4f5d75" font-size="7.6" font-family="'Geist Mono', monospace" letter-spacing="0.06em">▪ OPERATIONAL CONTEXT</text>
+        <text x="750" y="529" fill="#4f5d75" font-size="9.5" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="middle">its data never leaves this graph</text>
+      </g>
+
+      <text x="900" y="470" fill="#4f5d75" font-size="13" font-family="'Geist', sans-serif" text-anchor="middle" opacity="0.55">· · ·</text>
+      <text x="900" y="492" fill="#4f5d75" font-size="9.5" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="middle">n more</text>
+
+      <!-- ═══ THE FLYWHEEL STATEMENT ═══ -->
+      <text x="500" y="592" fill="#2d3142" font-size="15" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="middle">Every enterprise onboarded strengthens the reasoning every other enterprise receives.</text>
+      <text x="500" y="613" fill="#4f5d75" font-size="13" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="middle">Worth least on day one, most at scale — and the one asset a single-tenant competitor cannot accumulate.</text>
+
+      <!-- Legend -->
+      <line x1="40" y1="646" x2="960" y2="646" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="40" y="666" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+      <line x1="128" y1="662" x2="156" y2="662" stroke="#2d3142" stroke-width="1.6"/>
+      <text x="164" y="666" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">SYNCED DOWN — CATALOG + INTELLIGENCE</text>
+      <line x1="470" y1="662" x2="498" y2="662" stroke="#eb6c36" stroke-width="1.6" stroke-dasharray="5,4"/>
+      <text x="506" y="666" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">HARVESTED UP — PATTERNS ONLY, GATED</text>
+      <text x="812" y="666" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">◆ LICENSED ASSET</text>
+    </svg>
+  </div>
+</body>
+</html>

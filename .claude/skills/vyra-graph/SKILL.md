@@ -1,12 +1,12 @@
 ---
 name: vyra-graph
-description: Vyra five-graph domain reference. Covers entity types per graph, canonical relationship types, Cypher traversal patterns, and alignment rules with vyra-landscape.md / vyra-graph-spine.md. INVOKE before writing any graph schema, new node/relationship type, or cross-graph Cypher query.
+description: Vyra five-graph domain reference. Covers entity types per graph, canonical relationship types, Cypher traversal patterns, and alignment rules with vyra-foundation.md / vyra-graph-spine.md. INVOKE before writing any graph schema, new node/relationship type, or cross-graph Cypher query.
 ---
 
 # vyra-graph — Five-Graph Domain Reference
 
 Load this skill before any graph schema decision or cross-domain Cypher traversal.
-Pairs with `/neo4j-spine` (Cypher coding rules) and references `.design/vyra-landscape.md` (vision + operating model) and `.design/vyra-graph-spine.md` (schema canon — this skill summarizes it, the spine doc is authoritative on conflict).
+Pairs with `/neo4j-spine` (Cypher coding rules) and references `.design/vyra-foundation.md` (capability spec + operating model) and `.design/vyra-graph-spine.md` (schema canon — this skill summarizes it, the spine doc is authoritative on conflict).
 
 **Relationship names/directions below are reconciled against the running pipeline** (`cli/semantic-contract/contracts/v2.ts` + `cli/domains/grc/ingest-hints.json`) **and `.design/vyra-graph-spine.md`**, per `vyra-implementation-plan.md` Phase 0 (2026-07-21) — not invented independently. Node tables still include blueprint-only types with no relationship vocabulary defined yet (marked below); do not wire those up without picking a real name first and adding it to `v2.ts`.
 
@@ -208,4 +208,4 @@ Ground truth is `cli/semantic-contract/contracts/v2.ts` (write path) cross-check
 - `/neo4j-spine` — Cypher coding rules (parameterisation, MERGE, lazy handle, naming)
 - `/clean-code` — Design principles behind the domain model choices
 
-Refer to `.design/vyra-landscape.md` for the operating-model narrative behind every graph domain.
+Refer to `.design/vyra-foundation.md` for the operating-model narrative behind every graph domain.

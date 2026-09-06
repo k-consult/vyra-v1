@@ -1,8 +1,8 @@
 # Vyra Build Tracker
 
-**The current build status of Vyra, mapped to the 7-layer GRC operating model** — what's live, what's partial, what's still a gap, right now. This is the *tracking* view, deliberately kept out of `vyra-landscape.md` so that doc can stay a clean vision / operating-model read for stakeholders who don't need build-status noise.
+**The current build status of Vyra, mapped to the 7-layer GRC operating model** — what's live, what's partial, what's still a gap, right now. This is the *tracking* view, deliberately kept out of `vyra-foundation.md` so the specification stays a clean model/value/guarantees read without build-status noise.
 
-> **Audience: internal** — engineering and product. For the operating model itself (personas, capabilities, the loop) with no status, read `vyra-landscape.md`. For *why* an item sits where it does and what unblocks it, follow the phase references into `vyra-implementation-plan.md`.
+> **Audience: internal** — engineering and product. For the operating model itself (personas, capabilities, the loop) with no status, read `vyra-foundation.md`. For *why* an item sits where it does and what unblocks it, follow the phase references into `vyra-implementation-plan.md`.
 
 **Keep this in sync with the plan on every phase — it drifts otherwise.** When a phase changes a layer's status, update the matching row here *and* the "Net" summary below. `vyra-implementation-plan.md` is the authoritative source for phase completion; this doc is a layer-readiness lens over it, not a second source of truth.
 
@@ -16,7 +16,7 @@
 
 ## JTBD Layer Status
 
-One row per capability from `vyra-landscape.md`'s 7-layer operating model, scored on **whether the graph can actually feed it right now.** The layer/persona/capability definitions themselves live in the landscape doc — this table only adds the status lens. Full investigation detail behind any 🟡/🔴 row → `.design/__ref/implementation-history.md`.
+One row per capability from `vyra-foundation.md`'s 7-layer operating model, scored on **whether the graph can actually feed it right now.** The layer/persona/capability definitions themselves live in the foundation doc — this table only adds the status lens. Full investigation detail behind any 🟡/🔴 row → `.design/__ref/implementation-history.md`.
 
 Status key: **🟢 live** = real data, working queries · **🟡 partial** = modeled but incomplete or unstructured · **🔴 gap** = nothing built.
 
@@ -45,7 +45,7 @@ Status key: **🟢 live** = real data, working queries · **🟡 partial** = mod
 ## Where to go next
 
 - **Why this must be agentic at all** (no status) → `vyra-foundation.md`
-- **Vision / operating model** (no status) → `vyra-landscape.md`
+- **Model, value and guarantees** (no status) → `vyra-foundation.md`
 - **Phase sequencing, what's done, what's next, verification** → `vyra-implementation-plan.md`
 - **Schema, relationships, live/dormant status, Cypher patterns** → `vyra-graph-spine.md`
 - **Software layers & components** → `vyra-architecture.md`
