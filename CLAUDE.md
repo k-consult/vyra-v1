@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Vyra v1** — an Agentic Risk & Compliance Infrastructure platform. AI agents continuously transform regulations into operational assurance by reasoning over a shared enterprise graph.
 
-Canonical docs: @.design/vyra-landscape.md (vision + operating model — start here), @.design/vyra-graph-spine.md (schema ground truth), @.design/vyra-implementation-plan.md (sequencing + status).
+Canonical docs: @.design/README.md (start here — full reading order and doc map), @.design/vyra-landscape.md (vision + operating model), @.design/vyra-graph-spine.md (schema ground truth), @.design/vyra-implementation-plan.md (sequencing + status). Also see `.design/vyra-foundation.md` (why this must be agentic, not just workflow automation with AI attached) and `.design/vyra-architecture.md` (software layers + access rules) — read as needed, not auto-loaded here.
 
 Before any graph schema, agent design, or domain-model decision, read the landscape doc, then the spine. They are the source of truth — not `.design/__ref/blueprint.md`, which is retired/historical.
 
@@ -144,12 +144,19 @@ Ensure any UI-facing output and in-app copy is accurate and actually surfaced in
 - **Plan first.** For non-trivial tasks, outline the approach and wait for approval before writing code.
 - **Be terse.** No trailing summaries after completing work — the diff speaks for itself.
 - **Reference the spine.** Before proposing graph schema or agent architecture changes, verify alignment with `.design/vyra-graph-spine.md` (schema) and `.design/vyra-landscape.md` (operating model).
+- **Address all open items.** When asked about session state or open gaps, address all of them rather than picking one — ask a clarifying question only if scope is genuinely ambiguous.
 
 ---
 
 ## Verification
 
-Always verify changes end-to-end against the live graph/DB (run typecheck, build, and query the live data) before reporting a task as done.
+Always verify changes end-to-end against the live graph/DB (run typecheck, build, and query the live data) before reporting a task as done. This includes live-verifying features against the running graph/UI, not just typechecking — self-diagnose and fix bugs before reporting completion.
+
+---
+
+## Design & Diagrams
+
+For any diagram or UI copy, use the project's established palette, layout, and naming conventions. Before finishing, confirm CSS custom properties are declared inside a valid rule block (e.g. `:root { ... }`) — one declared at top level silently falls back to the browser default font/style with no error.
 
 ---
 

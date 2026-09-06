@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vyra Foundation — Three Concerns That Must Coexist</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-soft:    #7a8399;
+      --color-accent:  #eb6c36;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+
+    .frame { max-width: 1200px; width: 100%; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      color: var(--color-muted);
+      margin-bottom: 1.5rem;
+      max-width: 62ch;
+    }
+
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Venn · Vyra Foundation</p>
+    <h1>Three concerns that must coexist</h1>
+    <p class="subtitle">Agentic GRC requires Catalog, Operational Context, and Intelligence to stay structurally distinct yet continuously overlapping — never collapsed into one undifferentiated database.</p>
+
+    <svg viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="foundation-venn-title foundation-venn-desc">
+      <title id="foundation-venn-title">Catalog, Operational Context, and Intelligence overlapping</title>
+      <desc id="foundation-venn-desc">Venn diagram of three concerns Vyra's agentic GRC design keeps distinct but overlapping: Catalog (what to look for), Operational Context (what's happening), and Intelligence (what needs to be done, and getting it done). Their pairwise overlaps are Applicability, Grounding, and Decision Gate; the triple overlap, highlighted in coral, is the Closed Loop — the full observe-to-evidenced-action cycle that incumbent GRC tools never reach.</desc>
+
+      <defs>
+        <clipPath id="fv-clip-catalog">
+          <circle cx="500" cy="180" r="140"/>
+        </clipPath>
+        <clipPath id="fv-clip-operational">
+          <circle cx="428" cy="320" r="140"/>
+        </clipPath>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- Three set circles — fill only first, so strokes can be redrawn crisp on top later -->
+      <circle cx="500" cy="180" r="140" fill="rgba(45,49,66,0.04)"/>
+      <circle cx="428" cy="320" r="140" fill="rgba(79,93,117,0.05)"/>
+      <circle cx="572" cy="320" r="140" fill="rgba(122,131,153,0.05)"/>
+
+      <!-- Focal: coral wash on the triple intersection only (Catalog ∩ Operational Context ∩ Intelligence) -->
+      <g clip-path="url(#fv-clip-catalog)">
+        <g clip-path="url(#fv-clip-operational)">
+          <circle cx="572" cy="320" r="140" fill="rgba(235,108,54,0.14)"/>
+        </g>
+      </g>
+
+      <!-- Strokes redrawn on top so overlap fills never dull a boundary -->
+      <circle cx="500" cy="180" r="140" fill="none" stroke="#2d3142" stroke-width="1"/>
+      <circle cx="428" cy="320" r="140" fill="none" stroke="#4f5d75" stroke-width="1"/>
+      <circle cx="572" cy="320" r="140" fill="none" stroke="#7a8399" stroke-width="1"/>
+
+      <!-- Set labels — inside each circle's own non-overlapping lobe -->
+      <text x="500" y="96" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Catalog</text>
+      <text x="500" y="112" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">WHAT TO LOOK FOR</text>
+
+      <text x="340" y="386" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Operational Context</text>
+      <text x="340" y="402" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">WHAT'S HAPPENING</text>
+
+      <text x="660" y="386" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Intelligence</text>
+      <text x="660" y="402" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">GETTING IT DONE</text>
+
+      <!-- Pairwise intersection labels -->
+      <text x="420" y="224" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Applicability</text>
+      <text x="420" y="238" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.10em">ASSET → CONTROL → REQ</text>
+
+      <text x="580" y="224" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Grounding</text>
+      <text x="580" y="238" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.10em">AGENTS CITE THE CATALOG</text>
+
+      <text x="500" y="356" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Decision Gate</text>
+      <text x="500" y="370" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.10em">SIGNAL → REASON → APPROVE</text>
+
+      <!-- Focal triple-intersection label — the one coral accent in this diagram -->
+      <text x="500" y="264" fill="#eb6c36" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Closed Loop</text>
+      <text x="500" y="278" fill="#eb6c36" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.10em" opacity="0.85">REGULATION → EVIDENCED ACTION</text>
+
+      <!-- Editorial callout — incumbent GRC tools never reach the loop -->
+      <text x="920" y="28" fill="#2d3142" font-size="14" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="end">incumbents never leave Catalog</text>
+      <path d="M 860 40 Q 720 64 560 100" fill="none" stroke="rgba(45,49,66,0.40)" stroke-width="1" stroke-dasharray="4,3"/>
+      <circle cx="560" cy="100" r="2" fill="#2d3142"/>
+
+      <!-- Legend -->
+      <line x1="30" y1="552" x2="970" y2="552" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="30" y="572" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+
+      <circle cx="180" cy="568" r="4" fill="rgba(235,108,54,0.55)"/>
+      <text x="192" y="572" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">FOCAL — WHERE AGENTIC GRC ACTUALLY HAPPENS</text>
+
+      <line x1="600" y1="568" x2="628" y2="568" stroke="rgba(45,49,66,0.40)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="636" y="572" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.06em">EDITORIAL NOTE</text>
+    </svg>
+  </div>
+</body>
+</html>

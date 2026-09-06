@@ -18,7 +18,7 @@
 | **Part IV** | Working with the graph | Query and traversal patterns. |
 | **Appendices A–F** | Reference | Every node, every relationship, feeds, constraints, lineage, and document history. |
 
-> Optional companions: `vyra-landscape.md` gives the business-value / operating-model view; `vyra-architecture.md` shows the software layers and components built *around* this graph (how the API, agents, ingestion, and UI read and write it). This document stands on its own — you don't need either to understand the graph.
+> Optional companions: `vyra-foundation.md` gives the underlying agentic-GRC requirements this schema exists to satisfy; `vyra-landscape.md` gives the business-value / operating-model view; `vyra-architecture.md` shows the software layers and components built *around* this graph (how the API, agents, ingestion, and UI read and write it). This document stands on its own — you don't need any of them to understand the graph. Full reading order: `.design/README.md`.
 
 ---
 
@@ -506,6 +506,15 @@ MATCH (fnd:Finding {id: 'FND-001-01'})
       <-[:HAS_FINDING]-(inc:Incident)
       -[:GOVERNED_BY]->(reg:Regulation)
 RETURN fnd, inc, collect(reg) AS regulations
+```
+
+### Execution Traceability — Task to Regulation
+*"Why is this task on the calendar?"* — the third walk, alongside Forward/Reverse above: not audit-driven (`Incident`-anchored) but plan-driven (`Task`-anchored), following the catalog's own `Schedule -> Task -> Control -> Requirement` chain (Part II's Layered Graph Model) one hop further to the `Regulation`/`Standard` it ultimately implements. `:Catalog`-origin data only — legacy per-incident `Task`s have no `IMPLEMENTS -> Control` edge.
+```cypher
+MATCH (t:Task {id: 'TSK-0001'})-[:IMPLEMENTS]->(ctl:Control)
+      -[:IMPLEMENTS]->(req:Requirement)-[:DEFINED_BY]->(cla:Clause)
+      -[:BELONGS_TO]->(source)   // source is a Regulation or a Standard — Clause's parent is polymorphic
+RETURN t.name, ctl.name, req.name, labels(source) AS sourceType, source.name
 ```
 
 ### Incident Impact Analysis — Asset Risk Propagation
@@ -1364,3 +1373,4 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 | 2026-08-16 | Phase 8 — Complete the Agent Roster. `Decision` gained two more types: `risk-assessment` (`proposedLikelihood`/`proposedConsequence`/`proposedRating`) and `assurance-package-proposal` (`proposedPosture`, computed not LLM-decided). `:AgentProposed` now extends to `Risk` (`-[:RAISED_BY]-> Finding`, inherentScore/residualScore computed as likelihood×consequence, deliberately *not* excluded from `getRiskRollup()` unlike Control's Coverage Score exclusion) and to the full Assurance chain — `EvidencePackage`/`Attestation`/`AssuranceStatement`/`Audit` — which `assurance-intelligence` now proposes live for any Incident with unbundled Evidence, going through the same `PART_OF`/`BACKED_BY`/`DERIVED_FROM`/`COVERS`/`PREPARED_FOR` relationships Phase 4b's synthetic batch used, now also writable live. Phase 4b's `generate-assurance-seed.ts` is unchanged and still owns the original 7-incident historical batch. All four Assurance list endpoints now return an `origin: 'agent-proposed' \| 'synthetic'` field (from `labels(n)`) so callers can tell the two apart. |
 | 2026-08-22 | L1 Knowledge — Contracts. New `Contract` node (Operational graph, 12 rows from `20_Vendor_Master`, id reuses the real `Contract Reference` value) plus a second `Vendor` batch (`:Enterprise`, `VEN-001`–`VEN-012`). New relationships `WITH_VENDOR` (Contract→Vendor), `COORDINATED_BY` (Contract→Role), and `COVERS` (Contract→Facility, many-valued, 180 edges, expanded from `Sites Covered` via a mechanical range parse against the 20 `:Enterprise` Facility rows already seeded in Phase 2). `enterprise-sync.ts` gained its first-ever `edgeMap` processing step (previously only `catalog-sync.ts`/the base `grc` pipeline processed `edgeMap`; enterprise's was declared but unused). `InsuranceClause` (`21_Insurance_Risk_Clauses`) surfaced during scoping but stays explicitly out — it belongs in the Assurance graph, a separate future decision. |
 | 2026-08-23 | New `RESULTED_IN` (Decision → Control/Finding/Risk/Audit), the reverse of `ABOUT`, written only on approval. Backs a horizontal origin→reasoned→reviewed→result timeline on the Intelligence UI's Decision cards — `GET /intelligence/decisions` now resolves both `ABOUT` and `RESULTED_IN` server-side (`api/modules/intelligence/repo.ts`'s `listDecisions`) instead of the UI guessing either end from `Decision.id`/result-id naming conventions. No new node types; purely a traceability relationship on top of the existing Phase 7/8 approval writes. |
+| 2026-09-06 | Added a third traversal pattern to Part IV, **Execution Traceability — Task to Regulation** (`Task -[:IMPLEMENTS]-> Control -[:IMPLEMENTS]-> Requirement -[:DEFINED_BY]-> Clause -[:BELONGS_TO]-> Regulation\|Standard`), closing the `artifacts/TODO.md` item tracked since the 2026-08-23 architecture diagrams. No schema change — purely documenting an existing chain. Also: `.design/` doc set consolidated — new `.design/README.md` front door, `vyra-foundation.md` cross-linked everywhere (previously orphaned), `vyra-implementation-plan.md` trimmed to sequencing/open-decisions only, `vyra-tracker.md` row prose condensed, full historical build narrative (Phases 0–9) relocated verbatim to new `.design/__ref/implementation-history.md`. |

@@ -1,6 +1,6 @@
 # Vyra Landscape
 
-The front door to Vyra's canonical docs, and a stakeholder-facing read on its own: the vision, the operating model, and how a regulation becomes provable assurance. It carries **no build-status** — for what's live vs. planned, see `vyra-tracker.md`. Also: `vyra-graph-spine.md` for the ground-truth schema, `vyra-architecture.md` for the software layers, `vyra-implementation-plan.md` for phase sequencing.
+Second stop in Vyra's canonical reading path (see `.design/README.md` for the full order, and `vyra-foundation.md` first for *why* this has to be agentic at all) — a stakeholder-facing read on its own: the vision, the operating model, and how a regulation becomes provable assurance. It carries **no build-status** — for what's live vs. planned, see `vyra-tracker.md`. Also: `vyra-graph-spine.md` for the ground-truth schema, `vyra-architecture.md` for the software layers, `vyra-implementation-plan.md` for phase sequencing.
 
 ---
 
@@ -54,6 +54,7 @@ Sourced from the GRC Operating Model bow-tie diagram. Each layer names a **perso
 
 ## Where to go next
 
+- **Why this must be agentic at all** (the requirements a GRC platform must satisfy to earn the word) → `vyra-foundation.md`
 - **Current build status** (what's live vs. partial vs. gap, per JTBD layer) → `vyra-tracker.md`
 - **Schema, relationships, live/dormant status, Cypher patterns** → `vyra-graph-spine.md`
 - **Software layers & components** (how the API, agents, ingestion, and UI wrap the graph) → `vyra-architecture.md`

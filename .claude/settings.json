@@ -16,7 +16,10 @@
             "statusMessage": "Typechecking workspace..."
           }
         ]
-      }      
+      }
     ]
+  },
+  "enabledPlugins": {
+    "diagram-design@diagram-design": true
   }
 }
