@@ -1,0 +1,278 @@
+<title>Vyra — The Layered Architecture</title>
+<style>
+  :root{
+    color-scheme: light dark;
+    --paper:#F1F3F7; --paper-2:#F7F8FB; --card:#FFFFFF;
+    --ink:#171A21; --ink-soft:#3A3F49; --muted:#5B6472; --faint:#98A0AF;
+    --line: #D7DBE4; --line-soft: #E4E7EE;
+    --accent:#8F6A22; --accent-soft: rgba(143,106,34,.09); --accent-line: rgba(143,106,34,.32);
+    --ok:#4C7A5C; --warn:#8C3A34; --warn-soft: rgba(140,58,52,.08);
+    --shadow: 0 16px 48px rgba(23,26,33,.07);
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#0A0D13; --paper-2:#161B26; --card:#12161F;
+      --ink:#E6E9F0; --ink-soft:#C7CCDA; --muted:#8991A6; --faint:#5C6478;
+      --line: #262C3A; --line-soft: #1C212C;
+      --accent:#D3A657; --accent-soft: rgba(211,166,87,.13); --accent-line: rgba(211,166,87,.38);
+      --ok:#7FB08F; --warn:#C97169; --warn-soft: rgba(201,113,105,.12);
+      --shadow: 0 20px 60px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0A0D13; --paper-2:#161B26; --card:#12161F;
+    --ink:#E6E9F0; --ink-soft:#C7CCDA; --muted:#8991A6; --faint:#5C6478;
+    --line: #262C3A; --line-soft: #1C212C;
+    --accent:#D3A657; --accent-soft: rgba(211,166,87,.13); --accent-line: rgba(211,166,87,.38);
+    --ok:#7FB08F; --warn:#C97169; --warn-soft: rgba(201,113,105,.12);
+    --shadow: 0 20px 60px rgba(0,0,0,.5);
+  }
+  :root[data-theme="light"]{
+    --paper:#F1F3F7; --paper-2:#F7F8FB; --card:#FFFFFF;
+    --ink:#171A21; --ink-soft:#3A3F49; --muted:#5B6472; --faint:#98A0AF;
+    --line: #D7DBE4; --line-soft: #E4E7EE;
+    --accent:#8F6A22; --accent-soft: rgba(143,106,34,.09); --accent-line: rgba(143,106,34,.32);
+    --ok:#4C7A5C; --warn:#8C3A34; --warn-soft: rgba(140,58,52,.08);
+    --shadow: 0 16px 48px rgba(23,26,33,.07);
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-sans);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+  .page{max-width:1240px;margin:0 auto;padding:clamp(1.4rem,4vw,2.6rem) clamp(1.1rem,4vw,1.75rem) 3rem;display:flex;flex-direction:column;gap:1.5rem}
+
+  .eyebrow{font-family:var(--font-mono);font-size:.72rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+
+  .masthead{display:flex;flex-direction:column;gap:.5rem;padding-bottom:1.1rem;border-bottom:1px solid var(--line)}
+  .masthead .tagline{margin:0 0 .2rem;font-family:var(--font-mono);font-weight:700;font-size:.78rem;letter-spacing:.06em;color:var(--accent)}
+  .masthead .kicker{font-family:var(--font-mono);font-size:.72rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+  .masthead h1{margin:0;font-family:var(--font-sans);font-weight:700;font-size:clamp(1.7rem,3.1vw,2.3rem);line-height:1.15;letter-spacing:-.02em;text-wrap:balance;color:var(--ink)}
+  .masthead .dek{margin:0;max-width:48rem;color:var(--muted);font-size:.97rem;text-wrap:balance}
+
+  .diagram{border:1px solid var(--line);border-radius:16px;background:var(--paper-2);box-shadow:var(--shadow);overflow:hidden}
+  .diagram > * + *{border-top:1px solid var(--line)}
+  .cp-kicker{padding:.4rem 1.3rem;background:var(--accent-soft);display:flex;align-items:center;gap:.6rem}
+  .cp-kicker span{font-family:var(--font-mono);font-size:.66rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+  .cp-kicker small{font-family:var(--font-mono);font-size:.66rem;color:var(--muted);font-weight:400;letter-spacing:.02em;text-transform:none}
+  .svg-wrap{padding:1.3rem 1.2rem .6rem;overflow-x:auto}
+  .svg-wrap svg{display:block;width:100%;height:auto;min-width:1080px}
+
+  .legend{display:flex;flex-wrap:wrap;gap:1.3rem;padding:.75rem 1.3rem;font-family:var(--font-mono);font-size:.66rem;color:var(--muted);align-items:center;letter-spacing:.02em}
+  .legend .item{display:flex;align-items:center;gap:.45rem;white-space:nowrap}
+  .legend .swatch{width:16px;height:0;border-top:2px solid var(--muted)}
+  .legend .swatch.dash{border-top:2px dashed var(--faint)}
+  .legend .dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+  .legend .dot.accent{background:var(--accent)}
+  .legend .dot.warn{background:var(--warn)}
+
+  footer{border-top:1px solid var(--line);padding-top:1.1rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.4rem;font-family:var(--font-mono);font-size:.7rem;color:var(--faint)}
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <p class="tagline">VYRA — Compliance. Handled.</p>
+    <h1>The Layered Architecture</h1>
+    <span class="kicker">As Built Today — Faithful Detail</span>
+    <p class="dek">Every workspace, every domain module, every write path — the full component graph the summary diagram above compresses. Same Bounded Context, same patterns, same three debt markers, at engineering detail.</p>
+  </header>
+
+  <div class="diagram">
+
+    <div class="cp-kicker">
+      <span>As-Built · Faithful</span>
+      <small>— 13 components, 4 zones, nothing collapsed from the source</small>
+    </div>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 1280 520" role="img" aria-labelledby="layers-title layers-desc">
+        <title id="layers-title">Vyra layered architecture, faithful detail</title>
+        <desc id="layers-desc">Full component diagram of one Vyra tenant deployment: the UI presentation edge; an integration edge of IoT signals, CSV feeds, and third-party APIs; an application zone of the API service, ingestion pipeline, agent runtime, and the shared graph-db gateway; a data zone of the Neo4j twin and a planned audit log; and an external-services zone of the live local Ollama model plus planned SSO and notifications, with five applied patterns and three known-debt items tagged at their real location.</desc>
+        <defs>
+          <marker id="lArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+          </marker>
+          <marker id="lArrowAccent" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+          </marker>
+          <marker id="lArrowFaint" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--faint)"/>
+          </marker>
+        </defs>
+
+        <!-- ===== zones (bg -> zones -> arrows -> nodes) ===== -->
+        <rect x="40" y="128" width="240" height="304" rx="8" fill="var(--ink-soft)" opacity="0.035" stroke="var(--line)" stroke-width="0.8"/>
+        <rect x="52" y="132" width="150" height="14" rx="2" fill="var(--paper-2)"/>
+        <text x="60" y="142" fill="var(--muted)" font-size="8" font-family="var(--font-mono)" letter-spacing="0.1em">INTEGRATION EDGE</text>
+
+        <rect x="340" y="128" width="620" height="216" rx="8" fill="var(--ink-soft)" opacity="0.035" stroke="var(--line)" stroke-width="0.8"/>
+        <rect x="700" y="132" width="180" height="14" rx="2" fill="var(--paper-2)"/>
+        <text x="708" y="142" fill="var(--muted)" font-size="8" font-family="var(--font-mono)" letter-spacing="0.1em">APPLICATION LAYERS</text>
+
+        <rect x="510" y="332" width="440" height="128" rx="8" fill="var(--ink-soft)" opacity="0.035" stroke="var(--line)" stroke-width="0.8"/>
+        <rect x="522" y="336" width="56" height="14" rx="2" fill="var(--paper-2)"/>
+        <text x="530" y="346" fill="var(--muted)" font-size="8" font-family="var(--font-mono)" letter-spacing="0.1em">DATA</text>
+
+        <rect x="1000" y="128" width="240" height="304" rx="8" fill="var(--ink-soft)" opacity="0.035" stroke="var(--line)" stroke-width="0.8"/>
+        <rect x="1012" y="132" width="168" height="14" rx="2" fill="var(--paper-2)"/>
+        <text x="1020" y="142" fill="var(--muted)" font-size="8" font-family="var(--font-mono)" letter-spacing="0.1em">EXTERNAL SERVICES</text>
+
+        <!-- ===== connectors ===== -->
+        <!-- UI -> API -->
+        <path d="M450,116 V160" fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#lArrow)"/>
+        <rect x="432" y="146" width="36" height="12" rx="2" fill="var(--paper-2)"/>
+        <text x="450" y="155" fill="var(--muted)" font-size="8" font-family="var(--font-mono)" text-anchor="middle" letter-spacing="0.06em">HTTP</text>
+
+        <!-- FEED -> CLI (hop over UI->API; exits FEED's top-right so it clears the INTEGRATION EDGE zone label) -->
+        <path d="M230,160 V146 Q230,138 238,138 H442 a8,8 0 0,1 16,0 H642 Q650,138 650,146 V160"
+              fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#lArrow)"/>
+        <rect x="248" y="118" width="38" height="12" rx="2" fill="var(--paper-2)"/>
+        <text x="267" y="127" fill="var(--muted)" font-size="8" font-family="var(--font-mono)" text-anchor="middle" letter-spacing="0.06em">FEEDS</text>
+
+        <!-- IOT -> API -->
+        <path d="M256,284 H288 Q296,284 296,276 V190 Q296,182 304,182 H360"
+              fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#lArrow)"/>
+        <rect x="200" y="264" width="66" height="12" rx="2" fill="var(--paper-2)"/>
+        <text x="233" y="273" fill="var(--muted)" font-size="8" font-family="var(--font-mono)" text-anchor="middle" letter-spacing="0.04em">SIGNALS</text>
+
+        <!-- INTG -> API -->
+        <path d="M256,380 H316 Q324,380 324,372 V222 Q324,214 332,214 H360"
+              fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#lArrow)"/>
+
+        <!-- API -> LIB -->
+        <path d="M450,236 V240 Q450,248 458,248 H497 Q505,248 505,256 V260"
+              fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#lArrow)"/>
+        <!-- CLI -> LIB -->
+        <path d="M650,236 V260" fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#lArrow)"/>
+        <!-- AG -> LIB -->
+        <path d="M850,236 V240 Q850,248 842,248 H803 Q795,248 795,256 V260"
+              fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#lArrow)"/>
+
+        <!-- LIB -> NEO (focal) -->
+        <path d="M650,324 V364" fill="none" stroke="var(--accent)" stroke-width="1.4" marker-end="url(#lArrowAccent)"/>
+        <!-- LIB -> AUDIT (dashed, planned) -->
+        <path d="M860,324 V364" fill="none" stroke="var(--faint)" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#lArrowFaint)"/>
+        <rect x="826" y="330" width="68" height="12" rx="2" fill="var(--paper-2)"/>
+        <text x="860" y="339" fill="var(--faint)" font-size="8" font-family="var(--font-mono)" text-anchor="middle" letter-spacing="0.02em">PLANNED</text>
+
+        <!-- AG -> OLLAMA -->
+        <path d="M940,192 H1024" fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#lArrow)"/>
+        <rect x="953" y="174" width="48" height="12" rx="2" fill="var(--paper-2)"/>
+        <text x="977" y="183" fill="var(--muted)" font-size="8" font-family="var(--font-mono)" text-anchor="middle" letter-spacing="0.06em">REASON</text>
+
+        <!-- ===== nodes ===== -->
+
+        <!-- UI -->
+        <rect x="350" y="40" width="200" height="76" rx="6" fill="var(--paper-2)"/>
+        <rect x="350" y="40" width="200" height="76" rx="6" fill="var(--card)" stroke="var(--line)" stroke-width="1.2"/>
+        <text x="450" y="62" fill="var(--ink)" font-size="12" font-weight="600" font-family="var(--font-sans)" text-anchor="middle">UI · ui/ · :3002</text>
+        <text x="450" y="78" fill="var(--muted)" font-size="8.5" font-family="var(--font-mono)" text-anchor="middle">landscape · dashboard · knowledge · execution</text>
+        <text x="450" y="92" fill="var(--muted)" font-size="8.5" font-family="var(--font-mono)" text-anchor="middle">intelligence · assurance · calendar · enterprise · simulator</text>
+
+        <!-- FEED -->
+        <rect x="64" y="160" width="192" height="56" rx="6" fill="var(--paper-2)"/>
+        <rect x="64" y="160" width="192" height="56" rx="6" fill="var(--card)" stroke="var(--line)" stroke-width="1.2"/>
+        <text x="160" y="184" fill="var(--ink)" font-size="12" font-weight="600" font-family="var(--font-sans)" text-anchor="middle">Feeds</text>
+        <text x="160" y="200" fill="var(--muted)" font-size="9" font-family="var(--font-mono)" text-anchor="middle">catalog + enterprise CSVs</text>
+
+        <!-- IOT -->
+        <rect x="64" y="256" width="192" height="56" rx="6" fill="var(--paper-2)"/>
+        <rect x="64" y="256" width="192" height="56" rx="6" fill="var(--card)" stroke="var(--line)" stroke-width="1.2"/>
+        <text x="160" y="280" fill="var(--ink)" font-size="12" font-weight="600" font-family="var(--font-sans)" text-anchor="middle">IoT Services</text>
+        <text x="160" y="296" fill="var(--muted)" font-size="9" font-family="var(--font-mono)" text-anchor="middle">live floor signals</text>
+
+        <!-- INTG -->
+        <rect x="64" y="352" width="192" height="56" rx="6" fill="var(--paper-2)"/>
+        <rect x="64" y="352" width="192" height="56" rx="6" fill="var(--card)" stroke="var(--line)" stroke-width="1.2"/>
+        <text x="160" y="376" fill="var(--ink)" font-size="12" font-weight="600" font-family="var(--font-sans)" text-anchor="middle">Integration API</text>
+        <text x="160" y="392" fill="var(--muted)" font-size="9" font-family="var(--font-mono)" text-anchor="middle">3rd-party systems</text>
+
+        <!-- API (Repository + 2-layer debt) -->
+        <rect x="360" y="160" width="180" height="76" rx="6" fill="var(--paper-2)"/>
+        <rect x="360" y="160" width="180" height="76" rx="6" fill="var(--card)" stroke="var(--line)" stroke-width="1.2"/>
+        <rect x="368" y="166" width="42" height="12" rx="2" fill="transparent" stroke="var(--accent-line)" stroke-width="0.8"/>
+        <text x="389" y="175" fill="var(--accent)" font-size="7" font-family="var(--font-mono)" text-anchor="middle" letter-spacing="0.06em">REPO</text>
+        <rect x="414" y="166" width="46" height="12" rx="2" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="0.8"/>
+        <text x="437" y="175" fill="var(--warn)" font-size="7" font-family="var(--font-mono)" text-anchor="middle" letter-spacing="0.03em">2-LAYER</text>
+        <text x="450" y="192" fill="var(--ink)" font-size="12" font-weight="600" font-family="var(--font-sans)" text-anchor="middle">API / Service</text>
+        <text x="450" y="207" fill="var(--muted)" font-size="8.5" font-family="var(--font-mono)" text-anchor="middle">api/ · :4001 · Fastify</text>
+        <text x="450" y="220" fill="var(--muted)" font-size="8.5" font-family="var(--font-mono)" text-anchor="middle">8 domain modules</text>
+
+        <!-- CLI / Ingestion (Idempotent Receiver) -->
+        <rect x="560" y="160" width="180" height="76" rx="6" fill="var(--paper-2)"/>
+        <rect x="560" y="160" width="180" height="76" rx="6" fill="var(--card)" stroke="var(--line)" stroke-width="1.2"/>
+        <rect x="568" y="166" width="70" height="12" rx="2" fill="transparent" stroke="var(--accent-line)" stroke-width="0.8"/>
+        <text x="603" y="175" fill="var(--accent)" font-size="7" font-family="var(--font-mono)" text-anchor="middle" letter-spacing="0.03em">IDEMPOTENT</text>
+        <text x="650" y="192" fill="var(--ink)" font-size="12" font-weight="600" font-family="var(--font-sans)" text-anchor="middle">Ingestion</text>
+        <text x="650" y="207" fill="var(--muted)" font-size="8.5" font-family="var(--font-mono)" text-anchor="middle">cli/ · parser→compiler→projection</text>
+        <text x="650" y="220" fill="var(--muted)" font-size="8.5" font-family="var(--font-mono)" text-anchor="middle">catalog-sync · enterprise-sync · v2.ts</text>
+
+        <!-- AG / Agent Runtime (Registry) -->
+        <rect x="760" y="160" width="180" height="76" rx="6" fill="var(--paper-2)"/>
+        <rect x="760" y="160" width="180" height="76" rx="6" fill="var(--card)" stroke="var(--line)" stroke-width="1.2"/>
+        <rect x="768" y="166" width="58" height="12" rx="2" fill="transparent" stroke="var(--accent-line)" stroke-width="0.8"/>
+        <text x="797" y="175" fill="var(--accent)" font-size="7" font-family="var(--font-mono)" text-anchor="middle" letter-spacing="0.03em">REGISTRY</text>
+        <text x="850" y="192" fill="var(--ink)" font-size="12" font-weight="600" font-family="var(--font-sans)" text-anchor="middle">Agent Runtime</text>
+        <text x="850" y="207" fill="var(--muted)" font-size="8.5" font-family="var(--font-mono)" text-anchor="middle">observe→reason→act→verify</text>
+        <text x="850" y="220" fill="var(--muted)" font-size="8.5" font-family="var(--font-mono)" text-anchor="middle">control-intelligence live · 3 stubs</text>
+
+        <!-- LIB / graph-db (Gateway + 2-names debt) -->
+        <rect x="360" y="260" width="580" height="64" rx="6" fill="var(--paper-2)"/>
+        <rect x="360" y="260" width="580" height="64" rx="6" fill="var(--card)" stroke="var(--line)" stroke-width="1.2"/>
+        <rect x="368" y="266" width="52" height="12" rx="2" fill="transparent" stroke="var(--accent-line)" stroke-width="0.8"/>
+        <text x="394" y="275" fill="var(--accent)" font-size="7" font-family="var(--font-mono)" text-anchor="middle" letter-spacing="0.06em">GATEWAY</text>
+        <rect x="428" y="266" width="98" height="12" rx="2" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="0.8"/>
+        <text x="477" y="275" fill="var(--warn)" font-size="7" font-family="var(--font-mono)" text-anchor="middle" letter-spacing="0.02em">2 NAMES, 1 OP</text>
+        <text x="650" y="292" fill="var(--ink)" font-size="12" font-weight="600" font-family="var(--font-sans)" text-anchor="middle">lib/graph-db · log · config</text>
+        <text x="650" y="308" fill="var(--muted)" font-size="9" font-family="var(--font-mono)" text-anchor="middle">singleton + lazy factory · sole Neo4j driver</text>
+
+        <!-- NEO (focal) -->
+        <rect x="530" y="364" width="240" height="64" rx="6" fill="var(--paper-2)"/>
+        <rect x="530" y="364" width="240" height="64" rx="6" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.4"/>
+        <text x="650" y="392" fill="var(--ink)" font-size="13" font-weight="700" font-family="var(--font-sans)" text-anchor="middle">Neo4j Twin</text>
+        <text x="650" y="408" fill="var(--accent)" font-size="9" font-family="var(--font-mono)" text-anchor="middle">agentic-grc · 5 domains</text>
+
+        <!-- AUDIT (dashed, planned) -->
+        <rect x="790" y="364" width="140" height="64" rx="6" fill="var(--paper-2)"/>
+        <rect x="790" y="364" width="140" height="64" rx="6" fill="var(--card)" stroke="var(--ink-soft)" stroke-width="1" stroke-dasharray="4,4" opacity="0.9"/>
+        <text x="860" y="392" fill="var(--ink-soft)" font-size="12" font-weight="600" font-family="var(--font-sans)" text-anchor="middle">Audit Log</text>
+        <text x="860" y="408" fill="var(--faint)" font-size="9" font-family="var(--font-mono)" text-anchor="middle">write-through</text>
+
+        <!-- OLLAMA -->
+        <rect x="1024" y="160" width="192" height="64" rx="6" fill="var(--paper-2)"/>
+        <rect x="1024" y="160" width="192" height="64" rx="6" fill="var(--card)" stroke="var(--line)" stroke-width="1.2"/>
+        <text x="1120" y="186" fill="var(--ink)" font-size="12" font-weight="600" font-family="var(--font-sans)" text-anchor="middle">Ollama · local LLM</text>
+        <text x="1120" y="202" fill="var(--muted)" font-size="9" font-family="var(--font-mono)" text-anchor="middle">llama3.1:8b · localhost:11434</text>
+
+        <!-- SSO (dashed, planned) -->
+        <rect x="1024" y="264" width="192" height="56" rx="6" fill="var(--paper-2)"/>
+        <rect x="1024" y="264" width="192" height="56" rx="6" fill="var(--card)" stroke="var(--ink-soft)" stroke-width="1" stroke-dasharray="4,4" opacity="0.9"/>
+        <text x="1120" y="288" fill="var(--ink-soft)" font-size="12" font-weight="600" font-family="var(--font-sans)" text-anchor="middle">Identity / SSO</text>
+        <text x="1120" y="304" fill="var(--faint)" font-size="9" font-family="var(--font-mono)" text-anchor="middle">planned</text>
+
+        <!-- NOTIFY (dashed, planned) -->
+        <rect x="1024" y="360" width="192" height="56" rx="6" fill="var(--paper-2)"/>
+        <rect x="1024" y="360" width="192" height="56" rx="6" fill="var(--card)" stroke="var(--ink-soft)" stroke-width="1" stroke-dasharray="4,4" opacity="0.9"/>
+        <text x="1120" y="384" fill="var(--ink-soft)" font-size="12" font-weight="600" font-family="var(--font-sans)" text-anchor="middle">Notifications</text>
+        <text x="1120" y="400" fill="var(--faint)" font-size="9" font-family="var(--font-mono)" text-anchor="middle">planned</text>
+      </svg>
+    </div>
+
+    <div class="legend">
+      <div class="item"><span class="swatch"></span> live data flow</div>
+      <div class="item"><span class="swatch dash"></span> planned, not built</div>
+      <div class="item"><span class="dot accent"></span> applied pattern tag · Bounded Context anchor</div>
+      <div class="item"><span class="dot warn"></span> known architectural debt</div>
+    </div>
+
+  </div>
+
+  <footer>
+    <span>Vyra — an architecture of the tenant stack</span>
+    <span>Faithful detail companion to architecture-v3 · 2026-09-06</span>
+  </footer>
+
+</div>

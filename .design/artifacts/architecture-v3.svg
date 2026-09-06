@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 580" role="img" aria-labelledby="tenant-stack-title tenant-stack-desc">
+        <title id="tenant-stack-title">Vyra tenant-stack architecture, as built today</title>
+        <desc id="tenant-stack-desc">Diagram of one Vyra tenant deployment — presentation, integration, application, and data layers inside a single Bounded Context — showing five already-applied enterprise patterns at their real location, three named architectural-debt items in the API layer, one live external service, and two planned external services.</desc>
+        <defs>
+          <marker id="mArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#5B6472"/>
+          </marker>
+          <marker id="mArrowAccent" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#8F6A22"/>
+          </marker>
+          <marker id="mArrowFaint" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#98A0AF"/>
+          </marker>
+        </defs>
+
+        <!-- ===== zone: Bounded Context ===== -->
+        <rect x="280" y="112" width="540" height="428" rx="8" fill="#3A3F49" opacity="0.035" stroke="#D7DBE4" stroke-width="0.8"/>
+        <rect x="296" y="116" width="222" height="14" rx="2" fill="#F7F8FB"/>
+        <text x="307" y="126" fill="#5B6472" font-size="8" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" letter-spacing="0.12em">BOUNDED CONTEXT · ONE PER TENANT</text>
+
+        <!-- ===== connectors (drawn before nodes) ===== -->
+        <!-- UI -> API -->
+        <path d="M370,80 V140" fill="none" stroke="#5B6472" stroke-width="1.2" marker-end="url(#mArrow)"/>
+        <rect x="380" y="100" width="36" height="12" rx="2" fill="#F7F8FB"/>
+        <text x="398" y="109" fill="#5B6472" font-size="8" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.06em">HTTP</text>
+
+        <!-- Integration Edge -> API -->
+        <path d="M240,168 H300" fill="none" stroke="#5B6472" stroke-width="1.2" marker-end="url(#mArrow)"/>
+        <rect x="248" y="150" width="46" height="12" rx="2" fill="#F7F8FB"/>
+        <text x="271" y="159" fill="#5B6472" font-size="8" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.06em">SIGNALS</text>
+
+        <!-- Integration Edge -> Ingestion (hop over UI->API) -->
+        <path d="M150,140 V104 Q150,96 158,96 H362 a8,8 0 0,1 16,0 H542 Q550,96 550,104 V140"
+              fill="none" stroke="#5B6472" stroke-width="1.2" marker-end="url(#mArrow)"/>
+        <rect x="432" y="80" width="38" height="12" rx="2" fill="#F7F8FB"/>
+        <text x="451" y="89" fill="#5B6472" font-size="8" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.06em">FEEDS</text>
+
+        <!-- API -> lib/graph-db -->
+        <path d="M370,196 V272 Q370,280 378,280 H417 Q425,280 425,288 V364"
+              fill="none" stroke="#5B6472" stroke-width="1.2" marker-end="url(#mArrow)"/>
+        <!-- Ingestion -> lib/graph-db -->
+        <path d="M550,196 V364" fill="none" stroke="#5B6472" stroke-width="1.2" marker-end="url(#mArrow)"/>
+        <!-- Agent Runtime -> lib/graph-db -->
+        <path d="M730,196 V272 Q730,280 722,280 H683 Q675,280 675,288 V364"
+              fill="none" stroke="#5B6472" stroke-width="1.2" marker-end="url(#mArrow)"/>
+
+        <!-- lib/graph-db -> Neo4j Twin (focal) -->
+        <path d="M550,420 V456" fill="none" stroke="#8F6A22" stroke-width="1.4" marker-end="url(#mArrowAccent)"/>
+
+        <!-- Agent Runtime -> Ollama -->
+        <path d="M800,168 H840" fill="none" stroke="#5B6472" stroke-width="1.2" marker-end="url(#mArrow)"/>
+        <rect x="792" y="150" width="48" height="12" rx="2" fill="#F7F8FB"/>
+        <text x="816" y="159" fill="#5B6472" font-size="8" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.06em">REASON</text>
+
+        <!-- lib/graph-db -> Planned externals (dashed) -->
+        <path d="M800,392 H840" fill="none" stroke="#98A0AF" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#mArrowFaint)"/>
+
+        <!-- ===== nodes ===== -->
+
+        <!-- UI -->
+        <rect x="300" y="24" width="140" height="56" rx="6" fill="#F7F8FB"/>
+        <rect x="300" y="24" width="140" height="56" rx="6" fill="#FFFFFF" stroke="#D7DBE4" stroke-width="1.2"/>
+        <text x="370" y="48" fill="#171A21" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif" text-anchor="middle">UI</text>
+        <text x="370" y="64" fill="#5B6472" font-size="9" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" text-anchor="middle">ui/ · :3002 · Next.js</text>
+
+        <!-- Integration Edge -->
+        <rect x="60" y="140" width="180" height="56" rx="6" fill="#F7F8FB"/>
+        <rect x="60" y="140" width="180" height="56" rx="6" fill="#FFFFFF" stroke="#D7DBE4" stroke-width="1.2"/>
+        <text x="150" y="164" fill="#171A21" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif" text-anchor="middle">Integration Edge</text>
+        <text x="150" y="180" fill="#5B6472" font-size="9" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" text-anchor="middle">IoT · feeds · 3rd-party API</text>
+
+        <!-- API (with debt marker) -->
+        <rect x="300" y="140" width="140" height="56" rx="6" fill="#F7F8FB"/>
+        <rect x="300" y="140" width="140" height="56" rx="6" fill="#FFFFFF" stroke="#D7DBE4" stroke-width="1.2"/>
+        <rect x="308" y="146" width="42" height="12" rx="2" fill="transparent" stroke="rgba(143,106,34,.32)" stroke-width="0.8"/>
+        <text x="329" y="155" fill="#8F6A22" font-size="7" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.06em">REPO</text>
+        <rect x="386" y="146" width="46" height="12" rx="2" fill="rgba(140,58,52,.08)" stroke="#8C3A34" stroke-width="0.8"/>
+        <text x="409" y="155" fill="#8C3A34" font-size="7" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.04em">2-LAYER</text>
+        <text x="370" y="172" fill="#171A21" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif" text-anchor="middle">API / Service</text>
+        <text x="370" y="187" fill="#5B6472" font-size="9" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" text-anchor="middle">api/ · :4001 · Fastify</text>
+
+        <!-- Ingestion -->
+        <rect x="480" y="140" width="140" height="56" rx="6" fill="#F7F8FB"/>
+        <rect x="480" y="140" width="140" height="56" rx="6" fill="#FFFFFF" stroke="#D7DBE4" stroke-width="1.2"/>
+        <rect x="488" y="146" width="70" height="12" rx="2" fill="transparent" stroke="rgba(143,106,34,.32)" stroke-width="0.8"/>
+        <text x="523" y="155" fill="#8F6A22" font-size="7" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.04em">IDEMPOTENT</text>
+        <text x="550" y="172" fill="#171A21" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif" text-anchor="middle">Ingestion</text>
+        <text x="550" y="187" fill="#5B6472" font-size="9" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" text-anchor="middle">cli/ · CSV → LOAD CSV</text>
+
+        <!-- Agent Runtime -->
+        <rect x="660" y="140" width="140" height="56" rx="6" fill="#F7F8FB"/>
+        <rect x="660" y="140" width="140" height="56" rx="6" fill="#FFFFFF" stroke="#D7DBE4" stroke-width="1.2"/>
+        <rect x="668" y="146" width="58" height="12" rx="2" fill="transparent" stroke="rgba(143,106,34,.32)" stroke-width="0.8"/>
+        <text x="697" y="155" fill="#8F6A22" font-size="7" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.04em">REGISTRY</text>
+        <text x="730" y="172" fill="#171A21" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif" text-anchor="middle">Agent Runtime</text>
+        <text x="730" y="187" fill="#5B6472" font-size="9" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" text-anchor="middle">agents/ · local Ollama</text>
+
+        <!-- lib/graph-db -->
+        <rect x="300" y="364" width="500" height="56" rx="6" fill="#F7F8FB"/>
+        <rect x="300" y="364" width="500" height="56" rx="6" fill="#FFFFFF" stroke="#D7DBE4" stroke-width="1.2"/>
+        <rect x="308" y="370" width="52" height="12" rx="2" fill="transparent" stroke="rgba(143,106,34,.32)" stroke-width="0.8"/>
+        <text x="334" y="379" fill="#8F6A22" font-size="7" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.06em">GATEWAY</text>
+        <rect x="372" y="370" width="96" height="12" rx="2" fill="rgba(140,58,52,.08)" stroke="#8C3A34" stroke-width="0.8"/>
+        <text x="420" y="379" fill="#8C3A34" font-size="7" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" text-anchor="middle" letter-spacing="0.02em">2 NAMES, 1 OP</text>
+        <text x="550" y="388" fill="#171A21" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif" text-anchor="middle">lib/graph-db</text>
+        <text x="550" y="404" fill="#5B6472" font-size="9" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" text-anchor="middle">singleton + lazy factory · sole Neo4j driver</text>
+
+        <!-- Neo4j Twin (focal) -->
+        <rect x="420" y="456" width="260" height="64" rx="6" fill="#F7F8FB"/>
+        <rect x="420" y="456" width="260" height="64" rx="6" fill="rgba(143,106,34,.09)" stroke="#8F6A22" stroke-width="1.4"/>
+        <text x="550" y="484" fill="#171A21" font-size="13" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif" text-anchor="middle">Neo4j Twin</text>
+        <text x="550" y="500" fill="#8F6A22" font-size="9" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" text-anchor="middle">agentic-grc · one graph per tenant</text>
+
+        <!-- Ollama -->
+        <rect x="840" y="140" width="120" height="56" rx="6" fill="#F7F8FB"/>
+        <rect x="840" y="140" width="120" height="56" rx="6" fill="#FFFFFF" stroke="#D7DBE4" stroke-width="1.2"/>
+        <text x="900" y="164" fill="#171A21" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif" text-anchor="middle">Ollama</text>
+        <text x="900" y="180" fill="#5B6472" font-size="9" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" text-anchor="middle">local LLM · live</text>
+
+        <!-- Planned externals (dashed) -->
+        <rect x="840" y="364" width="120" height="56" rx="6" fill="#F7F8FB"/>
+        <rect x="840" y="364" width="120" height="56" rx="6" fill="#FFFFFF" stroke="#3A3F49" stroke-width="1" stroke-dasharray="4,4" opacity="0.9"/>
+        <text x="900" y="388" fill="#3A3F49" font-size="12" font-weight="600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif" text-anchor="middle">Planned</text>
+        <text x="900" y="404" fill="#98A0AF" font-size="7.5" font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" text-anchor="middle">SSO · Notify · Audit Log</text>
+      </svg>
