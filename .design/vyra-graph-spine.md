@@ -727,6 +727,30 @@ Cadence for a `Task` (`Schedule -[:APPLIES_TO]-> Task`, `:Catalog`) — correcte
 
 ---
 
+### `Assignment` — designed, not yet active
+Binds a `Task` (or a future non-Task action) to the `Actor` executing it, carrying the autonomy level for *that specific piece of work* — per `vyra-foundation.md` §2: "the autonomy level is a property of the assignment, not of the platform." No seed data, no live write path. Modeled as its own node rather than a bare edge property so a re-leveling is a new, superseding `Assignment` — consistent with the platform's append-and-supersede rule — instead of an overwrite with no history.
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `ASG-TSK-0001` |
+| autonomyLevel | int | `0`–`4` |
+| assignedAt | datetime | |
+| supersededBy | string | self-referential — a re-leveled assignment is superseded, never overwritten |
+
+No CSV feed. `Decision.autonomyLevel` (Intelligence Graph, live) is a different thing and stays as-is: it records what level *one proposal* was made at. `Assignment` would be the standing policy a `Task`/workflow is currently held at — the thing autonomy elevation (`vyra-foundation.md` §3) and cutover (§0, "reassigning tasks from human actors to agent actors... at a chosen level") both need somewhere to persist, and don't have today.
+
+### `Actor` — designed, not yet active
+The polymorphic Human/Agent base `vyra-foundation.md` §2 requires ("humans and agents are the same kind of assignable actor"), the same structural idiom as `Clause`'s polymorphic parent and the `:Catalog`/`:Enterprise` dual-label. `Assignment` above targets this node, which doesn't exist yet either. Today `Person` (Operational Graph) is the only concrete human-actor node; nothing plays the `:Agent` role — `agents/registry.ts` looks agent families up by string key, not as graph nodes (`vyra-architecture.md`'s target Agent Registry names this same gap).
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `PER-PRIYA_NAIR` (`:Human`) / `AGT-CONTROL-INTELLIGENCE` (`:Agent`) |
+| kind | string | `Human` \| `Agent` — the dual-label discriminator |
+
+No CSV feed.
+
+---
+
 ## Operational Graph
 
 ### `Incident`
@@ -1189,6 +1213,8 @@ Part of the designed model, awaiting the entities they connect — they carry no
 | `PART_OF` | Task → Workflow, Workflow → Program | Places a task within its workflow, and a workflow within its program |
 | `HAS_ROLE` | Person → Role | Declared and would fire on a match, but none of the 7 seeded `Person` rows' real job titles match any of the 16 seeded `Role` rows (different verticals — see `Person` in Appendix A) |
 | `WAIVES` | Exception → Requirement | Records a formal exception that waives a requirement |
+| `HAS_ASSIGNMENT` | Task → Assignment | Points a Task at the Assignment governing who executes it and at what autonomy level |
+| `ASSIGNED_TO` | Assignment → Actor | Resolves to whichever actor — human or agent — the assignment names |
 
 ---
 
@@ -1356,7 +1382,7 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 
 # Appendix F · Document History
 
-**Version 1.12** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
+**Version 1.13** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
 
 | Date | Change |
 |---|---|
@@ -1375,3 +1401,4 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 | 2026-08-23 | New `RESULTED_IN` (Decision → Control/Finding/Risk/Audit), the reverse of `ABOUT`, written only on approval. Backs a horizontal origin→reasoned→reviewed→result timeline on the Intelligence UI's Decision cards — `GET /intelligence/decisions` now resolves both `ABOUT` and `RESULTED_IN` server-side (`api/modules/intelligence/repo.ts`'s `listDecisions`) instead of the UI guessing either end from `Decision.id`/result-id naming conventions. No new node types; purely a traceability relationship on top of the existing Phase 7/8 approval writes. |
 | 2026-09-06 | Added a third traversal pattern to Part IV, **Execution Traceability — Task to Regulation** (`Task -[:IMPLEMENTS]-> Control -[:IMPLEMENTS]-> Requirement -[:DEFINED_BY]-> Clause -[:BELONGS_TO]-> Regulation\|Standard`), closing the `artifacts/TODO.md` item tracked since the 2026-08-23 architecture diagrams. No schema change — purely documenting an existing chain. Also: `.design/` doc set consolidated — new `.design/README.md` front door, `vyra-foundation.md` cross-linked everywhere (previously orphaned), `vyra-implementation-plan.md` trimmed to sequencing/open-decisions only, `vyra-tracker.md` row prose condensed, full historical build narrative (Phases 0–9) relocated verbatim to new `.design/__ref/implementation-history.md`. |
 | 2026-09-06 | Repositioned as a **technical reference** following the `.design` consolidation: `vyra-landscape.md` was retired into `vyra-foundation.md`, which is now the capability specification (what Vyra is, the 7-layer operating model, the value case, the guarantees). This doc's header, audience list and Part I were retuned accordingly — the "compliance experts can stop after Part II" reading path was removed, and Part I now points at the foundation doc for the *why* rather than restating it. All four `vyra-landscape.md` citations repointed to `vyra-foundation.md`. **No schema change.** |
+| 2026-09-07 | Added `Assignment` and `Actor` as designed-not-active node types (Execution Graph), plus `HAS_ASSIGNMENT` (Task→Assignment) and `ASSIGNED_TO` (Assignment→Actor) relationships — closing the gap flagged in `.design/vyra-domain.md`'s Cross-cutting subdomain: `vyra-foundation.md` §2's "the autonomy level is a property of the assignment, not of the platform" had zero graph footprint until now. **No live schema change** — no seed data, no write path. `Decision.autonomyLevel` remains the only live autonomy-level property, and records one proposal's level, not a standing Task/workflow assignment. |

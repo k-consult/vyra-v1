@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg viewBox="0 0 1000 440" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="bc2-title bc2-desc">
+<svg viewBox="0 0 1000 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="bc2-title bc2-desc">
       <title id="bc2-title">Vyra Central class diagram</title>
-      <desc id="bc2-desc">UML-style class diagram of the Vyra Central bounded context, showing its three sub-boundaries — Master Catalog Distribution, Collective Intelligence, and Tenancy and Entitlement — each with its Entities, Value Objects, Repositories, and Specifications, with Tenancy and Entitlement's target entitlement checks gating the other two.</desc>
+      <desc id="bc2-desc">UML-style class diagram of the Vyra Central bounded context, showing its three sub-boundaries — Master Catalog Distribution, Collective Intelligence, and Tenancy and Entitlement — each with its Aggregates (root plus owned child entities), Value Objects, Domain Events, Factories, Repositories, and Specifications, with Tenancy and Entitlement's target entitlement checks gating the other two.</desc>
       <defs><style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');</style>
         <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
       </defs>
@@ -10,95 +10,109 @@
 
       <!-- ===== Relationships (drawn before boxes) ===== -->
       <!-- Tenancy & Entitlement entitles Collective Intelligence (dashed, target) -->
-      <path d="M 780,296 V 320 Q 780,320 772,320 H 508 Q 500,320 500,312 V 276"
+      <path d="M 780,385 V 405 Q 780,405 772,405 H 508 Q 500,405 500,397 V 352"
             fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
       <!-- Tenancy & Entitlement entitles Master Catalog Distribution (dashed, target) -->
-      <path d="M 812,296 V 336 Q 812,336 804,336 H 196 Q 188,336 188,328 V 308"
+      <path d="M 812,385 V 421 Q 812,421 804,421 H 196 Q 188,421 188,421 V 385"
             fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
 
-      <rect x="466" y="314" width="68" height="12" rx="2" fill="#f5f5f5"/>
-      <text x="500" y="323" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">ENTITLES</text>
+      <rect x="466" y="394" width="68" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="500" y="403" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">ENTITLES</text>
 
-      <rect x="466" y="330" width="68" height="12" rx="2" fill="#f5f5f5"/>
-      <text x="500" y="339" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">ENTITLES</text>
+      <rect x="466" y="410" width="68" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="500" y="419" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">ENTITLES</text>
 
       <!-- ===== Box: Master Catalog Distribution ===== -->
-      <rect x="48" y="40" width="280" height="268" rx="6" fill="#f5f5f5"/>
-      <rect x="48" y="40" width="280" height="268" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="48" y="40" width="280" height="345" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
       <text x="188" y="60" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">«SUB-BOUNDARY»</text>
       <text x="188" y="78" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Master Catalog Distribution</text>
       <line x1="48" y1="90" x2="328" y2="90" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="60" y="102" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">ENTITIES</text>
-      <text x="60" y="119" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">MasterRegulation</text>
-      <text x="60" y="130" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">MasterClause</text>
-      <text x="60" y="141" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">MasterRequirement</text>
-      <text x="60" y="152" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">MasterControl</text>
-      <text x="60" y="163" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">SyncRun</text>
-      <line x1="48" y1="169" x2="328" y2="169" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="60" y="181" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">VALUE OBJECTS</text>
-      <text x="60" y="198" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CatalogDiff</text>
-      <text x="60" y="209" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">SyncSchedule</text>
-      <line x1="48" y1="215" x2="328" y2="215" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="60" y="227" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
-      <text x="60" y="244" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">MasterCatalog</text>
-      <text x="60" y="255" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">SyncRun</text>
-      <line x1="48" y1="261" x2="328" y2="261" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="60" y="273" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
-      <text x="60" y="290" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CatalogSyncIsAdditive</text>
-      <text x="60" y="301" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CatalogVersionIsPublishable</text>
+      <text x="60" y="102" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">AGGREGATES</text>
+      <text x="60" y="119" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">MasterRegulation (owns MasterClause)</text>
+      <text x="60" y="130" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">MasterRequirement</text>
+      <text x="60" y="141" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">MasterControl</text>
+      <text x="60" y="152" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">SyncRun</text>
+      <line x1="48" y1="158" x2="328" y2="158" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="60" y="170" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">VALUE OBJECTS</text>
+      <text x="60" y="187" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CatalogDiff</text>
+      <text x="60" y="198" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">SyncSchedule</text>
+      <line x1="48" y1="204" x2="328" y2="204" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="60" y="216" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">DOMAIN EVENTS</text>
+      <text x="60" y="233" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CatalogVersionPublished</text>
+      <text x="60" y="244" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">SyncRunCompleted</text>
+      <line x1="48" y1="250" x2="328" y2="250" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="60" y="262" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">FACTORIES</text>
+      <text x="60" y="279" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" font-style="italic">— none (direct CRUD) —</text>
+      <line x1="48" y1="285" x2="328" y2="285" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="60" y="297" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
+      <text x="60" y="314" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">MasterCatalog</text>
+      <text x="60" y="325" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">SyncRun</text>
+      <line x1="48" y1="331" x2="328" y2="331" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="60" y="343" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
+      <text x="60" y="360" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CatalogSyncIsAdditive</text>
+      <text x="60" y="371" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CatalogVersionIsPublishable</text>
 
       <!-- ===== Box: Collective Intelligence ===== -->
-      <rect x="360" y="40" width="280" height="236" rx="6" fill="#f5f5f5"/>
-      <rect x="360" y="40" width="280" height="236" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="360" y="40" width="280" height="312" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
       <text x="500" y="60" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">«SUB-BOUNDARY»</text>
       <text x="500" y="78" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Collective Intelligence</text>
       <line x1="360" y1="90" x2="640" y2="90" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="372" y="102" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">ENTITIES</text>
+      <text x="372" y="102" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">AGGREGATES</text>
       <text x="372" y="119" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CorroborationRecord</text>
       <line x1="360" y1="125" x2="640" y2="125" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
       <text x="372" y="137" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">VALUE OBJECTS</text>
-      <text x="372" y="154" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TypedPattern</text>
+      <text x="372" y="154" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TypedPattern (identifier-free)</text>
       <text x="372" y="165" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CorroborationThreshold</text>
       <line x1="360" y1="171" x2="640" y2="171" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="372" y="183" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
-      <text x="372" y="200" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CollectiveIntelligence</text>
-      <text x="372" y="211" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CorroborationGate</text>
+      <text x="372" y="183" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">DOMAIN EVENTS</text>
+      <text x="372" y="200" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">PatternSubmitted</text>
+      <text x="372" y="211" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">PatternCorroborated</text>
       <line x1="360" y1="217" x2="640" y2="217" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="372" y="229" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
-      <text x="372" y="246" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">PatternIsCorroborated</text>
-      <text x="372" y="257" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">PatternIsIdentifierFree</text>
-      <text x="372" y="268" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TenantHasOptedIn</text>
+      <text x="372" y="229" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">FACTORIES</text>
+      <text x="372" y="246" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TypedPatternFactory</text>
+      <line x1="360" y1="252" x2="640" y2="252" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="372" y="264" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
+      <text x="372" y="281" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CollectiveIntelligence</text>
+      <line x1="360" y1="287" x2="640" y2="287" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="372" y="299" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
+      <text x="372" y="316" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">PatternIsCorroborated</text>
+      <text x="372" y="327" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">PatternIsIdentifierFree</text>
+      <text x="372" y="338" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TenantHasOptedIn</text>
 
       <!-- ===== Box: Tenancy & Entitlement ===== -->
-      <rect x="672" y="40" width="280" height="256" rx="6" fill="#f5f5f5"/>
-      <rect x="672" y="40" width="280" height="256" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="672" y="40" width="280" height="345" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
       <text x="812" y="60" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">«SUB-BOUNDARY»</text>
       <text x="812" y="78" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Tenancy &amp; Entitlement</text>
       <line x1="672" y1="90" x2="952" y2="90" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="684" y="102" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">ENTITIES</text>
-      <text x="684" y="119" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Tenant</text>
-      <text x="684" y="130" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Entitlement</text>
-      <text x="684" y="141" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">UsageRecord</text>
-      <line x1="672" y1="147" x2="952" y2="147" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="684" y="159" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">VALUE OBJECTS</text>
-      <text x="684" y="176" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">EntitlementScope</text>
-      <text x="684" y="187" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ProvisioningCredentialsRef</text>
-      <line x1="672" y1="193" x2="952" y2="193" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="684" y="205" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
-      <text x="684" y="222" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TenantRegistry</text>
-      <text x="684" y="233" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Entitlement</text>
-      <text x="684" y="244" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">UsageMetering</text>
-      <line x1="672" y1="250" x2="952" y2="250" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="684" y="262" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
-      <text x="684" y="279" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TenantIsEntitledTo</text>
-      <text x="684" y="290" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TenantIsProvisioned</text>
+      <text x="684" y="102" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">AGGREGATES</text>
+      <text x="684" y="119" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Tenant (owns Entitlement)</text>
+      <text x="684" y="130" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">UsageRecord</text>
+      <line x1="672" y1="136" x2="952" y2="136" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="684" y="148" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">VALUE OBJECTS</text>
+      <text x="684" y="165" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">EntitlementScope</text>
+      <text x="684" y="176" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ProvisioningCredentialsRef</text>
+      <line x1="672" y1="182" x2="952" y2="182" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="684" y="194" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">DOMAIN EVENTS</text>
+      <text x="684" y="211" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TenantProvisioned</text>
+      <text x="684" y="222" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">EntitlementChanged</text>
+      <text x="684" y="233" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TenantOptedOutOfCI</text>
+      <line x1="672" y1="239" x2="952" y2="239" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="684" y="251" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">FACTORIES</text>
+      <text x="684" y="268" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TenantProvisioningFactory</text>
+      <line x1="672" y1="274" x2="952" y2="274" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="684" y="286" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
+      <text x="684" y="303" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TenantRegistry</text>
+      <text x="684" y="314" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Entitlement</text>
+      <text x="684" y="325" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">UsageRecord</text>
+      <line x1="672" y1="331" x2="952" y2="331" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="684" y="343" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
+      <text x="684" y="360" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TenantIsEntitledTo</text>
+      <text x="684" y="371" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TenantIsProvisioned</text>
 
       <!-- ===== Legend ===== -->
-      <line x1="48" y1="376" x2="952" y2="376" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
-      <text x="48" y="392" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+      <line x1="48" y1="436" x2="952" y2="436" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="48" y="452" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
 
-      <line x1="48" y1="409" x2="76" y2="409" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
-      <text x="84" y="412" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Entitlement gate · target, not yet built</text>
-
-      <text x="440" y="412" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif" font-style="italic">No direct link between the other two — each is independently monetized (§4)</text>
+      <text x="150" y="452" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Dashed arrow = entitlement gate, target, not yet built</text>
+      <text x="500" y="452" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif" font-style="italic">Everything in this BC is target except Master Catalog Distribution's same-database sync</text>
     </svg>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg viewBox="0 0 1280 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="bc1-title bc1-desc">
+<svg viewBox="0 0 1280 950" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="bc1-title bc1-desc">
       <title id="bc1-title">Tenant Compliance Twin class diagram</title>
-      <desc id="bc1-desc">UML-style class diagram of the Tenant Compliance Twin bounded context, showing seven subdomains — Knowledge, Operational, Intelligence, Execution, Assurance, Onboarding, and cross-cutting platform mechanics — each with its Entities, Value Objects, Repositories, and Specifications, connected by the compliance operating loop and onboarding's touchpoints into Operational and Intelligence.</desc>
+      <desc id="bc1-desc">UML-style class diagram of the Tenant Compliance Twin bounded context, showing seven subdomains — Knowledge, Operational, Intelligence, Execution, Assurance, Onboarding, and cross-cutting platform mechanics — each with its Aggregates (root plus owned child entities), Value Objects, Domain Events, Factories, Repositories, and Specifications, connected by the compliance operating loop and onboarding's touchpoints into Operational and Intelligence.</desc>
       <defs><style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');</style>
         <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
         <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
@@ -14,225 +14,264 @@
       <line x1="320" y1="76" x2="344" y2="76" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
       <line x1="624" y1="76" x2="648" y2="76" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
       <line x1="928" y1="76" x2="952" y2="76" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
-      <line x1="1092" y1="340" x2="1092" y2="396" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="1092" y1="418" x2="1092" y2="494" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
 
       <!-- Onboarding touchpoints (dashed, transitional) -->
-      <path d="M 484,396 V 372 Q 484,364 484,364 V 364" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
-      <path d="M 440,396 V 388 Q 440,380 448,380 H 740 Q 748,380 748,372 V 352" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <line x1="484" y1="494" x2="484" y2="440" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <path d="M 560,494 V 486 Q 560,478 568,478 H 772 Q 780,478 780,470 V 462" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
 
       <!-- Onboarding arrow labels -->
-      <rect x="452" y="374" width="64" height="12" rx="2" fill="#f5f5f5"/>
-      <text x="484" y="383" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">DISCOVERY</text>
+      <rect x="452" y="460" width="64" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="484" y="469" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">DISCOVERY</text>
 
-      <rect x="558" y="374" width="76" height="12" rx="2" fill="#f5f5f5"/>
-      <text x="596" y="383" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">PROVING RUN</text>
+      <rect x="632" y="472" width="76" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="670" y="481" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">PROVING RUN</text>
 
       <!-- ===== Box: Knowledge (col0, row1) ===== -->
-      <rect x="40" y="40" width="280" height="324" rx="6" fill="#f5f5f5"/>
-      <rect x="40" y="40" width="280" height="324" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="40" y="40" width="280" height="411" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
       <text x="180" y="60" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«SUBDOMAIN»</text>
       <text x="180" y="78" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Knowledge</text>
       <line x1="40" y1="90" x2="320" y2="90" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="52" y="102" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">ENTITIES</text>
-      <text x="52" y="119" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Regulation</text>
-      <text x="52" y="130" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Clause</text>
+      <text x="52" y="102" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">AGGREGATES</text>
+      <text x="52" y="119" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Regulation (owns Clause)</text>
+      <text x="52" y="130" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Standard (owns Clause)</text>
       <text x="52" y="141" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Requirement</text>
       <text x="52" y="152" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Control</text>
-      <text x="52" y="163" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">… +4 more</text>
+      <text x="52" y="163" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">+2 more (ComplianceArea, Authority)</text>
       <line x1="40" y1="169" x2="320" y2="169" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
       <text x="52" y="181" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">VALUE OBJECTS</text>
       <text x="52" y="198" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CatalogProvenance</text>
       <text x="52" y="209" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">SourceSpan</text>
       <text x="52" y="220" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ConfidenceAssertion</text>
       <line x1="40" y1="226" x2="320" y2="226" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="52" y="238" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
-      <text x="52" y="255" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Regulation</text>
-      <text x="52" y="266" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Standard</text>
-      <text x="52" y="277" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Control</text>
-      <text x="52" y="288" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ComplianceArea</text>
-      <text x="52" y="299" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Authority</text>
-      <line x1="40" y1="305" x2="320" y2="305" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="52" y="317" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
-      <text x="52" y="334" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CatalogFactIsCurrent</text>
-      <text x="52" y="345" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">RequirementIsDefinedBy</text>
-      <text x="52" y="356" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ControlImplementsRequirement</text>
+      <text x="52" y="238" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">DOMAIN EVENTS</text>
+      <text x="52" y="255" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">RegulationSuperseded</text>
+      <text x="52" y="266" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">RequirementRevised</text>
+      <line x1="40" y1="272" x2="320" y2="272" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="52" y="284" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">FACTORIES</text>
+      <text x="52" y="301" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" font-style="italic">— none (direct authoring) —</text>
+      <line x1="40" y1="307" x2="320" y2="307" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="52" y="319" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
+      <text x="52" y="336" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Regulation</text>
+      <text x="52" y="347" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Standard</text>
+      <text x="52" y="358" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Requirement</text>
+      <text x="52" y="369" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Control</text>
+      <text x="52" y="380" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">+2 more</text>
+      <line x1="40" y1="386" x2="320" y2="386" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="52" y="398" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
+      <text x="52" y="415" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CatalogFactIsCurrent</text>
+      <text x="52" y="426" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">RequirementIsDefinedBy</text>
+      <text x="52" y="437" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ControlImplementsRequirement</text>
 
       <!-- ===== Box: Operational (col1, row1) ===== -->
-      <rect x="344" y="40" width="280" height="324" rx="6" fill="#f5f5f5"/>
-      <rect x="344" y="40" width="280" height="324" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="344" y="40" width="280" height="400" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
       <text x="484" y="60" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«SUBDOMAIN»</text>
       <text x="484" y="78" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Operational</text>
       <line x1="344" y1="90" x2="624" y2="90" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="356" y="102" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">ENTITIES</text>
+      <text x="356" y="102" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">AGGREGATES</text>
       <text x="356" y="119" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Asset</text>
-      <text x="356" y="130" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Facility</text>
-      <text x="356" y="141" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Vendor</text>
-      <text x="356" y="152" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Signal</text>
-      <text x="356" y="163" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">… +4 more</text>
+      <text x="356" y="130" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Contract</text>
+      <text x="356" y="141" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Signal</text>
+      <text x="356" y="152" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Facility</text>
+      <text x="356" y="163" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">+4 more (Vendor, Org, Role, Person)</text>
       <line x1="344" y1="169" x2="624" y2="169" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
       <text x="356" y="181" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">VALUE OBJECTS</text>
       <text x="356" y="198" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">MappingProvenance</text>
       <text x="356" y="209" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">SiteCoverageRange</text>
-      <text x="356" y="220" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">EscalationPath</text>
+      <text x="356" y="220" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">EscalationPath (free text)</text>
       <line x1="344" y1="226" x2="624" y2="226" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="356" y="238" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
-      <text x="356" y="255" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Asset</text>
-      <text x="356" y="266" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Facility</text>
-      <text x="356" y="277" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Vendor</text>
-      <text x="356" y="288" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Signal</text>
-      <text x="356" y="299" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">… +3 more</text>
-      <line x1="344" y1="305" x2="624" y2="305" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="356" y="317" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
-      <text x="356" y="334" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">AssetHasControlCoverage</text>
-      <text x="356" y="345" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">AssetIsInComplianceArea</text>
-      <text x="356" y="356" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">PersonHasResolvableRole</text>
+      <text x="356" y="238" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">DOMAIN EVENTS</text>
+      <text x="356" y="255" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">SignalReceived</text>
+      <line x1="344" y1="261" x2="624" y2="261" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="356" y="273" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">FACTORIES</text>
+      <text x="356" y="290" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">SignalTaskFactory</text>
+      <line x1="344" y1="296" x2="624" y2="296" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="356" y="308" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
+      <text x="356" y="325" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Facility</text>
+      <text x="356" y="336" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Asset</text>
+      <text x="356" y="347" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Vendor</text>
+      <text x="356" y="358" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Contract</text>
+      <text x="356" y="369" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">+4 more</text>
+      <line x1="344" y1="375" x2="624" y2="375" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="356" y="387" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
+      <text x="356" y="404" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">AssetHasControlCoverage</text>
+      <text x="356" y="415" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">AssetIsInComplianceArea</text>
+      <text x="356" y="426" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">PersonHasResolvableRole</text>
 
       <!-- ===== Box: Intelligence (col2, row1) — FOCAL ===== -->
-      <rect x="648" y="40" width="280" height="312" rx="6" fill="#f5f5f5"/>
-      <rect x="648" y="40" width="280" height="312" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
+      <rect x="648" y="40" width="280" height="422" rx="6" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
       <text x="788" y="60" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«SUBDOMAIN»</text>
       <text x="788" y="78" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Intelligence</text>
       <line x1="648" y1="90" x2="928" y2="90" stroke="rgba(235,108,54,0.30)" stroke-width="1"/>
-      <text x="660" y="102" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">ENTITIES</text>
+      <text x="660" y="102" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">AGGREGATES</text>
       <text x="660" y="119" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Decision</text>
-      <text x="660" y="130" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Finding</text>
+      <text x="660" y="130" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Finding (owns RCA)</text>
       <text x="660" y="141" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Risk</text>
-      <text x="660" y="152" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">RCA</text>
-      <line x1="648" y1="158" x2="928" y2="158" stroke="rgba(235,108,54,0.30)" stroke-width="1"/>
-      <text x="660" y="170" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">VALUE OBJECTS</text>
-      <text x="660" y="187" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">RiskScore</text>
-      <text x="660" y="198" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">AutonomyLevel</text>
-      <text x="660" y="209" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ReviewOutcome</text>
-      <line x1="648" y1="215" x2="928" y2="215" stroke="rgba(235,108,54,0.30)" stroke-width="1"/>
-      <text x="660" y="227" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
-      <text x="660" y="244" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Decision</text>
-      <text x="660" y="255" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Finding</text>
-      <text x="660" y="266" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Risk</text>
-      <text x="660" y="277" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">RCA</text>
-      <line x1="648" y1="283" x2="928" y2="283" stroke="rgba(235,108,54,0.30)" stroke-width="1"/>
-      <text x="660" y="295" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
-      <text x="660" y="312" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">DecisionIsApprovable</text>
-      <text x="660" y="323" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">DecisionIsRejectable</text>
-      <text x="660" y="334" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">WorkflowEligibleForAutonomyElevation</text>
-      <text x="660" y="345" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">FindingRequiresCAPA</text>
+      <line x1="648" y1="147" x2="928" y2="147" stroke="rgba(235,108,54,0.30)" stroke-width="1"/>
+      <text x="660" y="159" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">VALUE OBJECTS</text>
+      <text x="660" y="176" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">RiskScore</text>
+      <text x="660" y="187" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ReviewOutcome</text>
+      <line x1="648" y1="193" x2="928" y2="193" stroke="rgba(235,108,54,0.30)" stroke-width="1"/>
+      <text x="660" y="205" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">DOMAIN EVENTS</text>
+      <text x="660" y="222" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ControlRecommendationApproved</text>
+      <text x="660" y="233" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">DeviationAssessmentApproved</text>
+      <text x="660" y="244" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">RiskAssessmentApproved</text>
+      <text x="660" y="255" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">AssurancePackageProposalApproved</text>
+      <text x="660" y="266" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">+2 more (DecisionRejected, FindingAnalysed)</text>
+      <line x1="648" y1="272" x2="928" y2="272" stroke="rgba(235,108,54,0.30)" stroke-width="1"/>
+      <text x="660" y="284" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">FACTORIES</text>
+      <text x="660" y="301" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ControlFactory</text>
+      <text x="660" y="312" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">FindingFactory</text>
+      <text x="660" y="323" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">RiskFactory</text>
+      <line x1="648" y1="329" x2="928" y2="329" stroke="rgba(235,108,54,0.30)" stroke-width="1"/>
+      <text x="660" y="341" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
+      <text x="660" y="358" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Decision</text>
+      <text x="660" y="369" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Finding</text>
+      <text x="660" y="380" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Risk</text>
+      <line x1="648" y1="386" x2="928" y2="386" stroke="rgba(235,108,54,0.30)" stroke-width="1"/>
+      <text x="660" y="398" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
+      <text x="660" y="415" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">DecisionIsApprovable</text>
+      <text x="660" y="426" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">DecisionIsRejectable</text>
+      <text x="660" y="437" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">WorkflowEligibleForAutonomyElevation</text>
+      <text x="660" y="448" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">FindingRequiresCAPA</text>
 
       <!-- ===== Box: Execution (col3, row1) ===== -->
-      <rect x="952" y="40" width="280" height="300" rx="6" fill="#f5f5f5"/>
-      <rect x="952" y="40" width="280" height="300" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="952" y="40" width="280" height="378" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
       <text x="1092" y="60" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«SUBDOMAIN»</text>
       <text x="1092" y="78" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Execution</text>
       <line x1="952" y1="90" x2="1232" y2="90" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="964" y="102" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">ENTITIES</text>
-      <text x="964" y="119" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Task</text>
-      <text x="964" y="130" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Schedule</text>
-      <text x="964" y="141" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CAPA</text>
-      <text x="964" y="152" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Verification</text>
-      <text x="964" y="163" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">… +2 more</text>
+      <text x="964" y="102" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">AGGREGATES</text>
+      <text x="964" y="119" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Schedule</text>
+      <text x="964" y="130" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Task</text>
+      <text x="964" y="141" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CAPA (owns Verification)</text>
+      <text x="964" y="152" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Workflow (not yet active)</text>
+      <text x="964" y="163" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">+1 more (Program)</text>
       <line x1="952" y1="169" x2="1232" y2="169" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
       <text x="964" y="181" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">VALUE OBJECTS</text>
-      <text x="964" y="198" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CadenceRule</text>
+      <text x="964" y="198" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CadenceRule (on Schedule)</text>
       <text x="964" y="209" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ComplianceWindow</text>
       <line x1="952" y1="215" x2="1232" y2="215" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="964" y="227" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
-      <text x="964" y="244" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Task</text>
-      <text x="964" y="255" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Schedule</text>
-      <text x="964" y="266" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CAPA</text>
-      <text x="964" y="277" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Verification</text>
-      <line x1="952" y1="283" x2="1232" y2="283" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="964" y="295" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
-      <text x="964" y="312" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TaskIsScheduled</text>
-      <text x="964" y="323" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CAPAIsClosed</text>
-      <text x="964" y="334" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TaskImplementsControl</text>
+      <text x="964" y="227" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">DOMAIN EVENTS</text>
+      <text x="964" y="244" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TaskScheduled</text>
+      <text x="964" y="255" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CAPAClosed</text>
+      <line x1="952" y1="261" x2="1232" y2="261" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="964" y="273" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">FACTORIES</text>
+      <text x="964" y="290" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CAPAFactory</text>
+      <line x1="952" y1="296" x2="1232" y2="296" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="964" y="308" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
+      <text x="964" y="325" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Schedule</text>
+      <text x="964" y="336" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Task</text>
+      <text x="964" y="347" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CAPA</text>
+      <line x1="952" y1="353" x2="1232" y2="353" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="964" y="365" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
+      <text x="964" y="382" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TaskIsScheduled</text>
+      <text x="964" y="393" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CAPAIsClosed</text>
+      <text x="964" y="404" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TaskImplementsControl</text>
 
       <!-- ===== Box: Onboarding (col1, row2) ===== -->
-      <rect x="344" y="396" width="280" height="268" rx="6" fill="#f5f5f5"/>
-      <rect x="344" y="396" width="280" height="268" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" stroke-dasharray="4,3"/>
-      <text x="484" y="416" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«SUBDOMAIN · TRANSITIONAL»</text>
-      <text x="484" y="434" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Onboarding</text>
-      <line x1="344" y1="446" x2="624" y2="446" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="356" y="458" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">ENTITIES</text>
-      <text x="356" y="475" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Blueprint</text>
-      <text x="356" y="486" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CutoverCriterion</text>
-      <text x="356" y="497" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ContinuityBaseline</text>
-      <line x1="344" y1="503" x2="624" y2="503" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="356" y="515" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">VALUE OBJECTS</text>
-      <text x="356" y="532" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ContinuityMetric</text>
-      <text x="356" y="543" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ProvingRunWindow</text>
-      <line x1="344" y1="549" x2="624" y2="549" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="356" y="561" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
-      <text x="356" y="578" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Blueprint</text>
-      <text x="356" y="589" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CutoverCriterion</text>
-      <text x="356" y="600" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ContinuityBaseline</text>
-      <line x1="344" y1="606" x2="624" y2="606" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="356" y="618" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
-      <text x="356" y="635" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CutoverExitCriterionMet</text>
-      <text x="356" y="646" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">WorkflowIsCutoverOverdue</text>
-      <text x="356" y="657" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">BlueprintIsRatified</text>
+      <rect x="344" y="494" width="280" height="356" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="484" y="514" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«SUBDOMAIN · TRANSITIONAL»</text>
+      <text x="484" y="532" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Onboarding</text>
+      <line x1="344" y1="544" x2="624" y2="544" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="356" y="556" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">AGGREGATES · target</text>
+      <text x="356" y="573" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Blueprint</text>
+      <text x="356" y="584" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CutoverCriterion</text>
+      <text x="356" y="595" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ContinuityBaseline</text>
+      <line x1="344" y1="601" x2="624" y2="601" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="356" y="613" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">VALUE OBJECTS</text>
+      <text x="356" y="630" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ContinuityMetric</text>
+      <text x="356" y="641" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ProvingRunWindow</text>
+      <line x1="344" y1="647" x2="624" y2="647" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="356" y="659" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">DOMAIN EVENTS</text>
+      <text x="356" y="676" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">WorkflowCutoverCriterionMet</text>
+      <text x="356" y="687" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">WorkflowCutoverOverdue</text>
+      <line x1="344" y1="693" x2="624" y2="693" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="356" y="705" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">FACTORIES</text>
+      <text x="356" y="722" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" font-style="italic">— none scoped yet (Phase 11) —</text>
+      <line x1="344" y1="728" x2="624" y2="728" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="356" y="740" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
+      <text x="356" y="757" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Blueprint</text>
+      <text x="356" y="768" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CutoverCriterion</text>
+      <text x="356" y="779" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ContinuityBaseline</text>
+      <line x1="344" y1="785" x2="624" y2="785" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="356" y="797" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
+      <text x="356" y="814" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CutoverExitCriterionMet</text>
+      <text x="356" y="825" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">WorkflowIsCutoverOverdue</text>
+      <text x="356" y="836" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">BlueprintIsRatified</text>
 
       <!-- ===== Box: Cross-Cutting (col2, row2) ===== -->
-      <rect x="648" y="396" width="280" height="268" rx="6" fill="#f5f5f5"/>
-      <rect x="648" y="396" width="280" height="268" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" stroke-dasharray="4,3"/>
-      <text x="788" y="416" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«SUBDOMAIN · SHARED»</text>
-      <text x="788" y="434" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Cross-Cutting</text>
-      <line x1="648" y1="446" x2="928" y2="446" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="660" y="458" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">ENTITIES</text>
-      <text x="660" y="475" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Actor</text>
-      <text x="660" y="486" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">WorkItem</text>
-      <text x="660" y="497" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">AuditEvent</text>
-      <line x1="648" y1="503" x2="928" y2="503" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="660" y="515" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">VALUE OBJECTS</text>
-      <text x="660" y="532" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TenantContext</text>
-      <text x="660" y="543" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ClaimLease</text>
-      <line x1="648" y1="549" x2="928" y2="549" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="660" y="561" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
-      <text x="660" y="578" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Actor</text>
-      <text x="660" y="589" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">WorkItem</text>
-      <text x="660" y="600" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">AuditEvent</text>
-      <line x1="648" y1="606" x2="928" y2="606" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="660" y="618" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
-      <text x="660" y="635" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ActorIsAssignable</text>
-      <text x="660" y="646" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">WorkItemIsClaimable</text>
-      <text x="660" y="657" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">WriteIsVersionConsistent</text>
+      <rect x="648" y="494" width="280" height="345" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="788" y="514" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«SUBDOMAIN · SHARED»</text>
+      <text x="788" y="532" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Cross-Cutting</text>
+      <line x1="648" y1="544" x2="928" y2="544" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="660" y="556" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">AGGREGATES</text>
+      <text x="660" y="573" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Actor</text>
+      <text x="660" y="584" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">WorkItem</text>
+      <text x="660" y="595" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" font-style="italic">Assignment (target, spine 1.13)</text>
+      <line x1="648" y1="601" x2="928" y2="601" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="660" y="613" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">VALUE OBJECTS</text>
+      <text x="660" y="630" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">TenantContext</text>
+      <text x="660" y="641" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ClaimLease</text>
+      <line x1="648" y1="647" x2="928" y2="647" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="660" y="659" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">DOMAIN EVENTS</text>
+      <text x="660" y="676" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" font-style="italic">sink — persists every event above</text>
+      <line x1="648" y1="682" x2="928" y2="682" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="660" y="694" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">FACTORIES</text>
+      <text x="660" y="711" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" font-style="italic">— none —</text>
+      <line x1="648" y1="717" x2="928" y2="717" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="660" y="729" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
+      <text x="660" y="746" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Actor</text>
+      <text x="660" y="757" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">WorkItem</text>
+      <text x="660" y="768" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">AuditEvent (append-only)</text>
+      <line x1="648" y1="774" x2="928" y2="774" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="660" y="786" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
+      <text x="660" y="803" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">ActorIsAssignable</text>
+      <text x="660" y="814" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">WorkItemIsClaimable</text>
+      <text x="660" y="825" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">WriteIsVersionConsistent</text>
 
       <!-- ===== Box: Assurance (col3, row2) ===== -->
-      <rect x="952" y="396" width="280" height="312" rx="6" fill="#f5f5f5"/>
-      <rect x="952" y="396" width="280" height="312" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-      <text x="1092" y="416" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«SUBDOMAIN»</text>
-      <text x="1092" y="434" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Assurance</text>
-      <line x1="952" y1="446" x2="1232" y2="446" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="964" y="458" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">ENTITIES</text>
-      <text x="964" y="475" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Evidence</text>
-      <text x="964" y="486" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">EvidencePackage</text>
-      <text x="964" y="497" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Attestation</text>
-      <text x="964" y="508" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">AssuranceStatement</text>
-      <text x="964" y="519" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Audit</text>
-      <line x1="952" y1="525" x2="1232" y2="525" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="964" y="537" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">VALUE OBJECTS</text>
-      <text x="964" y="554" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">PostureStatement</text>
-      <text x="964" y="565" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CoverageScore</text>
-      <line x1="952" y1="571" x2="1232" y2="571" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="964" y="583" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
-      <text x="964" y="600" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Evidence</text>
-      <text x="964" y="611" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">EvidencePackage</text>
-      <text x="964" y="622" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Attestation</text>
-      <text x="964" y="633" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">AssuranceStatement</text>
-      <text x="964" y="644" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Audit</text>
-      <line x1="952" y1="650" x2="1232" y2="650" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
-      <text x="964" y="662" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
-      <text x="964" y="679" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">EvidencePackageIsComplete</text>
-      <text x="964" y="690" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">PostureIsCompliant</text>
-      <text x="964" y="701" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">AssuranceStatementCoversRegulation</text>
+      <rect x="952" y="494" width="280" height="356" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="1092" y="514" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">«SUBDOMAIN»</text>
+      <text x="1092" y="532" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Assurance</text>
+      <line x1="952" y1="544" x2="1232" y2="544" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="964" y="556" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">AGGREGATES</text>
+      <text x="964" y="573" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">EvidencePackage</text>
+      <text x="976" y="584" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">(owns Attestation, AssuranceStatement)</text>
+      <text x="964" y="595" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Evidence</text>
+      <text x="964" y="606" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Audit</text>
+      <line x1="952" y1="612" x2="1232" y2="612" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="964" y="624" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">VALUE OBJECTS</text>
+      <text x="964" y="641" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">PostureStatement</text>
+      <text x="964" y="652" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">CoverageScore</text>
+      <line x1="952" y1="658" x2="1232" y2="658" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="964" y="670" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">DOMAIN EVENTS</text>
+      <text x="964" y="687" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">EvidenceCollected</text>
+      <text x="964" y="698" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">AssurancePackageAssembled</text>
+      <line x1="952" y1="704" x2="1232" y2="704" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="964" y="716" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">FACTORIES</text>
+      <text x="964" y="733" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">AssurancePackageFactory</text>
+      <line x1="952" y1="739" x2="1232" y2="739" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="964" y="751" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">REPOSITORIES</text>
+      <text x="964" y="768" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">EvidencePackage</text>
+      <text x="964" y="779" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Evidence</text>
+      <text x="964" y="790" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">Audit</text>
+      <line x1="952" y1="796" x2="1232" y2="796" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+      <text x="964" y="808" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.10em">SPECIFICATIONS</text>
+      <text x="964" y="825" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">EvidencePackageIsComplete</text>
+      <text x="964" y="836" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">PostureIsCompliant</text>
 
       <!-- ===== Legend ===== -->
-      <line x1="40" y1="736" x2="1240" y2="736" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
-      <text x="40" y="752" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+      <line x1="40" y1="866" x2="1240" y2="866" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="40" y="882" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
 
-      <rect x="40" y="768" width="14" height="10" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
-      <text x="60" y="776" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Focal · the agentic reasoning core</text>
+      <rect x="40" y="898" width="14" height="10" rx="2" fill="rgba(235,108,54,0.06)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="60" y="906" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Focal · the agentic reasoning core</text>
 
-      <line x1="300" y1="773" x2="328" y2="773" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
-      <text x="336" y="776" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Compliance operating loop</text>
+      <line x1="300" y1="903" x2="328" y2="903" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <text x="336" y="906" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Compliance operating loop</text>
 
-      <line x1="560" y1="773" x2="588" y2="773" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
-      <text x="596" y="776" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Onboarding touchpoint · transitional</text>
+      <line x1="560" y1="903" x2="588" y2="903" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <text x="596" y="906" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Onboarding touchpoint · transitional</text>
+
+      <text x="936" y="906" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif" font-style="italic">(owns X) = child Entity inside the same Aggregate boundary</text>
     </svg>
