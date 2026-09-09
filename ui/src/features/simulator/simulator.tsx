@@ -269,9 +269,9 @@ function FeedsTab() {
             </div>
             <p className="text-xs text-zinc-500 leading-relaxed">
                 Regulatory/enterprise feeds and new Incidents are what <span className="text-zinc-300">control-intelligence</span> and{' '}
-                <span className="text-zinc-300">assurance-intelligence</span> watch for — uncontrolled Requirements and
+                <span className="text-zinc-300">assurance-intelligence</span> watch for — uncontrolled Obligations and
                 Incidents with unbundled Evidence, respectively. Unlike Signals, there is no live API write path for
-                these yet: <code className="text-zinc-400">Requirement</code>, <code className="text-zinc-400">Incident</code>,
+                these yet: <code className="text-zinc-400">Obligation</code>, <code className="text-zinc-400">Incident</code>,
                 and <code className="text-zinc-400">Evidence</code> are seeded only by the CLI ingestion pipeline, so
                 there's nothing this simulator can honestly call.
             </p>
@@ -280,7 +280,7 @@ function FeedsTab() {
                 Every loader uses Cypher <code className="text-amber-300">MERGE</code>, so re-running it against the
                 same seed CSVs writes zero new nodes — both agents already saw everything reachable in this seed on
                 their very first poll. It only produces something new for them to react to if the underlying CSV
-                rows themselves change first (a new Requirement with no Control, a new Incident with fresh Evidence)
+                rows themselves change first (a new Obligation with no Control, a new Incident with fresh Evidence)
                 — that&apos;s a data-engineering edit, not something to click here.
             </p>
             <p className="text-xs text-zinc-500">To re-seed the graph from scratch (e.g. after wiping the database):</p>

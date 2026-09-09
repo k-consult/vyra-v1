@@ -8,7 +8,7 @@
     "catalog/regulations.csv":   "Regulation",
     "catalog/standards.csv":     "Standard",
     "catalog/clauses.csv":       "Clause",
-    "catalog/requirements.csv":  "Requirement",
+    "catalog/obligations.csv":   "Obligation",
     "catalog/complianceAreas.csv": "ComplianceArea",
     "catalog/controls.csv":      "Control",
     "catalog/tasks.csv":         "Task",

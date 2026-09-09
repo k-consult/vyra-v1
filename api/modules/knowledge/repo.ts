@@ -11,12 +11,12 @@ const db = () => DB.get(config.db.twin.database, {
 const TRACE_FORWARD = `
     MATCH path = (reg:Regulation {id: $id})
                  <-[:BELONGS_TO]-(cls:Clause)
-                 <-[:DEFINED_BY]-(req:Requirement)
+                 <-[:DEFINED_BY]-(req:Obligation)
                  <-[:IMPLEMENTS]-(ctl:Control)
     RETURN
         properties(reg) AS regulation,
         properties(cls) AS clause,
-        properties(req) AS requirement,
+        properties(req) AS obligation,
         properties(ctl) AS control
     LIMIT 200
 `;
@@ -24,13 +24,13 @@ const TRACE_FORWARD = `
 const TRACE_REVERSE = `
     MATCH path = (fnd:Finding {id: $id})
                  -[:AGAINST]->(ctl:Control)
-                 -[:IMPLEMENTS]->(req:Requirement)
+                 -[:IMPLEMENTS]->(req:Obligation)
                  -[:DEFINED_BY]->(cls:Clause)
                  -[:BELONGS_TO]->(reg:Regulation)
     RETURN
         properties(fnd) AS finding,
         properties(ctl) AS control,
-        properties(req) AS requirement,
+        properties(req) AS obligation,
         properties(cls) AS clause,
         properties(reg) AS regulation
 `;

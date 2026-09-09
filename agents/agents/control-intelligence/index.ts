@@ -1,15 +1,15 @@
 import * as R from 'ramda';
 import { defaultContext, runAgentLoop, reasonWithLLM, Reasoning } from '../../runtime';
-import { fetchRequirements } from '../../tools/graph-read';
+import { fetchObligations } from '../../tools/graph-read';
 import { writeDecision, DecisionPayload } from '../../tools/graph-write';
 import { DB } from '../../../lib/graph-db';
 import { config } from '../../../lib/config';
 
 // Control Intelligence Agent
-// Reads uncontrolled Requirements from the graph and proposes Controls via a local LLM.
+// Reads uncontrolled Obligations from the graph and proposes Controls via a local LLM.
 // Autonomy Level 1: proposes only — writes Decision nodes, does not create Controls.
 
-interface Requirement {
+interface Obligation {
     id: string;
     name: string;
     obligationType?: string;
@@ -26,13 +26,13 @@ export const run = async (regulationId?: string): Promise<void> => {
     const ctx = defaultContext();
     ctx.agentId = 'control-intelligence-agent';
 
-    await runAgentLoop<Requirement>(ctx.agentId, {
-        observe: () => fetchRequirements(regulationId) as Promise<Requirement[]>,
+    await runAgentLoop<Obligation>(ctx.agentId, {
+        observe: () => fetchObligations(regulationId) as Promise<Obligation[]>,
 
         reason: (req): Promise<Reasoning> => reasonWithLLM(
-            `A compliance requirement has no Control implementing it yet:\n` +
-            `Requirement: "${req.name}" (mandatory: ${req.mandatory ?? 'UNKNOWN'}, type: ${req.obligationType ?? 'UNKNOWN'})\n` +
-            `Recommend, in one or two sentences, what kind of Control (policy, SOP, or operational check) should implement this requirement, and state your recommended type explicitly.`,
+            `A compliance obligation has no Control implementing it yet:\n` +
+            `Obligation: "${req.name}" (mandatory: ${req.mandatory ?? 'UNKNOWN'}, type: ${req.obligationType ?? 'UNKNOWN'})\n` +
+            `Recommend, in one or two sentences, what kind of Control (policy, SOP, or operational check) should implement this obligation, and state your recommended type explicitly.`,
             `"recommendedControlType": one of "policy" | "sop" | "operational-check"`
         ),
 

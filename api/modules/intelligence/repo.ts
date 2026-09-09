@@ -47,7 +47,7 @@ export const listRcas = async () => {
 };
 
 // Marker labels aren't the entity's real type — strip them so origin/result surface
-// the same label a human would use ("Requirement", not "Requirement:Catalog").
+// the same label a human would use ("Obligation", not "Obligation:Catalog").
 const MARKER_LABELS = new Set(['Catalog', 'Enterprise', 'AgentProposed']);
 const primaryLabel = (labels: string[] | null | undefined): string | null =>
     labels?.find((l) => !MARKER_LABELS.has(l)) ?? labels?.[0] ?? null;
@@ -116,7 +116,7 @@ const REJECT_DECISION = `
 // 0.5's :Catalog convention). getCoverageScore() already filters to Control:Catalog
 // explicitly, so this is excluded from the coverage percentage with no further change.
 const APPROVE_CONTROL_RECOMMENDATION = `
-    MATCH (d:Decision {id: $id})-[:ABOUT]->(req:Requirement)
+    MATCH (d:Decision {id: $id})-[:ABOUT]->(req:Obligation)
     MERGE (ctl:Control:AgentProposed {id: $controlId})
     ON CREATE SET
         ctl.name = 'Proposed Control - ' + coalesce(req.name, req.id),
@@ -274,7 +274,7 @@ export const resolveDecision = async (
         if (type === 'control-recommendation') {
             const raw: any = await db().exec2(APPROVE_CONTROL_RECOMMENDATION, { ...params, controlId: `CTL-${id}` });
             const row = Array.isArray(raw) ? raw[0] : raw;
-            if (!row?.decision) throw new Error(`Decision ${id} has no linked Requirement to approve`);
+            if (!row?.decision) throw new Error(`Decision ${id} has no linked Obligation to approve`);
             return { decision: row.decision, control: row.control };
         }
         if (type === 'deviation-assessment') {
@@ -376,7 +376,7 @@ export const getReverseTrace = async (id: string) => {
                     status: 'partial',
                     rcas: r.rcas,
                     capas: r.capas,
-                    note: 'Requirement nodes not loaded — forward obligation trace unavailable',
+                    note: 'Obligation nodes not loaded — forward obligation trace unavailable',
                 },
                 l5: {
                     status: 'partial',

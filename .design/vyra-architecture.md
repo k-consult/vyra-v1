@@ -34,7 +34,7 @@ Inside that one Bounded Context, the five subdomains stay cohesive because each 
 
 | DDD relationship | Direction | Mechanism |
 |---|---|---|
-| **Open Host Service + Published Language** | Vyra Central → Tenant | The versioned `Regulation/Clause/Requirement/Control` catalog schema is a published contract every tenant conforms to — tenants don't negotiate or fork it |
+| **Open Host Service + Published Language** | Vyra Central → Tenant | The versioned `Regulation/Clause/Obligation/Control` catalog schema is a published contract every tenant conforms to — tenants don't negotiate or fork it |
 | **Anti-Corruption Layer, reversed** | Tenant ← sync | Runs opposite to the textbook direction: it isn't protecting the tenant from a messy upstream model, it's protecting the tenant's own local extensions from being clobbered by the *next* sync. The mechanism is `vyra-foundation.md` §1's additive `MERGE ... ON MATCH SET n += row` — a write discipline, not a translation layer, because both sides already share the same node shape |
 | **Separate Ways** | Enterprise subdomain ↔ Vyra Central | The Enterprise subdomain (org, roles, facilities, incidents) has no upstream dependency at all — pure tenant data, never synced anywhere today. Collective Intelligence's corroboration gate is the *planned* exception, and only for identifier-free typed patterns, never rows |
 
@@ -250,7 +250,7 @@ Sequencing and open decisions for building this: `vyra-implementation-plan.md`.
 > **Status:** Catalog Sync itself is **live** (Phase 1, real data) but writes into the *same* tenant database under a `:Catalog` label — not the physically separate "one master, many synced copies" split `vyra-foundation.md` §1 requires. Collective Intelligence, entitlement, and metering have **zero architectural footprint today**. `vyra-implementation-plan.md` already flags this open item in almost the same words used here: *"There's no separate 'master catalog' service today... Don't design against that split until it's explicitly scoped."*
 
 - **Vyra Central** — the deployment boundary itself: one shared service, distinct from any tenant's deployment, holding everything below.
-- **Master Catalog** — the central, versioned `Regulation/Clause/Requirement/Control` store. Target: its own database (e.g. `vyra-catalog-master`), reusing the multi-driver mechanism again rather than colocating with any tenant.
+- **Master Catalog** — the central, versioned `Regulation/Clause/Obligation/Control` store. Target: its own database (e.g. `vyra-catalog-master`), reusing the multi-driver mechanism again rather than colocating with any tenant.
 - **Catalog Sync Service** — the evolution of `cli/orchestration/catalog-sync.ts`: Master Catalog → **Sync Diff Engine** → fan-out into every tenant database, instead of reading local CSVs into whichever database happens to be configured.
 - **Sync Diff Engine** — computes a real diff instead of today's blind `MERGE...SET n += row` overwrite, which is what actually makes `vyra-foundation.md`'s "customization survives re-sync" and "freshness as a measurable SLA" requirements checkable rather than aspirational.
 - **`SyncRun`** — a new provenance node (`id, sourceCatalogVersion, startedAt, completedAt, nodesWritten, diffSummary`) — the sync-run audit trail that doesn't exist today (only a bare `catalogVersion` property does).

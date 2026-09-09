@@ -43,8 +43,8 @@ Every subdomain is described the same way:
 **Aggregates**
 - **`Regulation`** (root) — owns `Clause[]` that belong to it. Refs: `Authority` (by id). Invariant: a `Clause` added to this aggregate belongs to exactly this parent — enforced at add-time, not by a nullable FK on the Clause side.
 - **`Standard`** (root) — owns `Clause[]` that belong to it. Same invariant as `Regulation`, mirrored because `Clause`'s parent is XOR (`vyra-graph-spine.md` Appendix A), never both.
-- **`Requirement`** (root, standalone) — refs `Clause` (by id). Kept independent of the `Regulation`/`Standard` aggregate because a Requirement has its own version lifecycle and is referenced by many `Control`s — embedding it under `Clause` would force loading a whole Regulation to revise one obligation.
-- **`Control`** (root, standalone) — refs `Requirement`, `ComplianceArea` (by id). Origin (`:Catalog` / `:Enterprise` / `:AgentProposed` / legacy) is a VO field on this one Entity type, not a subtype — this is deliberate: it forecloses a future `if (control.origin === ...)` branch by keeping origin as data, not as a type hierarchy.
+- **`Obligation`** (root, standalone) — refs `Clause` (by id). Kept independent of the `Regulation`/`Standard` aggregate because an Obligation has its own version lifecycle and is referenced by many `Control`s — embedding it under `Clause` would force loading a whole Regulation to revise one obligation.
+- **`Control`** (root, standalone) — refs `Obligation`, `ComplianceArea` (by id). Origin (`:Catalog` / `:Enterprise` / `:AgentProposed` / legacy) is a VO field on this one Entity type, not a subtype — this is deliberate: it forecloses a future `if (control.origin === ...)` branch by keeping origin as data, not as a type hierarchy.
 - **`ComplianceArea`** (root, reference data) — no owned children, no refs.
 - **`Authority`** (root, reference data) — no owned children, no refs.
 
@@ -52,13 +52,13 @@ Every subdomain is described the same way:
 
 **Domain Events**
 - `RegulationSuperseded` — raised when a `Regulation` aggregate's `supersededBy` is set; consumed by anything holding a stale reference to flag it for re-check, not to cascade a delete (nothing is deleted, only superseded).
-- `RequirementRevised` — raised when a `Requirement`'s definition changes version; consumed by `Control` owners to re-evaluate `ControlImplementsRequirementSpecification`.
+- `ObligationRevised` — raised when an `Obligation`'s definition changes version; consumed by `Control` owners to re-evaluate `ControlImplementsObligationSpecification`.
 
 **Factories**: none — construction here is direct authoring/ingestion, not derived from another aggregate's event.
 
-**Repositories** (one per Aggregate root): RegulationRepository, StandardRepository, RequirementRepository, ControlRepository, ComplianceAreaRepository, AuthorityRepository
+**Repositories** (one per Aggregate root): RegulationRepository, StandardRepository, ObligationRepository, ControlRepository, ComplianceAreaRepository, AuthorityRepository
 
-**Specifications**: CatalogFactIsCurrentSpecification, RequirementIsDefinedBySpecification, ControlImplementsRequirementSpecification
+**Specifications**: CatalogFactIsCurrentSpecification, ObligationIsDefinedBySpecification, ControlImplementsObligationSpecification
 
 ---
 
@@ -211,8 +211,8 @@ This is the reasoning core, and where aggregate size matters most — every root
 
 **Aggregates**
 - **`MasterRegulation`** (root) — owns `MasterClause[]`.
-- **`MasterRequirement`** (root, standalone) — refs `MasterClause` (by id).
-- **`MasterControl`** (root, standalone) — refs `MasterRequirement` (by id).
+- **`MasterObligation`** (root, standalone) — refs `MasterClause` (by id).
+- **`MasterControl`** (root, standalone) — refs `MasterObligation` (by id).
 - **`SyncRun`** (root, standalone) — its own aggregate, not a child of `MasterRegulation`: one `SyncRun` spans the whole catalog fan-out across every tenant, not one regulation's lifecycle.
 
 **Value Objects**: CatalogDiff, SyncSchedule
@@ -221,7 +221,7 @@ This is the reasoning core, and where aggregate size matters most — every root
 
 **Factories**: none — catalog authoring is direct CRUD, not derived from another aggregate's event. The **Sync Diff Engine is a Domain Service, not a Factory**: it computes a `CatalogDiff` VO by comparing two existing aggregates' state; it doesn't construct a new Entity, which is what a Factory is for.
 
-**Repositories**: MasterCatalogRepository (covers `MasterRegulation`/`MasterClause`/`MasterRequirement`/`MasterControl` under one repo — an accepted exception to "one repo per aggregate root," since this is read-heavy reference data published together on one cadence, not a transactional consistency boundary), SyncRunRepository
+**Repositories**: MasterCatalogRepository (covers `MasterRegulation`/`MasterClause`/`MasterObligation`/`MasterControl` under one repo — an accepted exception to "one repo per aggregate root," since this is read-heavy reference data published together on one cadence, not a transactional consistency boundary), SyncRunRepository
 
 **Specifications**: CatalogSyncIsAdditiveSpecification (tenant extensions survive re-sync), CatalogVersionIsPublishableSpecification
 

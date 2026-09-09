@@ -24,17 +24,17 @@ export const listEvidence = async () => {
     }
 };
 
-// Coverage Scoring (L6, Phase 4a) — catalog-origin data only. Requirement -> Control and
+// Coverage Scoring (L6, Phase 4a) — catalog-origin data only. Obligation -> Control and
 // Asset -> ComplianceArea are dual-origin relationships (see vyra-graph-spine.md): the 15 legacy
 // per-incident Controls carry no BELONGS_TO -> ComplianceArea edge, so an unfiltered query would
 // silently exclude them from the denominator rather than the numerator. Filtering explicitly to
 // :Catalog/:Enterprise makes that scoping decision visible in the query, not an accident of the data.
-const REQUIREMENT_COVERAGE_TOTAL = `
-    MATCH (req:Requirement:Catalog)
+const OBLIGATION_COVERAGE_TOTAL = `
+    MATCH (req:Obligation:Catalog)
     OPTIONAL MATCH (req)<-[:IMPLEMENTS]-(ctl:Control:Catalog)
     RETURN
-        count(DISTINCT req) AS totalRequirements,
-        count(DISTINCT CASE WHEN ctl IS NOT NULL THEN req END) AS coveredRequirements
+        count(DISTINCT req) AS totalObligations,
+        count(DISTINCT CASE WHEN ctl IS NOT NULL THEN req END) AS coveredObligations
 `;
 
 // unmappedComplianceArea isolates the known Security-category gap (2 of 31 assets, see
@@ -49,15 +49,15 @@ const ASSET_COVERAGE_TOTAL = `
         count(DISTINCT CASE WHEN ctl IS NOT NULL THEN ast END) AS coveredAssets
 `;
 
-const REQUIREMENT_COVERAGE_BY_AREA = `
+const OBLIGATION_COVERAGE_BY_AREA = `
     MATCH (ca:ComplianceArea)
     OPTIONAL MATCH (ca)<-[:BELONGS_TO]-(ctl:Control:Catalog)
-    OPTIONAL MATCH (ctl)-[:IMPLEMENTS]->(req:Requirement:Catalog)
+    OPTIONAL MATCH (ctl)-[:IMPLEMENTS]->(req:Obligation:Catalog)
     RETURN
         ca.id AS complianceAreaId,
         ca.name AS complianceAreaName,
         count(DISTINCT ctl) AS controls,
-        count(DISTINCT req) AS requirementsCovered
+        count(DISTINCT req) AS obligationsCovered
     ORDER BY ca.name
 `;
 
@@ -80,9 +80,9 @@ const round1 = (n: number): number => Math.round(n * 10) / 10;
 export const getCoverageScore = async () => {
     try {
         const [reqRaw, astRaw, reqByAreaRaw, astByAreaRaw] = await Promise.all([
-            db().fetch2(REQUIREMENT_COVERAGE_TOTAL, {}),
+            db().fetch2(OBLIGATION_COVERAGE_TOTAL, {}),
             db().fetch2(ASSET_COVERAGE_TOTAL, {}),
-            db().fetch2(REQUIREMENT_COVERAGE_BY_AREA, {}),
+            db().fetch2(OBLIGATION_COVERAGE_BY_AREA, {}),
             db().fetch2(ASSET_COVERAGE_BY_AREA, {}),
         ]);
 
@@ -99,7 +99,7 @@ export const getCoverageScore = async () => {
                 complianceAreaId: r.complianceAreaId,
                 complianceAreaName: r.complianceAreaName,
                 controls: r.controls,
-                requirementsCovered: r.requirementsCovered,
+                obligationsCovered: r.obligationsCovered,
                 assets: a.assets,
                 coveredAssets: a.coveredAssets,
             };
@@ -107,10 +107,10 @@ export const getCoverageScore = async () => {
 
         return {
             scope: 'catalog-origin only — legacy (unlabeled) Controls and Assets are excluded, see vyra-implementation-plan.md Phase 4a',
-            requirements: {
-                total: req.totalRequirements ?? 0,
-                covered: req.coveredRequirements ?? 0,
-                coveragePercent: pct(req.coveredRequirements ?? 0, req.totalRequirements ?? 0),
+            obligations: {
+                total: req.totalObligations ?? 0,
+                covered: req.coveredObligations ?? 0,
+                coveragePercent: pct(req.coveredObligations ?? 0, req.totalObligations ?? 0),
             },
             assets: {
                 total: ast.totalAssets ?? 0,

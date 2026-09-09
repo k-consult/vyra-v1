@@ -26,11 +26,11 @@ const LIST_COMPLIANCE_AREAS = `
     ORDER BY n.name
 `;
 
-const TRACE_REQUIREMENTS = `
+const TRACE_OBLIGATIONS = `
     MATCH (reg:Regulation:Catalog {id: $id})-[:ISSUED_BY]->(auth:Authority)
     WITH reg
-    MATCH (reg)<-[:BELONGS_TO]-(cls:Clause)<-[:DEFINED_BY]-(req:Requirement)
-    RETURN properties(reg) AS regulation, properties(cls) AS clause, properties(req) AS requirement
+    MATCH (reg)<-[:BELONGS_TO]-(cls:Clause)<-[:DEFINED_BY]-(req:Obligation)
+    RETURN properties(reg) AS regulation, properties(cls) AS clause, properties(req) AS obligation
     ORDER BY cls.clauseRef
 `;
 
@@ -67,11 +67,11 @@ export const listComplianceAreas = async () => {
     }
 };
 
-export const traceRequirements = async (regulationId: string) => {
+export const traceObligations = async (regulationId: string) => {
     try {
-        return await db().fetch2(TRACE_REQUIREMENTS, { id: regulationId });
+        return await db().fetch2(TRACE_OBLIGATIONS, { id: regulationId });
     } catch (err: any) {
-        log.error('catalog.repo: traceRequirements failed', err.message);
+        log.error('catalog.repo: traceObligations failed', err.message);
         return [];
     }
 };

@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { Module } from '../../types';
-import { listRegulations, listAuthorities, listComplianceAreas, traceRequirements, computeWindow, fetchTaskCalendar, Cadence } from './repo';
+import { listRegulations, listAuthorities, listComplianceAreas, traceObligations, computeWindow, fetchTaskCalendar, Cadence } from './repo';
 
 const catalog: any = async (fastify: FastifyInstance) => {
     fastify.get('/regulations', async (_req, reply) => {
@@ -17,7 +17,7 @@ const catalog: any = async (fastify: FastifyInstance) => {
 
     fastify.get('/trace/:id', async (req: any, reply) => {
         const { id } = req.params;
-        const rows = await traceRequirements(id);
+        const rows = await traceObligations(id);
         reply.send({ regulationId: id, chain: rows });
     });
 

@@ -44,7 +44,7 @@ function CoverageSection({ data }: { data: CoverageScore }) {
             </div>
 
             <div className="flex gap-3 flex-wrap">
-                <CoverageStat label="Requirement Coverage" {...data.requirements} />
+                <CoverageStat label="Obligation Coverage" {...data.obligations} />
                 <CoverageStat label="Asset Coverage" {...data.assets} />
                 {data.assets.unmappedComplianceArea > 0 && (
                     <div className="rounded-xl border border-zinc-700 bg-zinc-900/50 px-5 py-4 flex-1 min-w-[180px]">
@@ -61,7 +61,7 @@ function CoverageSection({ data }: { data: CoverageScore }) {
                         <tr className="bg-zinc-900/60 text-zinc-500">
                             <th className="text-left font-medium px-4 py-2">Compliance Area</th>
                             <th className="text-right font-medium px-4 py-2">Controls</th>
-                            <th className="text-right font-medium px-4 py-2">Requirements Covered</th>
+                            <th className="text-right font-medium px-4 py-2">Obligations Covered</th>
                             <th className="text-right font-medium px-4 py-2">Assets</th>
                             <th className="text-right font-medium px-4 py-2">Covered Assets</th>
                         </tr>
@@ -71,7 +71,7 @@ function CoverageSection({ data }: { data: CoverageScore }) {
                             <tr key={row.complianceAreaId} className={i % 2 === 0 ? 'bg-zinc-950' : 'bg-zinc-900/20'}>
                                 <td className="px-4 py-1.5 text-zinc-300">{row.complianceAreaName}</td>
                                 <td className="px-4 py-1.5 text-right text-zinc-400 tabular-nums">{row.controls}</td>
-                                <td className="px-4 py-1.5 text-right text-zinc-400 tabular-nums">{row.requirementsCovered}</td>
+                                <td className="px-4 py-1.5 text-right text-zinc-400 tabular-nums">{row.obligationsCovered}</td>
                                 <td className="px-4 py-1.5 text-right text-zinc-400 tabular-nums">{row.assets}</td>
                                 <td className="px-4 py-1.5 text-right text-zinc-400 tabular-nums">{row.coveredAssets}</td>
                             </tr>

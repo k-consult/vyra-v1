@@ -125,7 +125,7 @@ const guardSignalInput = (input: Partial<CreateSignalInput>): CreateSignalInput 
 };
 
 // First non-CLI write path: writes directly via lib/graph-db, bypassing the CSV pipeline.
-// Auto-creates a Task in the same round trip, resolving Control/Requirement coverage
+// Auto-creates a Task in the same round trip, resolving Control/Obligation coverage
 // through Asset -[:COVERED_BY]-> Control (see cli/scripts/backfill-asset-control.ts) and
 // the responsible Person through Facility (falls back to 'UNKNOWN' if nobody WORKS_AT
 // that facility). WORKS_AT is many-valued (cli/scripts/generate-person-seed.ts) — a
@@ -139,8 +139,8 @@ const CREATE_SIGNAL_AND_TASK = `
     WITH s, a
     OPTIONAL MATCH (a)-[:LOCATED_AT]->(fac:Facility)<-[:WORKS_AT]-(person:Person)
     WITH s, a, person ORDER BY person.id LIMIT 1
-    OPTIONAL MATCH (a)-[:COVERED_BY]->(ctl:Control)-[:IMPLEMENTS]->(req:Requirement)
-    WITH s, a, person, collect(DISTINCT ctl.id) AS controlIds, collect(DISTINCT req.id) AS requirementIds
+    OPTIONAL MATCH (a)-[:COVERED_BY]->(ctl:Control)-[:IMPLEMENTS]->(req:Obligation)
+    WITH s, a, person, collect(DISTINCT ctl.id) AS controlIds, collect(DISTINCT req.id) AS obligationIds
     MERGE (t:Task {id: $taskId})
     ON CREATE SET
         t.name = $taskName,
@@ -151,7 +151,7 @@ const CREATE_SIGNAL_AND_TASK = `
         t.status = 'open',
         t.createdAt = datetime(),
         t.controlIds = controlIds,
-        t.requirementIds = requirementIds
+        t.obligationIds = obligationIds
     MERGE (s)-[:HAS_TASK]->(t)
     RETURN properties(s) AS signal, properties(t) AS task
 `;

@@ -70,14 +70,14 @@ export type ComplianceAreaCoverage = {
     complianceAreaId: string;
     complianceAreaName: string;
     controls: number;
-    requirementsCovered: number;
+    obligationsCovered: number;
     assets: number;
     coveredAssets: number;
 };
 
 export type CoverageScore = {
     scope: string;
-    requirements: { total: number; covered: number; coveragePercent: number };
+    obligations: { total: number; covered: number; coveragePercent: number };
     assets: { total: number; covered: number; unmappedComplianceArea: number; coveragePercent: number };
     byComplianceArea: ComplianceAreaCoverage[];
 };
@@ -105,7 +105,7 @@ export const catalog = {
     regulations:      () => get<{ regulations: any[] }>('/catalog/regulations'),
     authorities:      () => get<{ authorities: any[] }>('/catalog/authorities'),
     complianceAreas:  () => get<{ complianceAreas: any[] }>('/catalog/complianceAreas'),
-    traceRequirements: (id: string) => get(`/catalog/trace/${id}`),
+    traceObligations: (id: string) => get(`/catalog/trace/${id}`),
     calendar:         (horizonWeeks?: number) => get<{ calendar: any[] }>(`/catalog/calendar${horizonWeeks ? `?horizonWeeks=${horizonWeeks}` : ''}`),
 };
 

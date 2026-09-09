@@ -39,7 +39,7 @@ const RESULT_TAB: Partial<Record<string, Tab>> = {
 const ENTITY_ICON: Record<string, React.ElementType> = {
     Signal: Radio,
     Finding: Search,
-    Requirement: FileText,
+    Obligation: FileText,
     Incident: AlertTriangle,
     Control: ShieldCheck,
     Risk: TrendingUp,

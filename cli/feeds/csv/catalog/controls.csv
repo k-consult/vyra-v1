@@ -1,4 +1,4 @@
-id,name,controlType,description,complianceAreaId,riskId,requirementId,clauseId,standardId,regulationId,authorityId
+id,name,controlType,description,complianceAreaId,riskId,obligationId,clauseId,standardId,regulationId,authorityId
 CTRL-001,Smoke & Heat Detector Functional Test,Detective,Operational control ensuring smoke & heat detector functional test is performed and evidenced per SOP across the industrial park / warehouse network.,CA-001,RSK-007,OBL-0001,CLA-0001,STD-008,REG-001,AUTH-002
 CTRL-002,Fire Alarm Panel & Zone Verification,Preventive,Operational control ensuring fire alarm panel & zone verification is performed and evidenced per SOP across the industrial park / warehouse network.,CA-001,RSK-007,OBL-0002,CLA-0002,STD-008,REG-008,AUTH-007
 CTRL-003,PA / Voice Evacuation System Test,Preventive,Operational control ensuring pa / voice evacuation system test is performed and evidenced per SOP across the industrial park / warehouse network.,CA-001,RSK-009,OBL-0003,CLA-0003,STD-008,REG-007,AUTH-007

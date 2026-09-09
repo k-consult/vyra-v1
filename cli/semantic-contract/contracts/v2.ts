@@ -76,8 +76,8 @@ export const v2: Contract = {
             ],
         },
 
-        Requirement: {
-            label: 'Requirement',
+        Obligation: {
+            label: 'Obligation',
             graph: Graph.Knowledge,
             props: {
                 ...baseProps,
@@ -99,7 +99,7 @@ export const v2: Contract = {
                 ...baseProps,
                 controlType: 'controlType',
                 owner: 'owner',
-                requirementId: 'requirementId',
+                obligationId: 'obligationId',
                 complianceAreaId: 'complianceAreaId',
                 riskId: 'riskId',
                 clauseId: 'clauseId',
@@ -109,7 +109,7 @@ export const v2: Contract = {
             },
             axes: [Axis.Regulatory, Axis.Process],
             rels: [
-                { type: 'IMPLEMENTS', targetLabel: 'Requirement', sourceField: 'requirementId' },
+                { type: 'IMPLEMENTS', targetLabel: 'Obligation', sourceField: 'obligationId' },
                 { type: 'BELONGS_TO', targetLabel: 'ComplianceArea', sourceField: 'complianceAreaId' },
             ],
         },
@@ -405,9 +405,9 @@ export const v2: Contract = {
         Exception: {
             label: 'Exception',
             graph: Graph.Assurance,
-            props: { ...baseProps, reason: 'reason', approver: 'approver', expiresAt: 'expiresAt', requirementId: 'requirementId' },
+            props: { ...baseProps, reason: 'reason', approver: 'approver', expiresAt: 'expiresAt', obligationId: 'obligationId' },
             axes: [Axis.Assurance, Axis.Risk],
-            rels: [{ type: 'WAIVES', targetLabel: 'Requirement', sourceField: 'requirementId' }],
+            rels: [{ type: 'WAIVES', targetLabel: 'Obligation', sourceField: 'obligationId' }],
         },
     },
 };

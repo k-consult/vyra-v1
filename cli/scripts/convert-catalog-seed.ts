@@ -120,7 +120,7 @@ const convert = (): void => {
         catalogVersion: '1.0',
     })));
 
-    writeCSV('requirements.csv', obligationRows.map(r => ({
+    writeCSV('obligations.csv', obligationRows.map(r => ({
         id: r['ObligationID'],
         name: r['Description'],
         obligationType: r['Obligation Type'],
@@ -142,7 +142,7 @@ const convert = (): void => {
         description: r['Description'],
         complianceAreaId: r['ComplianceAreaID'],
         riskId: r['RiskID'],
-        requirementId: r['Primary ObligationID(s)'],
+        obligationId: r['Primary ObligationID(s)'],
         clauseId: r['ClauseID'],
         standardId: r['StandardID'],
         regulationId: r['RegulationID'],

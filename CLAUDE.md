@@ -72,7 +72,7 @@ The compliance digital twin is composed of five graphs. For entity types, relati
 
 | Graph | Question | Key nodes |
 |-------|----------|-----------|
-| Knowledge | What must be done? | Regulation, Clause, Requirement, Control |
+| Knowledge | What must be done? | Regulation, Clause, Obligation, Control |
 | Execution | What are we doing? | Program, Workflow, Task, CAPA |
 | Operational | What is happening? | Asset, Vendor, Signal, Event |
 | Intelligence | What do we understand? | Finding, Risk, Decision, RCA |

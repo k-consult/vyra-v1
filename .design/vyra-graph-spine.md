@@ -66,7 +66,7 @@ Each domain answers one question and has one **anchor node** — the node type a
 `vyra-foundation.md` states this loop at concept granularity (Regulations → … → Trust). Here it is at **node granularity** — the actual labels a traversal passes through. Read left to right, the domains form a single compliance loop. A regulation becomes an obligation; the obligation becomes a control; the control is exercised against a real asset; the asset throws a signal or an incident; the incident yields a finding; the finding drives risk scoring and a corrective action; and the closed-out action produces the evidence that proves compliance:
 
 ```
-Regulation → Clause → Requirement → Control → Asset → Signal/Incident → Finding → Risk → CAPA → Verification → Assurance
+Regulation → Clause → Obligation → Control → Asset → Signal/Incident → Finding → Risk → CAPA → Verification → Assurance
 ```
 
 This loop is the through-line for everything that follows: **Part II** draws it as diagrams, **Part III** shows which links are live today, and **Part IV** shows how to traverse it.
@@ -89,7 +89,7 @@ graph TB
 
     subgraph KG["📘  Knowledge"]
         K1[Regulation]
-        K2[Requirement]
+        K2[Obligation]
         K3[Policy · Standard]
     end
 
@@ -165,7 +165,7 @@ graph TB
         REG[Regulation]:::know
         STD[Standard]:::know
         CLA[Clause]:::know
-        REQ[Requirement]:::know
+        REQ[Obligation]:::know
         CTL[Control]:::know
         CA[ComplianceArea]:::know
     end
@@ -246,7 +246,7 @@ graph TB
 **Reading the diagram:**
 - **Five bands** = the five graph domains, stacked in operating-loop order.
 - **Solid arrows** = relationships that are live today (all names/directions match Appendix B, including its runtime & derived relationships). The Assurance chain (`EvidencePackage`/`Attestation`/`AssuranceStatement`/`Audit`) is live as of Phase 4b but carries **synthetic, script-generated seed data**, not a real audit-trail source — see Appendix A.
-- `Decision -->|ABOUT| Requirement` is drawn to `Requirement` as the representative target, but `ABOUT` is polymorphic (`Decision → *`, whatever `sourceId` resolves to).
+- `Decision -->|ABOUT| Obligation` is drawn to `Obligation` as the representative target, but `ABOUT` is polymorphic (`Decision → *`, whatever `sourceId` resolves to).
 
 ## 2.3 Mapping to the 7-Layer Operating Model
 
@@ -307,8 +307,8 @@ graph LR
 
 | JTBD Layer (`vyra-foundation.md`) | Graph domain(s) it reads/writes | Anchoring nodes / path |
 |---|---|---|
-| **L1 Knowledge** | Knowledge | `Regulation`/`Standard`/`Clause`/`Requirement`/`Control` |
-| **L2 Interpret** | Knowledge ∩ Operational | applicability chain: `Asset -[:COVERED_BY]-> Control -[:IMPLEMENTS]-> Requirement` |
+| **L1 Knowledge** | Knowledge | `Regulation`/`Standard`/`Clause`/`Obligation`/`Control` |
+| **L2 Interpret** | Knowledge ∩ Operational | applicability chain: `Asset -[:COVERED_BY]-> Control -[:IMPLEMENTS]-> Obligation` |
 | **L3 Planning** | Execution (+ enterprise context) | `Schedule -[:APPLIES_TO]-> Task -[:IMPLEMENTS]-> Control`; `Organization`/`Role`/`Facility` |
 | **L4 Graph Spine** | **all five** | the graph itself — this document; "Review" = the Autonomy Level 1 approval gate |
 | **L5 Oversight** | Operational → Intelligence | `Signal`/`Incident` feeding `Finding` (`HAS_FINDING`) |
@@ -472,7 +472,7 @@ graph LR
     classDef e fill:#fefce8,stroke:#ca8a04,color:#422006;
     classDef a fill:#f0fdf4,stroke:#16a34a,color:#052e16;
 
-    REG[Regulation]:::k --> REQ[Requirement]:::k --> CTL[Control]:::k
+    REG[Regulation]:::k --> REQ[Obligation]:::k --> CTL[Control]:::k
     CTL --> AST[Asset]:::o --> INC[Incident]:::o --> FND[Finding]:::i
     FND --> RSK[Risk]:::i
     FND --> CAPA[CAPA]:::e --> VER[Verification]:::e --> EVD[Evidence]:::a
@@ -509,10 +509,10 @@ RETURN fnd, inc, collect(reg) AS regulations
 ```
 
 ### Execution Traceability — Task to Regulation
-*"Why is this task on the calendar?"* — the third walk, alongside Forward/Reverse above: not audit-driven (`Incident`-anchored) but plan-driven (`Task`-anchored), following the catalog's own `Schedule -> Task -> Control -> Requirement` chain (Part II's Layered Graph Model) one hop further to the `Regulation`/`Standard` it ultimately implements. `:Catalog`-origin data only — legacy per-incident `Task`s have no `IMPLEMENTS -> Control` edge.
+*"Why is this task on the calendar?"* — the third walk, alongside Forward/Reverse above: not audit-driven (`Incident`-anchored) but plan-driven (`Task`-anchored), following the catalog's own `Schedule -> Task -> Control -> Obligation` chain (Part II's Layered Graph Model) one hop further to the `Regulation`/`Standard` it ultimately implements. `:Catalog`-origin data only — legacy per-incident `Task`s have no `IMPLEMENTS -> Control` edge.
 ```cypher
 MATCH (t:Task {id: 'TSK-0001'})-[:IMPLEMENTS]->(ctl:Control)
-      -[:IMPLEMENTS]->(req:Requirement)-[:DEFINED_BY]->(cla:Clause)
+      -[:IMPLEMENTS]->(req:Obligation)-[:DEFINED_BY]->(cla:Clause)
       -[:BELONGS_TO]->(source)   // source is a Regulation or a Standard — Clause's parent is polymorphic
 RETURN t.name, ctl.name, req.name, labels(source) AS sourceType, source.name
 ```
@@ -547,9 +547,9 @@ RETURN
 ```
 
 ### Compliance Coverage — Which Controls Cover This Asset
-*"What Controls and Requirements apply to this Asset?"*
+*"What Controls and Obligations apply to this Asset?"*
 ```cypher
-MATCH (a:Asset {id: 'AST-001'})-[:COVERED_BY]->(ctl:Control)-[:IMPLEMENTS]->(req:Requirement)
+MATCH (a:Asset {id: 'AST-001'})-[:COVERED_BY]->(ctl:Control)-[:IMPLEMENTS]->(req:Obligation)
 RETURN a.name, a.category, collect(DISTINCT ctl.name) AS controls, collect(DISTINCT req.name) AS requirements
 ```
 
@@ -608,15 +608,15 @@ Industry/international standard (Knowledge, `:Catalog`) — a `Clause`'s source 
 
 ---
 
-### `Clause` / `Requirement`
-`Clause` (Knowledge, `:Catalog`) belongs to exactly one of `Regulation` or `Standard` (`regulationId` XOR `standardId` populated per row — never both, per `05_Clauses`' `Source Type`/`Source ID` columns). `Requirement` (Knowledge, `:Catalog`) is `06_Obligations` mapped 1:1 — `ObligationID → id`, `Mandatory (Y/N) → mandatory` — reusing the existing `Requirement` type rather than adding a second node type for the same concept.
+### `Clause` / `Obligation`
+`Clause` (Knowledge, `:Catalog`) belongs to exactly one of `Regulation` or `Standard` (`regulationId` XOR `standardId` populated per row — never both, per `05_Clauses`' `Source Type`/`Source ID` columns). `Obligation` (Knowledge, `:Catalog`) is `06_Obligations` mapped 1:1 — `ObligationID → id`, `Mandatory (Y/N) → mandatory`. Named `Obligation` rather than the more generic `Requirement` because the source data, ISO 37301 terminology, and the ingested `ObligationID` key all already agree on this term — see Appendix F, 2026-09-09.
 
-**34 clauses, 34 requirements.**
+**34 clauses, 34 obligations.**
 
 ---
 
 ### `Control`
-Policies, SOPs, and operational procedures that implement requirements.
+Policies, SOPs, and operational procedures that implement obligations.
 
 | Property | Type | Example |
 |---|---|---|
@@ -624,10 +624,10 @@ Policies, SOPs, and operational procedures that implement requirements.
 | name | string | `Fire Safety SOP`, `Fire Hydrant System Pressure Test` |
 | controlType | string | `policy-sop` (legacy), `Preventive`/`Detective` (`:Catalog` rows) |
 | owner | string | `Facility & EHS` (legacy rows only) |
-| requirementId | string | `REQ-XXX` (legacy) / `OBL-0004` (`:Catalog`) — FK to Requirement |
+| obligationId | string | `REQ-XXX` (legacy) / `OBL-0004` (`:Catalog`) — FK to Obligation |
 | complianceAreaId | string | `CA-002` (`:Catalog` rows only) — FK to ComplianceArea |
 | riskId | string | `RSK-013` (`:Catalog` rows only, flat reference — no dedicated rel; the catalog `17_Risk_Register` taxonomy this points at is not yet ingested) |
-| clauseId / standardId / regulationId / authorityId | string | (`:Catalog` rows only, flat reference — already reachable via `Requirement -> Clause -> Regulation/Standard`, no duplicate rel added) |
+| clauseId / standardId / regulationId / authorityId | string | (`:Catalog` rows only, flat reference — already reachable via `Obligation -> Clause -> Regulation/Standard`, no duplicate rel added) |
 | status | string | `active` |
 
 **15 controls** (legacy enterprise pipeline, unlabeled, per-incident numbering `CTL-{incident}-{seq}`, from the "Policies & SOPs" column) **+ 30 controls** (`CTRL-001`–`CTRL-030`, `:Catalog` label, from `08_Operational_Controls` — a reusable control catalog, not per-incident) — same dual-origin coexistence pattern as `Regulation`/`Regulation:Catalog`.
@@ -666,7 +666,7 @@ Compliance activities that must be performed to maintain or restore compliance.
 | dueDate | datetime | `2026-05-03 17:36` |
 | workflowId | string | FK to Workflow |
 | evidenceRequired | string | `yes` |
-| controlIds / requirementIds | string[] | native array props, signal-driven Tasks only — every `Control`/`Requirement` the triggering `Asset` is covered by (via `COVERED_BY`), not a single FK, since one Asset can match multiple Controls under one ComplianceArea |
+| controlIds / obligationIds | string[] | native array props, signal-driven Tasks only — every `Control`/`Obligation` the triggering `Asset` is covered by (via `COVERED_BY`), not a single FK, since one Asset can match multiple Controls under one ComplianceArea |
 | controlId | string | `CTRL-001` (`:Catalog` rows only) — FK to Control, singular (one Task template implements exactly one Control, per `09_Task_Master`'s `Control ID` column) |
 | status | string | `closed` / `open` |
 
@@ -710,7 +710,7 @@ Confirmation that a CAPA was executed and effective.
 ---
 
 ### `Schedule`
-Cadence for a `Task` (`Schedule -[:APPLIES_TO]-> Task`, `:Catalog`) — corrected from the originally-declared `Schedule -> Requirement`, which was one hop too coarse: `13_Schedule_Rules` is keyed by `TaskID`, and `Task` (via its new `controlId`) already reaches `Requirement` through `Control`, so `Schedule -> Task -> Control -> Requirement` is the real, non-fabricated chain.
+Cadence for a `Task` (`Schedule -[:APPLIES_TO]-> Task`, `:Catalog`) — corrected from the originally-declared `Schedule -> Obligation`, which was one hop too coarse: `13_Schedule_Rules` is keyed by `TaskID`, and `Task` (via its new `controlId`) already reaches `Obligation` through `Control`, so `Schedule -> Task -> Control -> Obligation` is the real, non-fabricated chain.
 
 | Property | Type | Example |
 |---|---|---|
@@ -1137,13 +1137,13 @@ All relationships below are **live** and are the relationships the API actually 
 | Relationship | From → To | Meaning |
 |---|---|---|
 | `GOVERNED_BY` | Incident → Regulation | Incident is subject to this regulation |
-| `IMPLEMENTS` | Control → Requirement | Control satisfies a requirement |
+| `IMPLEMENTS` | Control → Obligation | Control satisfies an obligation |
 | `FAILED_AGAINST` | Incident → Control | Control failed during this incident |
 | `IN_JURISDICTION` | Regulation → Jurisdiction | Regulation applies within this jurisdiction |
 | `ISSUED_BY` | Regulation → Authority | Regulation is issued/enforced by this authority |
 | `OPERATES_IN` | Authority → Jurisdiction | Authority's jurisdiction of operation |
 | `BELONGS_TO` | Clause → Regulation **or** Clause → Standard | Clause's source document (polymorphic — a clause has exactly one parent, never both) |
-| `DEFINED_BY` | Requirement → Clause | Requirement is defined by this clause |
+| `DEFINED_BY` | Obligation → Clause | Obligation is defined by this clause |
 | `BELONGS_TO` | Control → ComplianceArea | Control's compliance domain (`:Catalog` rows only — same name-reuse safety as Clause→Regulation/Standard above) |
 
 ### Execution Graph
@@ -1153,7 +1153,7 @@ All relationships below are **live** and are the relationships the API actually 
 | `REQUIRES_CAPA` | RCA → CAPA | Root cause analysis prescribes a corrective action |
 | `ADDRESSES` | CAPA → Finding | Corrective action addresses the finding |
 | `CLOSES` | Verification → CAPA | Verification closes the CAPA |
-| `IMPLEMENTS` | Task → Control | Task is the recurring instance of what the Control requires (`:Catalog` rows only — reuses `IMPLEMENTS`, same as `Control -> Requirement`) |
+| `IMPLEMENTS` | Task → Control | Task is the recurring instance of what the Control requires (`:Catalog` rows only — reuses `IMPLEMENTS`, same as `Control -> Obligation`) |
 | `APPLIES_TO` | Schedule → Task | Schedule's cadence applies to this Task (`:Catalog` rows only, 50 of 60 Tasks) |
 
 ### Operational Graph
@@ -1200,7 +1200,7 @@ Authored at runtime (by the events sink or the agent runtime) or by a derived jo
 | `ABOUT` | Decision → * | An agent recommendation about some entity (polymorphic target — whatever the decision concerns) |
 | `RESULTED_IN` | Decision → Control/Finding/Risk/Audit | The reverse of `ABOUT` — points from an *approved* Decision to the real node its approval created. Written only on approval (never reject, since nothing is created); `assurance-package-proposal` links to `Audit` only, not the full chain, since the rest is already reachable from it via `PREPARED_FOR`/`DERIVED_FROM`/`BACKED_BY`/`PART_OF`. Added 2026-08-23 to back a per-Decision origin→result timeline in the Intelligence UI — `GET /intelligence/decisions` now also resolves `ABOUT`/`RESULTED_IN` server-side rather than the UI inferring either from `Decision.id`/result-id string conventions |
 | `REVIEWED_BY` | Decision → Person | Phase 7 — human reviewer attribution on approve/reject, written only when `reviewedBy` resolves to a real seeded `Person.id` |
-| `IMPLEMENTS` | Control:AgentProposed → Requirement | Phase 7 — approved `control-recommendation`; same relationship the catalog pipeline already uses, on a `:AgentProposed`-labeled `Control` |
+| `IMPLEMENTS` | Control:AgentProposed → Obligation | Phase 7 — approved `control-recommendation`; same relationship the catalog pipeline already uses, on a `:AgentProposed`-labeled `Control` |
 | `AGAINST` / `ABOUT` | Finding:AgentProposed → Control / Signal | Phase 7 — approved `deviation-assessment`; `AGAINST` per covered `Control`, or `ABOUT` the `Signal` directly if the asset had no coverage |
 | `RAISED_BY` | Risk:AgentProposed → Finding | Phase 8 — approved `risk-assessment`; same relationship the legacy pipeline already uses, on a `:AgentProposed`-labeled `Risk` |
 | `PART_OF` / `BACKED_BY` / `DERIVED_FROM` / `COVERS` / `PREPARED_FOR` | EvidencePackage:AgentProposed / Attestation:AgentProposed / AssuranceStatement:AgentProposed chain | Phase 8 — approved `assurance-package-proposal`; the same five Assurance-graph relationships above, now also writable live (not only by Phase 4b's batch script) on `:AgentProposed`-labeled nodes |
@@ -1212,7 +1212,7 @@ Part of the designed model, awaiting the entities they connect — they carry no
 |---|---|---|
 | `PART_OF` | Task → Workflow, Workflow → Program | Places a task within its workflow, and a workflow within its program |
 | `HAS_ROLE` | Person → Role | Declared and would fire on a match, but none of the 7 seeded `Person` rows' real job titles match any of the 16 seeded `Role` rows (different verticals — see `Person` in Appendix A) |
-| `WAIVES` | Exception → Requirement | Records a formal exception that waives a requirement |
+| `WAIVES` | Exception → Obligation | Records a formal exception that waives an obligation |
 | `HAS_ASSIGNMENT` | Task → Assignment | Points a Task at the Assignment governing who executes it and at what autonomy level |
 | `ASSIGNED_TO` | Assignment → Actor | Resolves to whichever actor — human or agent — the assignment names |
 
@@ -1252,13 +1252,13 @@ All feeds live under `cli/feeds/csv/<domain>/`.
 | catalog | regulations.csv | 11 | `:Catalog`-labeled, distinct from the 16 above |
 | catalog | standards.csv | 10 | Industry/ISO standards |
 | catalog | clauses.csv | 34 | Polymorphic parent: `regulationId` XOR `standardId` |
-| catalog | requirements.csv | 34 | `06_Obligations`, `Obligation → Requirement` mapping |
+| catalog | obligations.csv | 34 | `06_Obligations`, mapped 1:1 |
 | catalog | complianceAreas.csv | 10 | `07_Compliance_Areas`, 1:1 |
 | catalog | controls.csv | 30 | `08_Operational_Controls`, `:Catalog`-labeled, distinct from the 15 legacy `controls.csv` above |
 | catalog | tasks.csv | 60 | `09_Task_Master`, kept thin (id/name/controlId/frequency/priority), `:Catalog`-labeled, distinct from the 24 legacy `tasks.csv` above |
 | catalog | schedules.csv | 50 | `13_Schedule_Rules` filtered to `Schedule Type = Fixed` rows, `:Catalog`-labeled |
 
-No `edgeMap` for catalog feeds — every catalog relationship is an embedded FK (`v2.ts` `rels`), same mechanism `Regulation`/`Clause`/`Requirement`/`Control` already use.
+No `edgeMap` for catalog feeds — every catalog relationship is an embedded FK (`v2.ts` `rels`), same mechanism `Regulation`/`Clause`/`Obligation`/`Control` already use.
 
 **Enterprise feeds** (`cli/feeds/csv/enterprise/`, loaded by `cli/orchestration/enterprise-sync.ts` via `cli/domains/enterprise/ingest-hints.json`, generated by `cli/scripts/convert-enterprise-seed.ts` from the same `.design/__ref/synthetic-data/data.csv`):
 
@@ -1289,7 +1289,7 @@ No `edgeMap` for catalog feeds — every catalog relationship is an embedded FK 
 | assurance_statement_audit.csv | 7 | **Synthetic (Phase 4b)** — AssuranceStatement → PREPARED_FOR → Audit |
 | person_facility.csv | 14 | Phase 6 — Person → WORKS_AT → Facility (many-valued, see `Person` in Appendix A) |
 
-**Enterprise pipeline total: 214 nodes, 224 edges** (179 nodes + 141 edges through Phase 2, plus Phase 4b's 28 synthetic Assurance nodes (7 each of `EvidencePackage`/`Attestation`/`AssuranceStatement`/`Audit`) + 69 synthetic edges (30 `PART_OF` + 7 `BACKED_BY` + 7 `DERIVED_FROM` + 18 `COVERS` + 7 `PREPARED_FOR`), plus Phase 6's 7 `Person` nodes + 14 `WORKS_AT` edges). **Catalog pipeline total: 249 nodes, 268 edges** (`:Catalog`-labeled, separate `catalog-sync.ts` run — 99 original + 10 `ComplianceArea` + 30 `Control` + 60 `Task` + 50 `Schedule`; 98 original edges + 30 `IMPLEMENTS` (Control→Requirement) + 30 `BELONGS_TO` + 60 `IMPLEMENTS` (Task→Control) + 50 `APPLIES_TO` (Schedule→Task)). **Enterprise Context pipeline total: 103 nodes, 280 edges** (`:Enterprise`-labeled, separate `enterprise-sync.ts` run — 12 Organization, 16 Role, 20 Facility, 31 Asset, 12 Vendor, 12 Contract; 16 `BELONGS_TO` + 31 `LOCATED_AT` + 29 `IN_COMPLIANCE_AREA` + 12 `WITH_VENDOR` + 12 `COORDINATED_BY` + 180 `COVERS`). **Derived/live-write total: 101 `COVERED_BY` edges** (`backfill-asset-control.ts`, one-time) **+ Signal/Task/Decision created ad hoc via the API and agent runtime** (no fixed count — driven by live events, not seed data).
+**Enterprise pipeline total: 214 nodes, 224 edges** (179 nodes + 141 edges through Phase 2, plus Phase 4b's 28 synthetic Assurance nodes (7 each of `EvidencePackage`/`Attestation`/`AssuranceStatement`/`Audit`) + 69 synthetic edges (30 `PART_OF` + 7 `BACKED_BY` + 7 `DERIVED_FROM` + 18 `COVERS` + 7 `PREPARED_FOR`), plus Phase 6's 7 `Person` nodes + 14 `WORKS_AT` edges). **Catalog pipeline total: 249 nodes, 268 edges** (`:Catalog`-labeled, separate `catalog-sync.ts` run — 99 original + 10 `ComplianceArea` + 30 `Control` + 60 `Task` + 50 `Schedule`; 98 original edges + 30 `IMPLEMENTS` (Control→Obligation) + 30 `BELONGS_TO` + 60 `IMPLEMENTS` (Task→Control) + 50 `APPLIES_TO` (Schedule→Task)). **Enterprise Context pipeline total: 103 nodes, 280 edges** (`:Enterprise`-labeled, separate `enterprise-sync.ts` run — 12 Organization, 16 Role, 20 Facility, 31 Asset, 12 Vendor, 12 Contract; 16 `BELONGS_TO` + 31 `LOCATED_AT` + 29 `IN_COMPLIANCE_AREA` + 12 `WITH_VENDOR` + 12 `COORDINATED_BY` + 180 `COVERS`). **Derived/live-write total: 101 `COVERED_BY` edges** (`backfill-asset-control.ts`, one-time) **+ Signal/Task/Decision created ad hoc via the API and agent runtime** (no fixed count — driven by live events, not seed data).
 
 ---
 
@@ -1382,7 +1382,7 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 
 # Appendix F · Document History
 
-**Version 1.13** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
+**Version 1.14** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
 
 | Date | Change |
 |---|---|
@@ -1402,3 +1402,4 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 | 2026-09-06 | Added a third traversal pattern to Part IV, **Execution Traceability — Task to Regulation** (`Task -[:IMPLEMENTS]-> Control -[:IMPLEMENTS]-> Requirement -[:DEFINED_BY]-> Clause -[:BELONGS_TO]-> Regulation\|Standard`), closing the `artifacts/TODO.md` item tracked since the 2026-08-23 architecture diagrams. No schema change — purely documenting an existing chain. Also: `.design/` doc set consolidated — new `.design/README.md` front door, `vyra-foundation.md` cross-linked everywhere (previously orphaned), `vyra-implementation-plan.md` trimmed to sequencing/open-decisions only, `vyra-tracker.md` row prose condensed, full historical build narrative (Phases 0–9) relocated verbatim to new `.design/__ref/implementation-history.md`. |
 | 2026-09-06 | Repositioned as a **technical reference** following the `.design` consolidation: `vyra-landscape.md` was retired into `vyra-foundation.md`, which is now the capability specification (what Vyra is, the 7-layer operating model, the value case, the guarantees). This doc's header, audience list and Part I were retuned accordingly — the "compliance experts can stop after Part II" reading path was removed, and Part I now points at the foundation doc for the *why* rather than restating it. All four `vyra-landscape.md` citations repointed to `vyra-foundation.md`. **No schema change.** |
 | 2026-09-07 | Added `Assignment` and `Actor` as designed-not-active node types (Execution Graph), plus `HAS_ASSIGNMENT` (Task→Assignment) and `ASSIGNED_TO` (Assignment→Actor) relationships — closing the gap flagged in `.design/vyra-domain.md`'s Cross-cutting subdomain: `vyra-foundation.md` §2's "the autonomy level is a property of the assignment, not of the platform" had zero graph footprint until now. **No live schema change** — no seed data, no write path. `Decision.autonomyLevel` remains the only live autonomy-level property, and records one proposal's level, not a standing Task/workflow assignment. |
+| 2026-09-09 | Renamed `Requirement` → `Obligation` (node label + `requirementId`/`requirementIds` FK properties → `obligationId`/`obligationIds`), across the ingestion contract, API, agents, and UI. Ubiquitous Language correction, not a modeling change: the source data's own worksheet is `06_Obligations` with an `ObligationID` key, and ISO 37301 calls this concept "compliance obligation" — the graph's node name had simply never caught up to the term the data, the domain, and `vyra-domain.md`'s own prose already used. `mandatory`/`obligationType` properties, and the `DEFINED_BY`/`IMPLEMENTS` relationship names, are unchanged. Earlier entries in this table that say "Requirement" describe what was built at the time and are left as written, per this doc's own append-and-supersede convention — see the row above for the same treatment of the `vyra-landscape.md` rename. |
