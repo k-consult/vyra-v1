@@ -1,0 +1,20 @@
+{
+  "name": "@vyra/scripts",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "mcp-neo4j": "npx ts-node --transpile-only mcp-neo4j/index.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "dotenv": "^17.2.3",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": { "node": ">=20.0.0" }
+}

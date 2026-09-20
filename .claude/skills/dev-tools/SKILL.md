@@ -1,6 +1,6 @@
 ---
 name: dev-tools
-description: Parent skill — entry point for Node.js API development. Loads node-spine and clean-code, then displays the developer workflow from README.md. INVOKE when the user runs `/dev-tools` or asks where to start on a new feature, resource, or module.
+description: Entry point for Node.js API development — loads node-spine + clean-code and shows the dev workflow. INVOKE when starting a new feature, resource, or module.
 ---
 
 # dev-tools — Node.js API Developer Workflow

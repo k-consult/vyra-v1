@@ -1,6 +1,6 @@
 ---
 name: code-ninja
-description: Starting point for every coding session. Loads clean-code (always active) and displays the full skill map so the developer knows which skill to invoke for their context.
+description: Entry point for a coding session — loads clean-code and shows the skill map for what to invoke next.
 ---
 
 # code-ninja — Skill Map

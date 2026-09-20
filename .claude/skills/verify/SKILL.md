@@ -1,6 +1,6 @@
 ---
 name: verify
-description: Project recipe for driving Vyra's running app (api/ui/agents) to observe a change end-to-end, rather than just typechecking. INVOKE when verifying a change actually works, not just compiles.
+description: Recipe for driving Vyra's running app end-to-end to confirm a change actually works, not just compiles. INVOKE when verifying real behavior, not typechecking alone.
 ---
 
 # verify — Vyra project recipe

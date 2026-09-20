@@ -1,6 +1,6 @@
 ---
 name: node-spine
-description: Node.js structural coding standard (node-spine). Mandates the module spine (edge → core → repo) with per-resource folders, factory.js + spec.js + repo.js per entity, file=noun / method=verb naming (no Async/Sync/Promise suffixes), async/await with try-catch, lazy db handles, parameterised Cypher, Boom for HTTP errors, and a banned-pattern + grep verification gate. INVOKE BEFORE every Edit/Write under app/, scripts/, index-*.js, test/. If the request can't be mapped onto edge → core/index → factory + spec + repo, redesign before coding.
+description: Node.js coding standard — edge→core→repo module spine, factory/spec/repo per entity, naming/async/error-handling rules, banned-pattern gate. INVOKE before every Edit/Write under app/, scripts/, index-*.js, test/.
 ---
 
 # node-spine — Node.js Coding Standard

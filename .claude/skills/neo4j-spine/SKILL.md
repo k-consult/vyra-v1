@@ -1,6 +1,6 @@
 ---
 name: neo4j-spine
-description: Neo4j structural coding standard (neo4j-spine). Covers Cypher query patterns, parameterisation rules, lazy driver handles, MERGE vs CREATE idempotency, node/relationship naming conventions, read vs write helpers, and a banned-pattern gate. INVOKE before writing any Cypher, any db.fetch/exec call, or any graph schema change. Pairs with `node-spine` (module structure) and `clean-code` (design principles).
+description: Neo4j coding standard — Cypher patterns, parameterisation, MERGE vs CREATE idempotency, naming conventions, banned-pattern gate. INVOKE before writing any Cypher, db call, or graph schema change. Pairs with `node-spine`.
 ---
 
 # neo4j-spine — Neo4j Coding Standard

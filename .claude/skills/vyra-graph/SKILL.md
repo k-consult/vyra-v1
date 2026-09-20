@@ -1,6 +1,6 @@
 ---
 name: vyra-graph
-description: Vyra five-graph domain reference. Covers entity types per graph, canonical relationship types, Cypher traversal patterns, and alignment rules with vyra-foundation.md / vyra-graph-spine.md. INVOKE before writing any graph schema, new node/relationship type, or cross-graph Cypher query.
+description: Vyra five-graph domain reference — entity types, relationship types, traversal patterns, alignment with vyra-foundation/vyra-graph-spine. INVOKE before any graph schema, node/relationship type, or cross-graph query.
 ---
 
 # vyra-graph — Five-Graph Domain Reference

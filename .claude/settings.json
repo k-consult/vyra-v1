@@ -20,6 +20,10 @@
     ]
   },
   "enabledPlugins": {
-    "diagram-design@diagram-design": true
-  }
+    "diagram-design@diagram-design": false
+  },
+  "skillOverrides": {
+    "dev-audit": "off"
+  },
+  "disableClaudeAiConnectors": true
 }

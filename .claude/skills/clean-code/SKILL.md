@@ -1,6 +1,6 @@
 ---
 name: clean-code
-description: The Code-Craft Bible — definitive gate for every design and code review. 11 parts covering: layered architecture + Hexagonal/Ports&Adapters, contract-first design (TypeScript for greenfield), encapsulation, Tell-Don't-Ask, Law of Demeter, OCP + YAGNI, DRY, intention-revealing names, Ubiquitous Language + Bounded Contexts, fail-fast validation, operations (identity/soft-delete/greenfield), proactive pattern application, full GOF + Fowler catalog (★=live studio examples), micro-craft (function size/args/comments/error handling), complexity management (deep modules/strategic programming/package cohesion), distributed patterns (idempotency/CQRS/domain events/outbox). INVOKE before designing or reviewing any system component, module, interface, or pattern. Pairs with `node-spine` (structural coding rules).
+description: The Code-Craft Bible — gate for every design/code review: layered architecture, encapsulation, Tell-Don't-Ask, OCP/YAGNI/DRY, naming, Ubiquitous Language, fail-fast validation, GOF/Fowler patterns, micro-craft, complexity management, distributed patterns. INVOKE before designing or reviewing any component, module, interface, or pattern. Pairs with `node-spine`.
 ---
 
 # clean-code — The Code-Craft Bible

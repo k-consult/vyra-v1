@@ -1,6 +1,6 @@
 ---
 name: dev-gen
-description: Developer scaffolding skill. Two modes — (A) spec-first: reads a completed .design/<spec>.md and generates/updates the full file set for one resource; (B) text-first: infers a spec from a text description, lists gaps, asks for confirmation before writing. Also provides `/dev-gen api-client <module>` to regenerate routes.txt and Bruno collections for any module. INVOKE when the user runs `/dev-gen ...` or asks to scaffold a new resource, module, or API client. Pairs with `node-spine` (structural rules) and `clean-code` (design principles).
+description: Scaffolds a resource from a spec file (spec-first) or a text description (text-first, confirms gaps before writing); also regenerates API-client routes.txt/Bruno collections via `/dev-gen api-client <module>`. INVOKE to scaffold a new resource, module, or API client.
 ---
 
 # code-gen — GA API Scaffolding

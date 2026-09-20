@@ -1,10 +1,7 @@
 ---
-  name: sync-api-routes
-  description: Use when the user wants to call a GA backend route from this UI, generate a client call, or verify a request/response shape against the api repo. Points at
-  the canonical contract folders for a specified GA api module (Bruno collections, routes.txt, .design/<resource>.md). Invoked as `/sync-api-routes <module>` where <module>
-   is the folder name under `app/module/` in the api repo (e.g. studio, data, tribes). Trigger on any mention of: a GA backend endpoint, /api/<something>, "what's the body
-  for…", or "how do I call the <module> API".
-  ---
+name: sync-api-routes
+description: Points at the canonical API contract for a GA backend module (Bruno collections, routes.txt, .design/<resource>.md). Invoked as `/sync-api-routes <module>`. Trigger on any GA backend endpoint, /api/<path>, or "how do I call the <module> API" question.
+---
 
   # sync-api-routes
 

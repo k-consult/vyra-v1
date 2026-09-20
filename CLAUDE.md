@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Vyra v1** — an Agentic Risk & Compliance Infrastructure platform. AI agents continuously transform regulations into operational assurance by reasoning over a shared enterprise graph.
 
-Canonical docs: @.design/README.md (start here — full reading order and doc map), @.design/vyra-foundation.md (the capability specification — operating model, value, and the guarantees the design must satisfy), @.design/vyra-graph-spine.md (schema ground truth), @.design/vyra-implementation-plan.md (sequencing + status). Also see `.design/vyra-architecture.md` (software layers + access rules) and `.design/vyra-tracker.md` (current build status) — read as needed, not auto-loaded here.
+Canonical docs (read as needed, not auto-loaded here — together they run ~36k tokens, most sessions only need one): `.design/README.md` (start here — full reading order and doc map), `.design/vyra-foundation.md` (the capability specification — operating model, value, and the guarantees the design must satisfy), `.design/vyra-graph-spine.md` (schema ground truth), `.design/vyra-implementation-plan.md` (sequencing + status). Also see `.design/vyra-architecture.md` (software layers + access rules) and `.design/vyra-tracker.md` (current build status).
 
 Before any graph schema, agent design, or domain-model decision, read the foundation doc, then the spine. They are the source of truth — not anything under `.design/__ref/` (including the retired `blueprint.md` and `vyra-landscape.md`), which is historical.
 
@@ -103,7 +103,7 @@ Default autonomy level: **Level 1 (Agent Recommends, Human Approves)** unless ex
 
 ## Coding Conventions
 
-**Invoke `/code-ninja` at the start of every session.** It loads the skill map and activates `/clean-code`.
+**Invoke `/code-ninja` when a session starts touching code** (`app/`, `agents/`, `api/`, `cli/`, `ui/`, `lib/`, `scripts/`, tests). It loads the skill map and activates `/clean-code`. Skip it for doc-only, config-only, or dependency-bump sessions.
 
 **Functional style throughout.** Use Ramda (`import * as R from 'ramda'` / `const R = require('ramda')`) for data transformation. Compose chains of small, focused functions.
 

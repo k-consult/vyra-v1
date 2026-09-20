@@ -1,6 +1,6 @@
 ---
 name: grc
-description: Single authoritative entry point for resuming work on Vyra across sessions. Reads the five canonical docs (vyra-foundation, vyra-architecture, vyra-graph-spine's header, vyra-tracker, vyra-implementation-plan), cross-checks against git log/status, and reports current phase, what's done, what's explicitly next, and open decisions/gaps the docs already flag. INVOKE at the start of a new session, after a context reset, or whenever asked "where were we" / "what's next" on this project.
+description: Resumes Vyra work across sessions — reads the five canonical docs, cross-checks git log/status, reports phase, done/next, and open gaps. INVOKE at session start, after a context reset, or when asked "where were we"/"what's next".
 ---
 
 # grc — Session Resume
