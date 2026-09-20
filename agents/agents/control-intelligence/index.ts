@@ -51,7 +51,7 @@ export const run = async (regulationId?: string): Promise<void> => {
         },
 
         verify: async (req) => {
-            const raw: any = await db().fetch2(
+            const raw: any = await db().fetch(
                 `MATCH (d:Decision {id: $id}) RETURN properties(d) AS decision`,
                 { id: `DEC-${req.id}` }
             );

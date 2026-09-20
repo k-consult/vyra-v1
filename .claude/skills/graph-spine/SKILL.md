@@ -34,22 +34,21 @@ const db = DB.get(config.db.twin.database, { uri, user, password });
 
 ---
 
-## 2. Call shape — `fetch`/`fetch2` for reads, `exec`/`exec2` for writes
+## 2. Call shape — `fetch` for reads, `exec` for writes
 
-`lib/graph-db`'s `db()` returns exactly four methods, each taking `(cypher: string, args?: any)` — **two arguments, nothing more**:
+`lib/graph-db`'s `db()` returns exactly two methods, each taking `(cypher: string, args?: any)` — **two arguments, nothing more**:
 
 | Helper | Access mode | Use for |
 |---|---|---|
-| `db().fetch(cypher, args)` | READ session | Reads. `fetch2` is a plain alias for `fetch` today — prefer `fetch2` for new code since it's what the codebase already converges on. |
-| `db().exec(cypher, args)` | WRITE session | Writes (CREATE/MERGE/SET/DELETE). |
-| `db().exec2(cypher, args)` | WRITE session | Same as `exec` — alias. Prefer `exec2` for writes that return data. |
+| `db().fetch(cypher, args)` | READ session | Reads. |
+| `db().exec(cypher, args)` | WRITE session | Writes (CREATE/MERGE/SET/DELETE), including writes that return data. |
 
 ```ts
 // ❌ BAD — third argument doesn't exist on this project's DB interface
 await db().fetch(cypher, { id }, !verbose);
 
 // ✅ GOOD — exactly two arguments
-await db().fetch2(cypher, { id });
+await db().fetch(cypher, { id });
 ```
 
 There is no `skipLog`/`verbose` flag on this interface — logging is handled internally by `graph-db` via `log.cypher(...)`. Don't invent a third parameter.
@@ -66,7 +65,7 @@ const cypher = `MATCH (n:${label}) WHERE n.id = "${id}" RETURN n`;
 
 // ✅ GOOD — value is a parameter; label from a module-level constant only
 const cypher = `MATCH (n:Regulation) WHERE n.id = $id RETURN n`;
-await db().fetch2(cypher, { id });
+await db().fetch(cypher, { id });
 ```
 
 **The only exception:** node labels and relationship types sourced from **module-level constants** (not caller input) may be interpolated. Never interpolate a value that arrives from outside the module.
@@ -79,7 +78,7 @@ Pre-define every Cypher string as a named constant at module scope — never an 
 
 ```ts
 // ❌ BAD — anonymous; cannot grep, cannot reuse
-const rows = await db().fetch2(`MATCH (n:Regulation) RETURN properties(n) AS regulation`, {});
+const rows = await db().fetch(`MATCH (n:Regulation) RETURN properties(n) AS regulation`, {});
 
 // ✅ GOOD — named constant at module scope
 const LIST_REGULATIONS = `
@@ -87,7 +86,7 @@ const LIST_REGULATIONS = `
     RETURN properties(n) AS regulation
     ORDER BY n.name
 `;
-const rows = await db().fetch2(LIST_REGULATIONS, {});
+const rows = await db().fetch(LIST_REGULATIONS, {});
 ```
 
 If a query is used in more than one function, hoist it to module scope (the norm). Multi-hop traversals used once are still declared as a named `const` above the function, not inline.
@@ -195,35 +194,27 @@ const cypher = `
 
 ## 8. Error handling
 
-`async/await` + `try/catch`, matching every existing `repo.ts`. Writes always rethrow. Reads return a safe default (`[]`) so a list endpoint degrades instead of 500ing:
+Reads and writes both let failures propagate — no `try/catch` in a plain `repo.ts` function. `lib/graph-db`'s `fetch`/`exec` already `log.error(...)` and rethrow on a driver/query failure, so wrapping the call again only produces one of two defects: duplicate logging, or (worse) a caught error masked into a safe-looking `[]`/`null`. A Neo4j connection failure and "genuinely zero rows" must never look the same to a caller — that is a `foundation.md` non-negotiable ("documented absence is a first-class state") applied to infrastructure failures, not just business gaps.
 
 ```ts
-// Write — always rethrow
+// Write — no try/catch needed; db().exec already logs and rethrows
 export const writeFinding = async (finding: Finding): Promise<void> => {
-    try {
-        await db().exec2(cypher, params);
-    } catch (err: any) {
-        log.error('graph-write: writeFinding failed', err.message);
-        throw err;
-    }
+    await db().exec(cypher, params);
 };
 
-// Read — safe default
+// Read — same: let it throw
 export const listRegulations = async () => {
-    try {
-        const raw: any = await db().fetch2(LIST_REGULATIONS, {});
-        const rows = Array.isArray(raw) ? raw : [raw];
-        return rows.map((r: any) => r.regulation).filter(Boolean);
-    } catch (err: any) {
-        log.error('knowledge.repo: listRegulations failed', err.message);
-        return [];
-    }
+    const raw: any = await db().fetch(LIST_REGULATIONS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.regulation).filter(Boolean);
 };
 ```
 
-Never swallow errors from write operations. A failed write that returns silently is data loss.
+**The one exception:** a function that needs to attach domain context to a failure — e.g. `intelligence/repo.ts`'s `resolveDecision`, which wraps several possible Cypher paths and wants one consistent log line naming the decision `id` — may keep a `try/catch`, but it must always rethrow, never return a safe default.
 
-**The `Array.isArray(raw) ? raw : [raw]` guard** is required after every `fetch2` call in this codebase — `getResult` in `lib/graph-db` flattens a single-row result to a bare object instead of a one-element array. Don't assume the result is always an array.
+At the edge, a route handler does not need its own `try/catch` either: Fastify's default error handler turns an uncaught throw from an async handler into a 5xx response. Never swallow an error into `[]`/`null`/`void` at any layer — a failed read or write that returns silently is indistinguishable from real data, and for a write specifically it is data loss.
+
+**The `Array.isArray(raw) ? raw : [raw]` guard** is required after every `fetch` call in this codebase — `getResult` in `lib/graph-db` flattens a single-row result to a bare object instead of a one-element array. Don't assume the result is always an array.
 
 ---
 
@@ -242,15 +233,15 @@ Never swallow errors from write operations. A failed write that returns silently
 | ❌ Bad | ✅ Fix |
 |--------|--------|
 | `const db = DB.get(...)` at module scope | `const db = () => DB.get(...)` |
-| `db().fetch(cypher, args, skipLog)` — third argument | `db().fetch2(cypher, args)` — two arguments only |
+| `db().fetch(cypher, args, skipLog)` — third argument | `db().fetch(cypher, args)` — two arguments only |
 | Template literal interpolation of caller values | Named `$param` in Cypher |
 | Anonymous Cypher string as a direct argument | Named `const` before the call |
 | `CREATE` on a node with a stable `id` | `MERGE ... ON CREATE SET` |
 | Labels in camelCase or snake_case | PascalCase |
 | Relationship types in camelCase | UPPER_SNAKE_CASE |
 | `WHERE NOT n.archived` | Not a convention here — don't add a soft-delete filter that doesn't exist in the schema |
-| Write error swallowed (catch returns `[]` or `{}`) | Rethrow; safe defaults for reads only |
-| Assuming `fetch2` always returns an array | Guard with `Array.isArray(raw) ? raw : [raw]` |
+| Error swallowed (catch returns `[]`, `null`, or `{}`) | Let it propagate — no `try/catch` in a plain repo function; if one is kept for context, it must rethrow |
+| Assuming `fetch` always returns an array | Guard with `Array.isArray(raw) ? raw : [raw]` |
 | Inventing a new relationship type ad hoc | Check `.design/graph.md` + `v2.ts` first; raise as a schema decision |
 
 ---
@@ -265,7 +256,7 @@ grep -rnE 'const\s+db\s*=\s*DB\.get\(' api/ agents/ cli/
 grep -rnE '`[^`]*\$\{[a-z][^}]*\}[^`]*`' api/ agents/ cli/ | grep -iE 'MATCH|MERGE|CREATE|RETURN|WHERE'
 
 # Third argument on fetch/exec calls (not part of this project's DB interface)
-grep -rnE '\.(fetch2?|exec2?)\([^,]+,[^,]+,' api/ agents/ cli/
+grep -rnE '\.(fetch|exec)\([^,]+,[^,]+,' api/ agents/ cli/
 
 # CREATE on a node — flag for review (may need MERGE)
 grep -rnE '\bCREATE\s+\(' api/ agents/ cli/ --include='*.ts' --include='*.cypher'
@@ -278,11 +269,11 @@ grep -rnE '\bCREATE\s+\(' api/ agents/ cli/ --include='*.ts' --include='*.cypher
 - [ ] DB handle is a lazy factory (`const db = () => DB.get(...)`)?
 - [ ] All caller values are `$named` parameters — no `${}` interpolation?
 - [ ] Every Cypher string is a named `UPPER_SNAKE` const?
-- [ ] Calls to `fetch`/`fetch2`/`exec`/`exec2` take exactly two arguments?
+- [ ] Calls to `fetch`/`exec` take exactly two arguments?
 - [ ] Idempotent nodes use `MERGE ... ON CREATE SET`?
 - [ ] Node labels PascalCase, relationship types UPPER_SNAKE_CASE, properties camelCase?
 - [ ] New relationship type checked against `.design/graph.md` + `v2.ts` before use?
-- [ ] Write errors rethrow; reads return a safe default (`[]`) with `Array.isArray` guard on `fetch2` results?
+- [ ] Reads and writes both let failures propagate (no swallowing to `[]`/`null`); any kept `try/catch` rethrows; `Array.isArray` guard applied on `fetch` results?
 - [ ] Bulk load order: indexes → nodes → edges?
 
 ---

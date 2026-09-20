@@ -47,7 +47,7 @@ This is what makes the `:Catalog`/`:Enterprise` dual-label an architectural deci
 | Layer | Workspace | Port | Components | Talks to |
 |---|---|---|---|---|
 | **Presentation** | `ui/` | 3002 | Next.js + React feature views — `landscape`, `dashboard`, `knowledge`, `execution`, `intelligence`, `assurance`, `calendar`, `validation`, `enterprise`, `simulator` | API (HTTP) only — **never** Neo4j |
-| **API / Service** | `api/` | 4001 | Fastify; domain modules — `knowledge`, `execution`, `operational`, `intelligence`, `assurance`, `catalog`, `enterprise`, `dashboard`. Two-layer today (route → repo, no domain/validation layer) — see **Known Architectural Debt** below | `lib/graph-db` |
+| **API / Service** | `api/` | 4001 | Fastify; domain modules — `knowledge`, `execution`, `operational`, `intelligence`, `assurance`, `catalog`, `enterprise`, `dashboard`. Two-layer (route → repo) for reads; `operational` and `intelligence` add a `spec.ts` validation layer ahead of `repo.ts` for their mutating routes — see Target Architecture §6 | `lib/graph-db` |
 | **Agent Runtime** | `agents/` | — | `runtime` (observe→reason→act→verify loop + `reasonWithLLM` helper), `tools` (graph-read / graph-write), agent families — `control-intelligence` (live), `risk-`/`signal-`/`assurance-intelligence` (stubs) | `lib/graph-db` + local Ollama (`localhost:11434`) — **never** the API |
 | **Ingestion** | `cli/` | — | Pipeline: `parser` → `compiler` → `projection` → `runtime`; orchestrators `index.ts` / `catalog-sync.ts` / `enterprise-sync.ts`; `semantic-contract/v2.ts` (column→node contract); `scripts/` (converters, backfill) | `lib/graph-db` (via `LOAD CSV`) |
 | **Shared Foundation** | `lib/` | — | `graph-db` (sole Neo4j driver), `log`, `config` — **built before all others** | Neo4j |
@@ -72,16 +72,11 @@ Naming what's already right matters as much as naming what's missing. These are 
 | **Singleton + Lazy Factory** | `DB.getInstance()` (singleton holding driver state) wrapped by `const db = () => DB.get(...)` at every call site (lazy factory) | No module pays a connection cost until it actually queries; the singleton is confined to one file, never referenced directly by callers |
 | **Idempotent Receiver** | `cli/runtime/repo.ts`'s `MERGE ... ON CREATE/ON MATCH SET n += row`; every agent-family write | `./ingest.sh` is safely re-runnable and at-least-once agent polling (`agents/scheduler.ts`) can't duplicate a node |
 | **Registry** (partial) | `agents/registry.ts` | A named lookup of agent families by string key — correctly a Registry today, even as a static object rather than the graph-backed version Target §2 proposes |
+| **Specification** | `api/modules/operational/spec.ts`, `api/modules/intelligence/spec.ts` | Each mutating route's `isValid(input)` (plus `intelligence`'s `isApprovable`/`isRejectable`, matching `domain.md`'s named specifications) is a composable predicate checked before the write — see Target Architecture §6 |
 
 ## Known Architectural Debt
 
-Concrete, code-grounded gaps — named so they're tracked, not rediscovered as surprises later:
-
-| Smell | Where | What's missing | Fix |
-|---|---|---|---|
-| **Edge and Service collapsed into one layer** | Every `api/modules/<domain>/index.ts` — the Fastify route handler calls `repo.ts` directly; nothing validates input or sequences domain rules between them | Node-spine's own `edge → core → repo` spine calls for a Service/Domain layer; today it's `edge → repo` — two layers, not three | Target Architecture §6, **Domain Validation Layer**, below — scoped to the 3 endpoints that actually mutate state, not all 30+ read endpoints (YAGNI: a GET has nothing to validate beyond route params) |
-| **Errors silently become empty results** | The dominant pattern in `repo.ts` reads — 34 of 41 `catch` blocks across `api/modules/*/repo.ts` log the error and `return []` (or `void`) | Fail-fast (clean-code §5): a Neo4j connection failure and "genuinely zero rows" are indistinguishable to every caller, including the UI — the one thing `foundation.md` calls non-negotiable for *business* gaps ("documented absence is a first-class state") is being silently violated for *infrastructure* failures instead | Let read failures reject; translate to a 5xx at the edge. A repo manufacturing a false empty success is worse than a visible error, because it looks like data |
-| **A Gateway with two names for one operation** | `lib/graph-db`'s `db` interface exposes `fetch`/`fetch2` and `exec`/`exec2`; `fetch2`/`exec2` are pass-throughs with no distinct behavior. In practice the whole codebase already voted: 71 call sites use `fetch2`, zero call `fetch` directly; 9 use `exec2` vs. 3 for `exec` | DRY — one piece of knowledge (`how do I read/write`), two names | Collapse to one name each (the "2" ones, since that's what call sites already standardized on), or give the "2" variants real distinct semantics if one was actually intended (e.g., a transactional read) |
+No open items — see git history for what was closed and when.
 
 ---
 
@@ -125,8 +120,8 @@ Concrete, code-grounded gaps — named so they're tracked, not rediscovered as s
 | Notification Gateway | new `lib/notify` | Decision Watchdog, UI | target |
 | Decision Feed | `api/` (WebSocket/SSE) | `ui/` | target |
 | Unit of Work | `lib/graph-db` | every multi-statement write caller | target |
-| Audit Writer (**Transactional Outbox**, adapted for a store with no native CDC) | `lib/graph-db` (wraps `exec`/`exec2`) | append-only per-tenant audit database | target |
-| Domain Validation Layer (**Specification** + fail-fast) | `api/modules/<resource>/spec.ts` (new) | `index.ts` (route), `repo.ts` | target — see §6 |
+| Audit Writer (**Transactional Outbox**, adapted for a store with no native CDC) | `lib/graph-db` (wraps `exec`) | append-only per-tenant audit database | target |
+| Domain Validation Layer (**Specification** + fail-fast) | `api/modules/{operational,intelligence}/spec.ts` | `index.ts` (route), `repo.ts` | live — see §6 |
 | Master Catalog | Vyra Central | Catalog Sync Service | target |
 | Catalog Sync Service | Vyra Central (evolves `cli/orchestration/catalog-sync.ts`) | Master Catalog, tenant twins | partially live — same-DB today |
 | Sync Diff Engine | Vyra Central, inside Catalog Sync Service | Master Catalog, tenant twins | target |
@@ -229,10 +224,10 @@ Sequencing and open decisions for building this: `plan.md`.
 
 ### 4. Persistence — Transactions, Audit & Versioning
 
-> **Status: target design — 0% built.** What exists today: `lib/graph-db`'s `db` interface (`fetch`/`fetch2`/`exec`/`exec2`) issues one bare `session.run()` per call, with no multi-statement transaction and no retry; `cli/runtime/repo.ts`'s `loadNodes` writes `MERGE ... ON CREATE/ON MATCH SET n += row` — an idempotent overwrite-by-id with no history. `supersededBy` exists on exactly one node type, `Regulation`.
+> **Status: target design — 0% built.** What exists today: `lib/graph-db`'s `db` interface (`fetch`/`exec`) issues one bare `session.run()` per call, with no multi-statement transaction and no retry; `cli/runtime/repo.ts`'s `loadNodes` writes `MERGE ... ON CREATE/ON MATCH SET n += row` — an idempotent overwrite-by-id with no history. `supersededBy` exists on exactly one node type, `Regulation`.
 
 - **Unit of Work** — a new `transact(fn)` method on the `db` interface, wrapping `session.executeWrite`, for any logical operation that spans more than one Cypher statement (e.g. a Decision approval that creates a `Risk` node and its edges in one step) — replacing today's sequences of independent, non-atomic `exec()` calls.
-- **Audit Writer** — a write-through wrapper around every mutating `exec`/`exec2` call, emitting an immutable `AuditEvent {actor, action, targetId, before, after, ts}` record. Two placements are possible; this doc recommends one:
+- **Audit Writer** — a write-through wrapper around every mutating `exec` call, emitting an immutable `AuditEvent {actor, action, targetId, before, after, ts}` record. Two placements are possible; this doc recommends one:
   - *(a)* graph-native `AuditEvent` nodes inside the tenant's own twin — keeps everything on one integration bus, but bloats the twin with write-history it doesn't need for reasoning.
   - *(b, recommended)* a second, append-only database per tenant (e.g. `<tenant>-audit`), opened through the *same already-existing* `DB.get(name, credentials)` multi-driver mechanism in `lib/graph-db` that Tenant Provisioning (§1) also depends on — no new infrastructure, and the mutable twin stays lean.
 - **Append-and-Supersede Protocol** — the name for the pattern `foundation.md` already requires ("nothing is deleted, only superseded"), enforced at the Audit Writer / repo layer rather than as a Neo4j schema constraint (Cypher has no native "supersede, don't overwrite" guard). Which node types beyond `Regulation` must carry a `supersededBy` property is `graph.md`'s decision, not this document's — architecture only fixes *where in the write path* the protocol is enforced.
@@ -299,13 +294,13 @@ Sequencing and open decisions for building this: `plan.md`.
 
 ### 6. Domain Validation Layer — Closing the Edge→Repo Gap
 
-> **Status: target design — 0% built.** What exists today instead: every `api/modules/<domain>/index.ts` Fastify handler calls straight into `repo.ts` (see **Known Architectural Debt**, above). This is deliberately the smallest item in this document — three endpoints, not a rewrite of the API.
+> **Status: live.** `api/modules/operational/spec.ts` and `api/modules/intelligence/spec.ts` exist; the three mutating routes (`POST /operational/signals`, `POST /intelligence/decisions/:id/approve`, `POST /intelligence/decisions/:id/reject`) call `spec.isValid(...)` (and, for decisions, the named `isApprovable`/`isRejectable` specifications from `domain.md`) before touching `repo.ts`. This was deliberately the smallest item in this document — three endpoints, not a rewrite of the API.
 
-Not every endpoint needs this. Of the ~30 routes across `api/modules/`, exactly **three mutate state**: `POST /operational/signals`, `POST /intelligence/decisions/:id/approve`, `POST /intelligence/decisions/:id/reject`. The other routes are pure `MATCH` reads with nothing to validate beyond a route param — adding a validation layer there would be YAGNI, not rigor.
+Not every endpoint needs this. Of the ~30 routes across `api/modules/`, exactly **three mutate state**. The other routes are pure `MATCH` reads with nothing to validate beyond a route param — adding a validation layer there would be YAGNI, not rigor.
 
-- **Spec (Specification pattern)** — a new `spec.ts` sitting next to each mutating module's `repo.ts`, exporting one `isValid(input)` per write endpoint. It checks structural validity only (required fields, enum membership, referential existence of an `assetId`/`decisionId`) — the same job `node-spine`'s `spec.js` already does for other Vyra workspaces; the API module is the one place that never got one.
-- **Where it plugs in** — the route handler calls `spec.isValid(body)` before `repo.ts`, and lets a failure throw with the field/rule/value named (clean-code §5.2) rather than the route handler's current ad hoc `try { ... } catch (err) { reply.code(400).send({ error: err.message }) }`, which today reports whatever the *repo* or *driver* happened to throw — not a validation error at all.
-- **What this deliberately does not do** — it does not introduce a `core/` orchestration layer, a factory, or a new entity type. Two layers (edge+repo) are fine for the 27 read-only routes (a legitimate **Transaction Script** choice, per clean-code §8.6, for simple CRUD-shaped reads); the fix is scoped to where a real domain rule is actually being skipped today — the three writes.
+- **Spec (Specification pattern)** — `spec.ts` sits next to each mutating module's `repo.ts`, exporting one `isValid(input)` per write endpoint. It checks structural validity (required fields, enum membership) and, for `operational/spec.ts`, referential existence of `assetId` (a live `assetExists` read in `repo.ts`) before the write proceeds.
+- **Where it plugs in** — the route handler calls `spec.isValid(body)` before `repo.ts`, wrapping only that call in `try/catch` → 400 with the field/rule/value named (clean-code §5.2). The repo call underneath is unwrapped, same as a read — a genuine repo/driver failure now propagates to Fastify's default 5xx instead of being coerced into a 400 alongside real validation errors.
+- **What this deliberately does not do** — it does not introduce a `core/` orchestration layer, a factory, or a new entity type. Two layers (edge+repo) are fine for the read-only routes (a legitimate **Transaction Script** choice, per clean-code §8.6, for simple CRUD-shaped reads); the fix is scoped to where a real domain rule was actually being skipped — the three writes.
 
 Sequencing and open decisions for building this: `plan.md`.
 

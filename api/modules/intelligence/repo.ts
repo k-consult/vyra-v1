@@ -9,25 +9,17 @@ const db = () => DB.get(config.db.twin.database, {
 });
 
 export const listFindings = async () => {
-    try {
-        const cypher = `MATCH (f:Finding) RETURN properties(f) AS finding ORDER BY f.severity, f.detectedAt DESC LIMIT 200`;
-        const raw: any = await db().fetch2(cypher, {});
-        const rows = Array.isArray(raw) ? raw : [raw]; return rows.map((r: any) => r.finding).filter(Boolean);
-    } catch (err: any) {
-        log.error('intelligence.repo: listFindings failed', err.message);
-        return [];
-    }
+    const cypher = `MATCH (f:Finding) RETURN properties(f) AS finding ORDER BY f.severity, f.detectedAt DESC LIMIT 200`;
+    const raw: any = await db().fetch(cypher, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.finding).filter(Boolean);
 };
 
 export const listRisks = async () => {
-    try {
-        const cypher = `MATCH (r:Risk) RETURN properties(r) AS risk ORDER BY r.inherentScore DESC LIMIT 200`;
-        const raw: any = await db().fetch2(cypher, {});
-        const rows = Array.isArray(raw) ? raw : [raw]; return rows.map((r: any) => r.risk).filter(Boolean);
-    } catch (err: any) {
-        log.error('intelligence.repo: listRisks failed', err.message);
-        return [];
-    }
+    const cypher = `MATCH (r:Risk) RETURN properties(r) AS risk ORDER BY r.inherentScore DESC LIMIT 200`;
+    const raw: any = await db().fetch(cypher, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.risk).filter(Boolean);
 };
 
 const LIST_RCAS = `
@@ -37,13 +29,9 @@ const LIST_RCAS = `
 `;
 
 export const listRcas = async () => {
-    try {
-        const raw: any = await db().fetch2(LIST_RCAS, {});
-        const rows = Array.isArray(raw) ? raw : [raw]; return rows.map((r: any) => r.rca).filter(Boolean);
-    } catch (err: any) {
-        log.error('intelligence.repo: listRcas failed', err.message);
-        return [];
-    }
+    const raw: any = await db().fetch(LIST_RCAS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.rca).filter(Boolean);
 };
 
 // Marker labels aren't the entity's real type — strip them so origin/result surface
@@ -63,18 +51,13 @@ const LIST_DECISIONS = `
 `;
 
 export const listDecisions = async () => {
-    try {
-        const raw: any = await db().fetch2(LIST_DECISIONS, {});
-        const rows = Array.isArray(raw) ? raw : [raw];
-        return rows.filter((r: any) => r?.decision).map((r: any) => ({
-            ...r.decision,
-            origin: r.origin ? { ...r.origin, label: primaryLabel(r.originLabels) } : null,
-            result: r.result ? { ...r.result, label: primaryLabel(r.resultLabels) } : null,
-        }));
-    } catch (err: any) {
-        log.error('intelligence.repo: listDecisions failed', err.message);
-        return [];
-    }
+    const raw: any = await db().fetch(LIST_DECISIONS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.filter((r: any) => r?.decision).map((r: any) => ({
+        ...r.decision,
+        origin: r.origin ? { ...r.origin, label: primaryLabel(r.originLabels) } : null,
+        result: r.result ? { ...r.result, label: primaryLabel(r.resultLabels) } : null,
+    }));
 };
 
 const GET_DECISION = `
@@ -83,14 +66,9 @@ const GET_DECISION = `
 `;
 
 export const getDecision = async (id: string) => {
-    try {
-        const raw: any = await db().fetch2(GET_DECISION, { id });
-        const row = Array.isArray(raw) ? raw[0] : raw;
-        return row?.decision ?? null;
-    } catch (err: any) {
-        log.error(`intelligence.repo: getDecision failed ${id}`, err.message);
-        return null;
-    }
+    const raw: any = await db().fetch(GET_DECISION, { id });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    return row?.decision ?? null;
 };
 
 // Phase 7 — Human-in-the-Loop Decision Gate. Reject is type-agnostic (just a status
@@ -267,30 +245,30 @@ export const resolveDecision = async (
     const params = { id, reviewedBy: reviewedBy ?? null, reviewNote: reviewNote ?? null };
     try {
         if (action === 'reject') {
-            const raw: any = await db().exec2(REJECT_DECISION, params);
+            const raw: any = await db().exec(REJECT_DECISION, params);
             const row = Array.isArray(raw) ? raw[0] : raw;
             return { decision: row?.decision };
         }
         if (type === 'control-recommendation') {
-            const raw: any = await db().exec2(APPROVE_CONTROL_RECOMMENDATION, { ...params, controlId: `CTL-${id}` });
+            const raw: any = await db().exec(APPROVE_CONTROL_RECOMMENDATION, { ...params, controlId: `CTL-${id}` });
             const row = Array.isArray(raw) ? raw[0] : raw;
             if (!row?.decision) throw new Error(`Decision ${id} has no linked Obligation to approve`);
             return { decision: row.decision, control: row.control };
         }
         if (type === 'deviation-assessment') {
-            const raw: any = await db().exec2(APPROVE_DEVIATION_ASSESSMENT, { ...params, findingId: `FND-${id}` });
+            const raw: any = await db().exec(APPROVE_DEVIATION_ASSESSMENT, { ...params, findingId: `FND-${id}` });
             const row = Array.isArray(raw) ? raw[0] : raw;
             if (!row?.decision) throw new Error(`Decision ${id} has no linked Signal to approve`);
             return { decision: row.decision, finding: row.finding };
         }
         if (type === 'risk-assessment') {
-            const raw: any = await db().exec2(APPROVE_RISK_ASSESSMENT, { ...params, riskId: `RSK-${id}` });
+            const raw: any = await db().exec(APPROVE_RISK_ASSESSMENT, { ...params, riskId: `RSK-${id}` });
             const row = Array.isArray(raw) ? raw[0] : raw;
             if (!row?.decision) throw new Error(`Decision ${id} has no linked Finding to approve`);
             return { decision: row.decision, risk: row.risk };
         }
         if (type === 'assurance-package-proposal') {
-            const incRaw: any = await db().fetch2(
+            const incRaw: any = await db().fetch(
                 `MATCH (:Decision {id: $id})-[:ABOUT]->(inc:Incident) RETURN properties(inc) AS incident`,
                 { id }
             );
@@ -298,7 +276,7 @@ export const resolveDecision = async (
             const incidentId = incRow?.incident?.id;
             if (!incidentId) throw new Error(`Decision ${id} has no linked Incident to approve`);
             const period = quarterOf(incRow.incident.incidentTime);
-            const raw: any = await db().exec2(APPROVE_ASSURANCE_PACKAGE, {
+            const raw: any = await db().exec(APPROVE_ASSURANCE_PACKAGE, {
                 ...params,
                 packageId: `EPKG-${incidentId}`,
                 attestationId: `ATT-${incidentId}`,
@@ -347,46 +325,41 @@ const layerStatus = (a: any[], b: any[]): 'full' | 'partial' | 'missing' => {
 };
 
 export const getReverseTrace = async (id: string) => {
-    try {
-        const raw = await db().fetch2(GET_REVERSE_TRACE, { id });
-        // fetch2 unwraps single-record results to a plain object via flattenWhenScalar
-        const r = Array.isArray(raw) ? raw[0] : raw;
-        if (!r?.incident) return null;
-        const controls = [...r.incidentControls, ...r.findingControls].filter(
-            (c, i, arr) => arr.findIndex((x) => x.id === c.id) === i
-        );
-        return {
-            layers: {
-                l1: {
-                    status: r.incident ? 'full' : 'missing',
-                    incident: r.incident,
-                },
-                l2: {
-                    status: layerStatus(r.findings, r.risks),
-                    findings: r.findings,
-                    risks: r.risks,
-                },
-                l3: {
-                    status: layerStatus(controls, r.assets),
-                    controls,
-                    assets: r.assets,
-                    vendors: r.vendors,
-                },
-                l4: {
-                    status: 'partial',
-                    rcas: r.rcas,
-                    capas: r.capas,
-                    note: 'Obligation nodes not loaded — forward obligation trace unavailable',
-                },
-                l5: {
-                    status: 'partial',
-                    regulations: r.regulations,
-                    note: 'No clause/section/page references in current graph',
-                },
+    const raw = await db().fetch(GET_REVERSE_TRACE, { id });
+    // fetch unwraps single-record results to a plain object via flattenWhenScalar
+    const r = Array.isArray(raw) ? raw[0] : raw;
+    if (!r?.incident) return null;
+    const controls = [...r.incidentControls, ...r.findingControls].filter(
+        (c, i, arr) => arr.findIndex((x) => x.id === c.id) === i
+    );
+    return {
+        layers: {
+            l1: {
+                status: r.incident ? 'full' : 'missing',
+                incident: r.incident,
             },
-        };
-    } catch (err: any) {
-        log.error(`intelligence.repo: getReverseTrace failed ${id}`, err.message);
-        return null;
-    }
+            l2: {
+                status: layerStatus(r.findings, r.risks),
+                findings: r.findings,
+                risks: r.risks,
+            },
+            l3: {
+                status: layerStatus(controls, r.assets),
+                controls,
+                assets: r.assets,
+                vendors: r.vendors,
+            },
+            l4: {
+                status: 'partial',
+                rcas: r.rcas,
+                capas: r.capas,
+                note: 'Obligation nodes not loaded — forward obligation trace unavailable',
+            },
+            l5: {
+                status: 'partial',
+                regulations: r.regulations,
+                note: 'No clause/section/page references in current graph',
+            },
+        },
+    };
 };

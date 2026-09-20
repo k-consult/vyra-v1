@@ -44,12 +44,13 @@ ui/        Next.js + React frontend (:3002)
 
 Other workspaces import `lib/` via relative paths (`../../lib/<module>`), never as an npm package. See root `CLAUDE.md` for the full picture.
 
-### 0.2 `api/` module shape — flat, no factory/spec split
+### 0.2 `api/` module shape — flat, spec only where a write needs one
 
-Each domain is one folder: `api/modules/<domain>/{index.ts, repo.ts}`. This is deliberately flatter than a classic edge/core/factory/spec/repo stack:
+Each domain is one folder: `api/modules/<domain>/{index.ts, repo.ts}`, plus an optional sibling `spec.ts`. This is deliberately flatter than a classic edge/core/factory/spec/repo stack:
 
-- `index.ts` — a Fastify plugin (`Module = FastifyPluginAsync & { prefix: string }`). A route handler does exactly two things: `await` one function from the sibling `repo.ts`, then `reply.send({ <namedKey>: result })`. No try/catch in the handler — `repo.ts` already handles errors (see 0.4).
+- `index.ts` — a Fastify plugin (`Module = FastifyPluginAsync & { prefix: string }`). A read route handler does exactly two things: `await` one function from the sibling `repo.ts`, then `reply.send({ <namedKey>: result })` — no try/catch; a thrown error propagates and Fastify's default handler turns it into a 5xx (see 0.4). A write route that has a `spec.ts` wraps only the `spec` call in `try/catch` (→ 400 on validation failure) and lets the repo call underneath propagate untouched, same as a read.
 - `repo.ts` — Cypher queries only. Lazy `db()` handle, named `UPPER_SNAKE` query constants. See `graph-spine` for the full rule set.
+- `spec.ts` (only on the mutating endpoints that need one — today `operational` and `intelligence`) — one `isValid(input)`/named specification per write, checking structural validity (required fields, enum membership, referential existence) before the route calls `repo.ts`. Not present on read-only modules — a GET has nothing to validate beyond route params (YAGNI). See Target Architecture §6 in `architecture.md` for the full rationale.
 - New domain → new folder + register in `api/index.ts`'s `modules` array. No auto-discovery, no master router — this is intentionally the smallest structure that satisfies OCP (Part 3.1) at this scale: adding a domain is additive, never an edit to an existing module.
 - Full route lookup and add-a-route workflow: `api-route-spine`.
 
@@ -65,7 +66,7 @@ These apply across `api/`, `agents/`, `cli/`, and `lib/`:
 - **`lib/log` only** — `log.info` / `log.debug` / `log.error` / `log.cypher`. Never `console.*`.
 - **Guard functions** for argument validation; prefer `R.defaultTo`, `R.nth`, `R.path` for safe access. Standard string fallback for an unresolved value is `'UNKNOWN'` (see `agents/runtime/index.ts`'s `reasonWithLLM`), not `null` or `undefined`.
 - **No identifiers ending in** `Manager`, `Controller`, `Plugin`, `Helper`, `Util` (Part 4.4's naming rules, enforced project-wide).
-- **Error handling — the actual pattern in every `repo.ts` and `agents/tools/*.ts`:** `async/await` + `try/catch`. Writes always rethrow after `log.error(...)`. Reads return a safe default (`[]`) instead of throwing, so a list endpoint degrades gracefully instead of 500ing. This is Part 9.4's "never return null" rule made concrete: the safe default here is `[]`, never `null`.
+- **Error handling — the actual pattern in every `repo.ts` and `agents/tools/*.ts`:** reads and writes both let failures propagate. `lib/graph-db`'s `fetch`/`exec` already `log.error(...)` and rethrow on a driver/query failure, so a `repo.ts` function calls `db()` directly with no wrapping `try/catch` — a connection failure and "genuinely zero rows" must never look the same to a caller (Part 9.4's fail-fast rule, and `foundation.md`'s "documented absence is a first-class state" applied to infrastructure, not just business gaps). A route handler that needs to attach domain context to a failure (`api/modules/<domain>/repo.ts`'s few multi-step writes, e.g. `resolveDecision`) still uses `try/catch` — but always rethrows, never returns a safe default. Fastify's default error handler turns an uncaught throw into a 5xx at the edge; no per-route try/catch is needed for that.
 - **No soft-delete / `archived` convention.** Unlike the generic Part 6.2 guidance, this schema has no soft-delete fields — see `graph-spine` §7 for the actual node-identity fields (`id`, `createdAt`, `version`, plus `agentId`/`autonomyLevel`/`confidence` on agent-generated nodes).
 
 ### 0.5 `ui/` shape — route shell + feature component + one API client

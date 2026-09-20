@@ -1,6 +1,5 @@
 import { DB } from '../../../lib/graph-db';
 import { config } from '../../../lib/config';
-import log from '../../../lib/log';
 
 const db = () => DB.get(config.db.twin.database, {
     uri: config.db.twin.uri,
@@ -58,49 +57,23 @@ const LIST_AGENT_PROPOSED_CONTROLS = `
 `;
 
 export const listRegulations = async () => {
-    try {
-        const raw: any = await db().fetch2(LIST_REGULATIONS, {});
-        const rows = Array.isArray(raw) ? raw : [raw]; return rows.map((r: any) => r.regulation).filter(Boolean);
-    } catch (err: any) {
-        log.error('knowledge.repo: listRegulations failed', err.message);
-        return [];
-    }
+    const raw: any = await db().fetch(LIST_REGULATIONS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.regulation).filter(Boolean);
 };
 
 export const listControls = async () => {
-    try {
-        const raw: any = await db().fetch2(LIST_CONTROLS, {});
-        const rows = Array.isArray(raw) ? raw : [raw]; return rows.map((r: any) => r.control).filter(Boolean);
-    } catch (err: any) {
-        log.error('knowledge.repo: listControls failed', err.message);
-        return [];
-    }
+    const raw: any = await db().fetch(LIST_CONTROLS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.control).filter(Boolean);
 };
 
 export const listAgentProposedControls = async () => {
-    try {
-        const raw: any = await db().fetch2(LIST_AGENT_PROPOSED_CONTROLS, {});
-        const rows = Array.isArray(raw) ? raw : [raw]; return rows.map((r: any) => r.control).filter(Boolean);
-    } catch (err: any) {
-        log.error('knowledge.repo: listAgentProposedControls failed', err.message);
-        return [];
-    }
+    const raw: any = await db().fetch(LIST_AGENT_PROPOSED_CONTROLS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.control).filter(Boolean);
 };
 
-export const traceForward = async (regulationId: string) => {
-    try {
-        return await db().fetch2(TRACE_FORWARD, { id: regulationId });
-    } catch (err: any) {
-        log.error('knowledge.repo: traceForward failed', err.message);
-        return [];
-    }
-};
+export const traceForward = async (regulationId: string) => db().fetch(TRACE_FORWARD, { id: regulationId });
 
-export const traceReverse = async (findingId: string) => {
-    try {
-        return await db().fetch2(TRACE_REVERSE, { id: findingId });
-    } catch (err: any) {
-        log.error('knowledge.repo: traceReverse failed', err.message);
-        return [];
-    }
-};
+export const traceReverse = async (findingId: string) => db().fetch(TRACE_REVERSE, { id: findingId });

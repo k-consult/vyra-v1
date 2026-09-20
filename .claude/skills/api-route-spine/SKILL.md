@@ -54,10 +54,10 @@ export default knowledge;
 
 1. **New domain?** Create `api/modules/<domain>/index.ts` + `repo.ts`, then add the import + entry to the `modules` array in `api/index.ts`. No other wiring exists — no master router, no auto-discovery.
 2. **Existing domain, new route:** add a `fastify.get`/`fastify.post` call in that module's `index.ts`. Fixed-segment routes should still be registered before `:param` routes at the same depth (Fastify's router is trie-based and largely order-independent, but keep the convention for readability and to avoid ambiguous overlaps).
-3. **Handler shape** — this codebase does not use the edge/core/factory/spec/repo split. A handler does exactly two things:
+3. **Handler shape** — this codebase does not use the edge/core/factory/spec/repo split, except on the handful of writes that mutate state. A read handler does exactly two things:
    - `await` one function imported from the sibling `repo.ts`
    - `reply.send({ <namedKey>: result })` — always a named top-level key (`{ regulations: [...] }`, not a bare array), so the UI never has to guess the shape
-4. **No try/catch in the handler.** `repo.ts` functions already catch internally: reads return `[]` on failure (handler still replies 200 with an empty list), writes rethrow (Fastify's default error handler turns it into a 500). See `graph-spine` §8 for the repo-side pattern.
+4. **No try/catch in a read handler.** `repo.ts` functions let failures propagate (no internal `try/catch` swallowing to a safe default) — Fastify's default error handler turns any uncaught throw from the async handler into a 500. See `graph-spine` §8 for the repo-side pattern. A write route that mutates state adds a sibling `spec.ts` (see `operational`/`intelligence` for the two existing examples) and wraps only the `spec.isValid(...)` call in `try/catch` → 400; the repo call underneath still propagates untouched.
 5. **Add the client function** to `ui/src/lib/api.ts` under the matching domain object, using the shared `get`/`post` helpers already defined at the top of that file. This is the only UI-side wiring needed — there's no generated client, no codegen step.
 6. **Persistence** goes in `repo.ts` per `graph-spine`, not in the route handler.
 

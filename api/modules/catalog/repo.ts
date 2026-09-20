@@ -1,6 +1,5 @@
 import { DB } from '../../../lib/graph-db';
 import { config } from '../../../lib/config';
-import log from '../../../lib/log';
 
 const db = () => DB.get(config.db.twin.database, {
     uri: config.db.twin.uri,
@@ -35,46 +34,24 @@ const TRACE_OBLIGATIONS = `
 `;
 
 export const listRegulations = async () => {
-    try {
-        const raw: any = await db().fetch2(LIST_REGULATIONS, {});
-        const rows = Array.isArray(raw) ? raw : [raw];
-        return rows.map((r: any) => r.regulation).filter(Boolean);
-    } catch (err: any) {
-        log.error('catalog.repo: listRegulations failed', err.message);
-        return [];
-    }
+    const raw: any = await db().fetch(LIST_REGULATIONS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.regulation).filter(Boolean);
 };
 
 export const listAuthorities = async () => {
-    try {
-        const raw: any = await db().fetch2(LIST_AUTHORITIES, {});
-        const rows = Array.isArray(raw) ? raw : [raw];
-        return rows.map((r: any) => r.authority).filter(Boolean);
-    } catch (err: any) {
-        log.error('catalog.repo: listAuthorities failed', err.message);
-        return [];
-    }
+    const raw: any = await db().fetch(LIST_AUTHORITIES, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.authority).filter(Boolean);
 };
 
 export const listComplianceAreas = async () => {
-    try {
-        const raw: any = await db().fetch2(LIST_COMPLIANCE_AREAS, {});
-        const rows = Array.isArray(raw) ? raw : [raw];
-        return rows.map((r: any) => r.complianceArea).filter(Boolean);
-    } catch (err: any) {
-        log.error('catalog.repo: listComplianceAreas failed', err.message);
-        return [];
-    }
+    const raw: any = await db().fetch(LIST_COMPLIANCE_AREAS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.complianceArea).filter(Boolean);
 };
 
-export const traceObligations = async (regulationId: string) => {
-    try {
-        return await db().fetch2(TRACE_OBLIGATIONS, { id: regulationId });
-    } catch (err: any) {
-        log.error('catalog.repo: traceObligations failed', err.message);
-        return [];
-    }
-};
+export const traceObligations = async (regulationId: string) => db().fetch(TRACE_OBLIGATIONS, { id: regulationId });
 
 export interface Cadence {
     cadenceUnit: 'hour' | 'day' | 'week' | 'month';
@@ -108,26 +85,21 @@ const TASK_CALENDAR = `
 `;
 
 export const fetchTaskCalendar = async (horizonWeeks = 52) => {
-    try {
-        const raw: any = await db().fetch2(TASK_CALENDAR, {});
-        const rows = Array.isArray(raw) ? raw : [raw];
-        return rows.filter(Boolean).map((r: any) => {
-            const cadence: Cadence = {
-                cadenceUnit: r.schedule.cadenceUnit,
-                cadenceInterval: Number(r.schedule.cadenceInterval),
-                anchorDate: r.schedule.anchorDate,
-            };
-            return {
-                taskId: r.task.id,
-                taskName: r.task.name,
-                frequency: r.task.frequency,
-                controlId: r.control.id,
-                controlName: r.control.name,
-                occurrences: computeWindow(cadence, horizonWeeks),
-            };
-        });
-    } catch (err: any) {
-        log.error('catalog.repo: fetchTaskCalendar failed', err.message);
-        return [];
-    }
+    const raw: any = await db().fetch(TASK_CALENDAR, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.filter(Boolean).map((r: any) => {
+        const cadence: Cadence = {
+            cadenceUnit: r.schedule.cadenceUnit,
+            cadenceInterval: Number(r.schedule.cadenceInterval),
+            anchorDate: r.schedule.anchorDate,
+        };
+        return {
+            taskId: r.task.id,
+            taskName: r.task.name,
+            frequency: r.task.frequency,
+            controlId: r.control.id,
+            controlName: r.control.name,
+            occurrences: computeWindow(cadence, horizonWeeks),
+        };
+    });
 };

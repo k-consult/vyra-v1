@@ -22,7 +22,7 @@ export const fetchObligations = async (regulationId?: string) => {
            WHERE NOT (req)<-[:IMPLEMENTS]-(:Control) AND NOT (:Decision)-[:ABOUT]->(req)
            RETURN properties(req) AS obligation LIMIT 100`;
     const args = regulationId ? { id: regulationId } : {};
-    const raw: any = await db().fetch2(cypher, args);
+    const raw: any = await db().fetch(cypher, args);
     const rows = Array.isArray(raw) ? raw : [raw];
     return rows.map((r: any) => r.obligation).filter(Boolean);
 };
@@ -32,7 +32,7 @@ export const fetchControlsForObligation = async (obligationId: string) => {
         MATCH (req:Obligation {id: $id})<-[:IMPLEMENTS]-(ctl:Control)
         RETURN properties(ctl) AS control
     `;
-    const raw: any = await db().fetch2(cypher, { id: obligationId });
+    const raw: any = await db().fetch(cypher, { id: obligationId });
     const rows = Array.isArray(raw) ? raw : [raw];
     return rows.map((r: any) => r.control).filter(Boolean);
 };
@@ -50,7 +50,7 @@ export const fetchUnassessedSignals = async () => {
         RETURN properties(s) AS signal, properties(ast) AS asset, collect(DISTINCT tsk.id) AS taskIds
         LIMIT 100
     `;
-    const raw: any = await db().fetch2(cypher, {});
+    const raw: any = await db().fetch(cypher, {});
     const rows = Array.isArray(raw) ? raw : [raw];
     return rows.filter((r: any) => r?.signal).map((r: any) => ({
         ...r.signal,
@@ -73,7 +73,7 @@ export const fetchUnscoredFindings = async () => {
         RETURN properties(f) AS finding, properties(ctl) AS control
         LIMIT 100
     `;
-    const raw: any = await db().fetch2(cypher, {});
+    const raw: any = await db().fetch(cypher, {});
     const rows = Array.isArray(raw) ? raw : [raw];
     return rows.filter((r: any) => r?.finding).map((r: any) => ({ ...r.finding, control: r.control ?? null }));
 };
@@ -99,7 +99,7 @@ export const fetchUnbundledEvidenceIncidents = async () => {
                (size(capaIds) > 0 AND size(capaIds) = size(verifiedCapaIds)) AS allCapasVerified
         LIMIT 50
     `;
-    const raw: any = await db().fetch2(cypher, {});
+    const raw: any = await db().fetch(cypher, {});
     const rows = Array.isArray(raw) ? raw : [raw];
     return rows.filter((r: any) => r?.incident).map((r: any) => ({
         ...r.incident,
@@ -114,7 +114,7 @@ export const traceForward = async (regulationId: string) => {
         MATCH path = (:Regulation {id: $id})<-[:BELONGS_TO]-(:Clause)<-[:DEFINED_BY]-(:Obligation)<-[:IMPLEMENTS]-(:Control)
         RETURN path LIMIT 50
     `;
-    const raw: any = await db().fetch2(cypher, { id: regulationId });
+    const raw: any = await db().fetch(cypher, { id: regulationId });
     const rows = Array.isArray(raw) ? raw : [raw];
     return rows.map((r: any) => r.path).filter(Boolean);
 };

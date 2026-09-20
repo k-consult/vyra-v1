@@ -1,7 +1,7 @@
 // Guardrails for the neo4j-local MCP server. Every check here is a fast, readable
 // rejection with a clear message — defense-in-depth, not the only line of defense.
 // The structural backstop for read_cypher is that it only ever runs through
-// lib/graph-db's fetch2(), which opens a Neo4j READ-mode session: the server itself
+// lib/graph-db's fetch(), which opens a Neo4j READ-mode session: the server itself
 // refuses to execute a write inside it, regardless of what slips past the regex below.
 
 const WRITE_KEYWORDS =

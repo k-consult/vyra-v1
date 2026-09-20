@@ -1,6 +1,5 @@
 import { DB } from '../../../lib/graph-db';
 import { config } from '../../../lib/config';
-import log from '../../../lib/log';
 
 const db = () => DB.get(config.db.twin.database, {
     uri: config.db.twin.uri,
@@ -8,7 +7,7 @@ const db = () => DB.get(config.db.twin.database, {
     password: config.db.twin.password,
 });
 
-// fetch2 unwraps single-record results via flattenWhenScalar — normalise here
+// fetch unwraps single-record results via flattenWhenScalar — normalise here
 const toRow = (raw: any): Record<string, number> => {
     const row = Array.isArray(raw) ? raw[0] : raw;
     return row ?? {};
@@ -70,61 +69,56 @@ const posture = (
 };
 
 export const getLandscape = async () => {
-    try {
-        const [
-            incRaw, regRaw, facRaw, astRaw, vndRaw, ctlRaw,
-            tskRaw, evdRaw, rskRaw, fndRaw, rcaRaw, decRaw, capRaw, verRaw,
-            orgRaw, roleRaw, caRaw, sigRaw,
-        ] = await Promise.all([
-            db().fetch2(COUNT_INCIDENTS,    {}),
-            db().fetch2(COUNT_REGULATIONS,  {}),
-            db().fetch2(COUNT_FACILITIES,   {}),
-            db().fetch2(COUNT_ASSETS,       {}),
-            db().fetch2(COUNT_VENDORS,      {}),
-            db().fetch2(COUNT_CONTROLS,     {}),
-            db().fetch2(COUNT_TASKS,        {}),
-            db().fetch2(COUNT_EVIDENCE,     {}),
-            db().fetch2(COUNT_RISKS,        {}),
-            db().fetch2(COUNT_FINDINGS,     {}),
-            db().fetch2(COUNT_RCAS,         {}),
-            db().fetch2(COUNT_DECISIONS,    {}),
-            db().fetch2(COUNT_CAPAS,        {}),
-            db().fetch2(COUNT_VERIFICATIONS,{}),
-            db().fetch2(COUNT_ORGANIZATIONS,{}),
-            db().fetch2(COUNT_ROLES,        {}),
-            db().fetch2(COUNT_COMPLIANCE_AREAS, {}),
-            db().fetch2(COUNT_SIGNALS,      {}),
-        ]);
+    const [
+        incRaw, regRaw, facRaw, astRaw, vndRaw, ctlRaw,
+        tskRaw, evdRaw, rskRaw, fndRaw, rcaRaw, decRaw, capRaw, verRaw,
+        orgRaw, roleRaw, caRaw, sigRaw,
+    ] = await Promise.all([
+        db().fetch(COUNT_INCIDENTS,    {}),
+        db().fetch(COUNT_REGULATIONS,  {}),
+        db().fetch(COUNT_FACILITIES,   {}),
+        db().fetch(COUNT_ASSETS,       {}),
+        db().fetch(COUNT_VENDORS,      {}),
+        db().fetch(COUNT_CONTROLS,     {}),
+        db().fetch(COUNT_TASKS,        {}),
+        db().fetch(COUNT_EVIDENCE,     {}),
+        db().fetch(COUNT_RISKS,        {}),
+        db().fetch(COUNT_FINDINGS,     {}),
+        db().fetch(COUNT_RCAS,         {}),
+        db().fetch(COUNT_DECISIONS,    {}),
+        db().fetch(COUNT_CAPAS,        {}),
+        db().fetch(COUNT_VERIFICATIONS,{}),
+        db().fetch(COUNT_ORGANIZATIONS,{}),
+        db().fetch(COUNT_ROLES,        {}),
+        db().fetch(COUNT_COMPLIANCE_AREAS, {}),
+        db().fetch(COUNT_SIGNALS,      {}),
+    ]);
 
-        const inc = toRow(incRaw);
-        const rsk = toRow(rskRaw);
-        const fnd = toRow(fndRaw);
-        const cap = toRow(capRaw);
+    const inc = toRow(incRaw);
+    const rsk = toRow(rskRaw);
+    const fnd = toRow(fndRaw);
+    const cap = toRow(capRaw);
 
-        return {
-            incidents:     { total: inc.total ?? 0, critical: inc.critical ?? 0, open: inc.open ?? 0 },
-            regulations:   { total: toRow(regRaw).total ?? 0 },
-            facilities:    { total: toRow(facRaw).total ?? 0 },
-            assets:        { total: toRow(astRaw).total ?? 0 },
-            vendors:       { total: toRow(vndRaw).total ?? 0 },
-            controls:      { total: toRow(ctlRaw).total ?? 0 },
-            tasks:         { total: toRow(tskRaw).total ?? 0, open: toRow(tskRaw).open ?? 0, closed: toRow(tskRaw).closed ?? 0 },
-            evidence:      { total: toRow(evdRaw).total ?? 0 },
-            risks:         { total: rsk.total ?? 0, critical: rsk.critical ?? 0, high: rsk.high ?? 0 },
-            findings:      { total: fnd.total ?? 0, critical: fnd.critical ?? 0, open: fnd.open ?? 0 },
-            rcas:          { total: toRow(rcaRaw).total ?? 0 },
-            decisions:     { total: toRow(decRaw).total ?? 0 },
-            capas:         { total: cap.total ?? 0, open: cap.open ?? 0 },
-            verifications: { total: toRow(verRaw).total ?? 0 },
-            organizations: { total: toRow(orgRaw).total ?? 0 },
-            roles:         { total: toRow(roleRaw).total ?? 0 },
-            complianceAreas: { total: toRow(caRaw).total ?? 0 },
-            signals:       { total: toRow(sigRaw).total ?? 0 },
-            posture:       posture(rsk, fnd, cap, inc),
-            updatedAt:     new Date().toISOString(),
-        };
-    } catch (err: any) {
-        log.error('dashboard.repo: getLandscape failed', err.message);
-        return null;
-    }
+    return {
+        incidents:     { total: inc.total ?? 0, critical: inc.critical ?? 0, open: inc.open ?? 0 },
+        regulations:   { total: toRow(regRaw).total ?? 0 },
+        facilities:    { total: toRow(facRaw).total ?? 0 },
+        assets:        { total: toRow(astRaw).total ?? 0 },
+        vendors:       { total: toRow(vndRaw).total ?? 0 },
+        controls:      { total: toRow(ctlRaw).total ?? 0 },
+        tasks:         { total: toRow(tskRaw).total ?? 0, open: toRow(tskRaw).open ?? 0, closed: toRow(tskRaw).closed ?? 0 },
+        evidence:      { total: toRow(evdRaw).total ?? 0 },
+        risks:         { total: rsk.total ?? 0, critical: rsk.critical ?? 0, high: rsk.high ?? 0 },
+        findings:      { total: fnd.total ?? 0, critical: fnd.critical ?? 0, open: fnd.open ?? 0 },
+        rcas:          { total: toRow(rcaRaw).total ?? 0 },
+        decisions:     { total: toRow(decRaw).total ?? 0 },
+        capas:         { total: cap.total ?? 0, open: cap.open ?? 0 },
+        verifications: { total: toRow(verRaw).total ?? 0 },
+        organizations: { total: toRow(orgRaw).total ?? 0 },
+        roles:         { total: toRow(roleRaw).total ?? 0 },
+        complianceAreas: { total: toRow(caRaw).total ?? 0 },
+        signals:       { total: toRow(sigRaw).total ?? 0 },
+        posture:       posture(rsk, fnd, cap, inc),
+        updatedAt:     new Date().toISOString(),
+    };
 };

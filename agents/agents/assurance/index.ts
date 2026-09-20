@@ -64,7 +64,7 @@ export const run = async (): Promise<void> => {
         },
 
         verify: async (inc) => {
-            const raw: any = await db().fetch2(
+            const raw: any = await db().fetch(
                 `MATCH (d:Decision {id: $id}) RETURN properties(d) AS decision`,
                 { id: `DEC-${inc.id}` }
             );

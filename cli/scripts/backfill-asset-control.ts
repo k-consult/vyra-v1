@@ -23,7 +23,7 @@ const BACKFILL_ASSET_CONTROL = `
 
 async function main() {
     log.info('backfill-asset-control: deriving Asset -[:COVERED_BY]-> Control via shared ComplianceArea...');
-    const raw: any = await db().exec2(BACKFILL_ASSET_CONTROL, {});
+    const raw: any = await db().exec(BACKFILL_ASSET_CONTROL, {});
     const row = Array.isArray(raw) ? raw[0] : raw;
     log.info(`backfill-asset-control: +${row?.edgesCreated ?? 0} COVERED_BY edges`);
     await DB.closeAll();

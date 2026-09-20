@@ -1,7 +1,6 @@
 import * as R from 'ramda';
 import { DB } from '../../../lib/graph-db';
 import { config } from '../../../lib/config';
-import log from '../../../lib/log';
 
 const db = () => DB.get(config.db.twin.database, {
     uri: config.db.twin.uri,
@@ -22,23 +21,15 @@ const LIST_VENDORS = `
 `;
 
 export const listFacilities = async () => {
-    try {
-        const raw: any = await db().fetch2(LIST_FACILITIES, {});
-        const rows = Array.isArray(raw) ? raw : [raw]; return rows.map((r: any) => r.facility).filter(Boolean);
-    } catch (err: any) {
-        log.error('operational.repo: listFacilities failed', err.message);
-        return [];
-    }
+    const raw: any = await db().fetch(LIST_FACILITIES, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.facility).filter(Boolean);
 };
 
 export const listVendors = async () => {
-    try {
-        const raw: any = await db().fetch2(LIST_VENDORS, {});
-        const rows = Array.isArray(raw) ? raw : [raw]; return rows.map((r: any) => r.vendor).filter(Boolean);
-    } catch (err: any) {
-        log.error('operational.repo: listVendors failed', err.message);
-        return [];
-    }
+    const raw: any = await db().fetch(LIST_VENDORS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.vendor).filter(Boolean);
 };
 
 const LIST_PEOPLE = `
@@ -50,14 +41,9 @@ const LIST_PEOPLE = `
 `;
 
 export const listPeople = async () => {
-    try {
-        const raw: any = await db().fetch2(LIST_PEOPLE, {});
-        const rows = Array.isArray(raw) ? raw : [raw];
-        return rows.filter((r: any) => r?.person).map((r: any) => ({ ...r.person, facilityIds: r.facilityIds ?? [] }));
-    } catch (err: any) {
-        log.error('operational.repo: listPeople failed', err.message);
-        return [];
-    }
+    const raw: any = await db().fetch(LIST_PEOPLE, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.filter((r: any) => r?.person).map((r: any) => ({ ...r.person, facilityIds: r.facilityIds ?? [] }));
 };
 
 const LIST_INCIDENTS = `
@@ -67,36 +53,29 @@ const LIST_INCIDENTS = `
 `;
 
 export const listIncidents = async () => {
-    try {
-        const raw: any = await db().fetch2(LIST_INCIDENTS, {});
-        const rows = Array.isArray(raw) ? raw : [raw];
-        return rows.map((r: any) => r.incident).filter(Boolean);
-    } catch (err: any) {
-        log.error('operational.repo: listIncidents failed', err.message);
-        return [];
-    }
+    const raw: any = await db().fetch(LIST_INCIDENTS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.incident).filter(Boolean);
 };
 
 export const listAssets = async () => {
-    try {
-        const cypher = `MATCH (a:Asset) RETURN properties(a) AS asset ORDER BY a.name LIMIT 200`;
-        return await db().fetch2(cypher, {});
-    } catch (err: any) {
-        log.error('operational.repo: listAssets failed', err.message);
-        return [];
-    }
+    const cypher = `MATCH (a:Asset) RETURN properties(a) AS asset ORDER BY a.name LIMIT 200`;
+    return db().fetch(cypher, {});
 };
 
 export const listSignals = async (assetId?: string) => {
-    try {
-        const cypher = assetId
-            ? `MATCH (a:Asset {id: $id})<-[:EMITTED_BY]-(s:Signal) RETURN properties(s) AS signal ORDER BY s.timestamp DESC LIMIT 100`
-            : `MATCH (s:Signal) RETURN properties(s) AS signal ORDER BY s.timestamp DESC LIMIT 100`;
-        return await db().fetch2(cypher, { id: assetId });
-    } catch (err: any) {
-        log.error('operational.repo: listSignals failed', err.message);
-        return [];
-    }
+    const cypher = assetId
+        ? `MATCH (a:Asset {id: $id})<-[:EMITTED_BY]-(s:Signal) RETURN properties(s) AS signal ORDER BY s.timestamp DESC LIMIT 100`
+        : `MATCH (s:Signal) RETURN properties(s) AS signal ORDER BY s.timestamp DESC LIMIT 100`;
+    return db().fetch(cypher, { id: assetId });
+};
+
+const ASSET_EXISTS = `MATCH (a:Asset {id: $id}) RETURN count(a) > 0 AS assetExists`;
+
+export const assetExists = async (id: string): Promise<boolean> => {
+    const raw: any = await db().fetch(ASSET_EXISTS, { id });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    return Boolean(row?.assetExists);
 };
 
 export interface CreateSignalInput {
@@ -159,7 +138,7 @@ const CREATE_SIGNAL_AND_TASK = `
 export const createSignal = async (input: Partial<CreateSignalInput>) => {
     const signal = guardSignalInput(input);
     const taskId = `TSK-${signal.id}`;
-    const raw: any = await db().exec2(CREATE_SIGNAL_AND_TASK, {
+    const raw: any = await db().exec(CREATE_SIGNAL_AND_TASK, {
         assetId: signal.assetId,
         signalId: signal.id,
         signalProps: { name: signal.name, type: signal.type, source: signal.source, timestamp: signal.timestamp, payload: signal.payload, assetId: signal.assetId },
@@ -203,13 +182,8 @@ const GET_LIFECYCLE = `
 `;
 
 export const getLifecycle = async (id: string) => {
-    try {
-        const raw = await db().fetch2(GET_LIFECYCLE, { id });
-        // fetch2 unwraps single-record results to a plain object via flattenWhenScalar
-        const row = Array.isArray(raw) ? raw[0] : raw;
-        return row?.incident ? row : null;
-    } catch (err: any) {
-        log.error(`operational.repo: getLifecycle failed ${id}`, err.message);
-        return null;
-    }
+    const raw = await db().fetch(GET_LIFECYCLE, { id });
+    // fetch unwraps single-record results to a plain object via flattenWhenScalar
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    return row?.incident ? row : null;
 };

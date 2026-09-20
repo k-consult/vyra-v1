@@ -20,12 +20,12 @@ const truncate = (rows: any[]) => ({
 export const getSchema = async () => {
     try {
         const [labels, relTypes, propKeys] = await Promise.all([
-            db().fetch2('CALL db.labels() YIELD label RETURN label ORDER BY label', {}),
-            db().fetch2(
+            db().fetch('CALL db.labels() YIELD label RETURN label ORDER BY label', {}),
+            db().fetch(
                 'CALL db.relationshipTypes() YIELD relationshipType RETURN relationshipType ORDER BY relationshipType',
                 {}
             ),
-            db().fetch2('CALL db.propertyKeys() YIELD propertyKey RETURN propertyKey ORDER BY propertyKey', {}),
+            db().fetch('CALL db.propertyKeys() YIELD propertyKey RETURN propertyKey ORDER BY propertyKey', {}),
         ]);
         return {
             labels: asRows(labels).map((r) => r.label),
@@ -42,7 +42,7 @@ export const readCypher = async (cypher: string, params: Record<string, unknown>
     guard.assertReadOnly(cypher);
     guard.assertNoAdminCommands(cypher);
     try {
-        const raw = await db().fetch2(cypher, params);
+        const raw = await db().fetch(cypher, params);
         return truncate(asRows(raw));
     } catch (err: any) {
         log.error('mcp-neo4j: readCypher failed', err.message);
@@ -54,7 +54,7 @@ export const writeCypher = async (cypher: string, params: Record<string, unknown
     guard.assertWriteAllowed();
     guard.assertNoAdminCommands(cypher);
     try {
-        const raw = await db().exec2(cypher, params);
+        const raw = await db().exec(cypher, params);
         return truncate(asRows(raw));
     } catch (err: any) {
         log.error('mcp-neo4j: writeCypher failed', err.message);

@@ -40,7 +40,7 @@ export const writeDecision = async (decision: DecisionPayload): Promise<void> =>
     `;
     const { id, sourceId, ...props } = decision;
     try {
-        await db().exec2(cypher, { id, sourceId, props });
+        await db().exec(cypher, { id, sourceId, props });
     } catch (err: any) {
         log.error('graph-write: writeDecision failed', err.message);
         throw err;
@@ -57,7 +57,7 @@ export const writeFinding = async (finding: { id: string; title: string; severit
     `;
     const { id, controlId, ...props } = finding;
     try {
-        await db().exec2(cypher, { id, controlId, props });
+        await db().exec(cypher, { id, controlId, props });
     } catch (err: any) {
         log.error('graph-write: writeFinding failed', err.message);
         throw err;

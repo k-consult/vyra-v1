@@ -23,9 +23,7 @@ interface result {
 
 interface db {
     fetch(cypher: string, args?: any): Promise<result[]>;
-    fetch2(cypher: string, args?: any): Promise<result[]>;
-    exec(cypher: string, args?: any): Promise<void | result[]>;
-    exec2(cypher: string, args?: any): Promise<result[]>;
+    exec(cypher: string, args?: any): Promise<result[]>;
 }
 
 function getShortID(): number {
@@ -92,11 +90,7 @@ class DB {
             }
         }
 
-        async function fetch2(cypher: string, args: any = {}): Promise<result[]> {
-            return fetch(cypher, args);
-        }
-
-        async function exec(cypher: string, args: any = {}): Promise<void | result[]> {
+        async function exec(cypher: string, args: any = {}): Promise<result[]> {
             const reqID = getShortID();
             const session = driver.session({ database: name, defaultAccessMode: neo4j.session.WRITE });
             try {
@@ -112,11 +106,7 @@ class DB {
             }
         }
 
-        async function exec2(cypher: string, args: any = {}): Promise<result[]> {
-            return exec(cypher, args) as Promise<result[]>;
-        }
-
-        return { fetch, fetch2, exec, exec2 };
+        return { fetch, exec };
     }
 
     public async createDB(credentials: credentials, databaseName: string): Promise<void> {

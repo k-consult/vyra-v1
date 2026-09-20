@@ -1,6 +1,5 @@
 import { DB } from '../../../lib/graph-db';
 import { config } from '../../../lib/config';
-import log from '../../../lib/log';
 
 const db = () => DB.get(config.db.twin.database, {
     uri: config.db.twin.uri,
@@ -15,13 +14,9 @@ const LIST_EVIDENCE = `
 `;
 
 export const listEvidence = async () => {
-    try {
-        const raw: any = await db().fetch2(LIST_EVIDENCE, {});
-        const rows = Array.isArray(raw) ? raw : [raw]; return rows.map((r: any) => r.evidence).filter(Boolean);
-    } catch (err: any) {
-        log.error('assurance.repo: listEvidence failed', err.message);
-        return [];
-    }
+    const raw: any = await db().fetch(LIST_EVIDENCE, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.evidence).filter(Boolean);
 };
 
 // Coverage Scoring (L6, Phase 4a) — catalog-origin data only. Obligation -> Control and
@@ -78,52 +73,47 @@ const pct = (numerator: number, denominator: number): number =>
 const round1 = (n: number): number => Math.round(n * 10) / 10;
 
 export const getCoverageScore = async () => {
-    try {
-        const [reqRaw, astRaw, reqByAreaRaw, astByAreaRaw] = await Promise.all([
-            db().fetch2(OBLIGATION_COVERAGE_TOTAL, {}),
-            db().fetch2(ASSET_COVERAGE_TOTAL, {}),
-            db().fetch2(OBLIGATION_COVERAGE_BY_AREA, {}),
-            db().fetch2(ASSET_COVERAGE_BY_AREA, {}),
-        ]);
+    const [reqRaw, astRaw, reqByAreaRaw, astByAreaRaw] = await Promise.all([
+        db().fetch(OBLIGATION_COVERAGE_TOTAL, {}),
+        db().fetch(ASSET_COVERAGE_TOTAL, {}),
+        db().fetch(OBLIGATION_COVERAGE_BY_AREA, {}),
+        db().fetch(ASSET_COVERAGE_BY_AREA, {}),
+    ]);
 
-        const req: any = Array.isArray(reqRaw) ? reqRaw[0] : reqRaw;
-        const ast: any = Array.isArray(astRaw) ? astRaw[0] : astRaw;
-        const reqByArea: any[] = Array.isArray(reqByAreaRaw) ? reqByAreaRaw : [reqByAreaRaw];
-        const astByArea: any[] = Array.isArray(astByAreaRaw) ? astByAreaRaw : [astByAreaRaw];
+    const req: any = Array.isArray(reqRaw) ? reqRaw[0] : reqRaw;
+    const ast: any = Array.isArray(astRaw) ? astRaw[0] : astRaw;
+    const reqByArea: any[] = Array.isArray(reqByAreaRaw) ? reqByAreaRaw : [reqByAreaRaw];
+    const astByArea: any[] = Array.isArray(astByAreaRaw) ? astByAreaRaw : [astByAreaRaw];
 
-        const assetsById = new Map(astByArea.filter(Boolean).map((r: any) => [r.complianceAreaId, r]));
+    const assetsById = new Map(astByArea.filter(Boolean).map((r: any) => [r.complianceAreaId, r]));
 
-        const byComplianceArea = reqByArea.filter(Boolean).map((r: any) => {
-            const a = assetsById.get(r.complianceAreaId) ?? { assets: 0, coveredAssets: 0 };
-            return {
-                complianceAreaId: r.complianceAreaId,
-                complianceAreaName: r.complianceAreaName,
-                controls: r.controls,
-                obligationsCovered: r.obligationsCovered,
-                assets: a.assets,
-                coveredAssets: a.coveredAssets,
-            };
-        });
-
+    const byComplianceArea = reqByArea.filter(Boolean).map((r: any) => {
+        const a = assetsById.get(r.complianceAreaId) ?? { assets: 0, coveredAssets: 0 };
         return {
-            scope: 'catalog-origin only — legacy (unlabeled) Controls and Assets are excluded, see plan.md Phase 4a',
-            obligations: {
-                total: req.totalObligations ?? 0,
-                covered: req.coveredObligations ?? 0,
-                coveragePercent: pct(req.coveredObligations ?? 0, req.totalObligations ?? 0),
-            },
-            assets: {
-                total: ast.totalAssets ?? 0,
-                covered: ast.coveredAssets ?? 0,
-                unmappedComplianceArea: ast.unmappedComplianceArea ?? 0,
-                coveragePercent: pct(ast.coveredAssets ?? 0, ast.totalAssets ?? 0),
-            },
-            byComplianceArea,
+            complianceAreaId: r.complianceAreaId,
+            complianceAreaName: r.complianceAreaName,
+            controls: r.controls,
+            obligationsCovered: r.obligationsCovered,
+            assets: a.assets,
+            coveredAssets: a.coveredAssets,
         };
-    } catch (err: any) {
-        log.error('assurance.repo: getCoverageScore failed', err.message);
-        return null;
-    }
+    });
+
+    return {
+        scope: 'catalog-origin only — legacy (unlabeled) Controls and Assets are excluded, see plan.md Phase 4a',
+        obligations: {
+            total: req.totalObligations ?? 0,
+            covered: req.coveredObligations ?? 0,
+            coveragePercent: pct(req.coveredObligations ?? 0, req.totalObligations ?? 0),
+        },
+        assets: {
+            total: ast.totalAssets ?? 0,
+            covered: ast.coveredAssets ?? 0,
+            unmappedComplianceArea: ast.unmappedComplianceArea ?? 0,
+            coveragePercent: pct(ast.coveredAssets ?? 0, ast.totalAssets ?? 0),
+        },
+        byComplianceArea,
+    };
 };
 
 const RISK_ROLLUP = `
@@ -133,25 +123,20 @@ const RISK_ROLLUP = `
 `;
 
 export const getRiskRollup = async () => {
-    try {
-        const raw: any = await db().fetch2(RISK_ROLLUP, {});
-        const rows: any[] = Array.isArray(raw) ? raw : [raw];
-        const byRating = rows.filter(Boolean).map(r => ({
-            rating: r.rating,
-            count: r.count,
-            avgScore: r.avgScore != null ? Math.round(r.avgScore * 10) / 10 : 0,
-        }));
-        const totalRisks = byRating.reduce((sum, r) => sum + r.count, 0);
-        const weightedSum = byRating.reduce((sum, r) => sum + r.avgScore * r.count, 0);
-        return {
-            byRating,
-            totalRisks,
-            avgResidualScore: totalRisks > 0 ? round1(weightedSum / totalRisks) : 0,
-        };
-    } catch (err: any) {
-        log.error('assurance.repo: getRiskRollup failed', err.message);
-        return null;
-    }
+    const raw: any = await db().fetch(RISK_ROLLUP, {});
+    const rows: any[] = Array.isArray(raw) ? raw : [raw];
+    const byRating = rows.filter(Boolean).map(r => ({
+        rating: r.rating,
+        count: r.count,
+        avgScore: r.avgScore != null ? Math.round(r.avgScore * 10) / 10 : 0,
+    }));
+    const totalRisks = byRating.reduce((sum, r) => sum + r.count, 0);
+    const weightedSum = byRating.reduce((sum, r) => sum + r.avgScore * r.count, 0);
+    return {
+        byRating,
+        totalRisks,
+        avgResidualScore: totalRisks > 0 ? round1(weightedSum / totalRisks) : 0,
+    };
 };
 
 // origin distinguishes Phase 4b's unlabeled synthetic batch from Phase 8's live
@@ -168,14 +153,9 @@ const LIST_ATTESTATIONS = `
 `;
 
 export const listAttestations = async () => {
-    try {
-        const raw: any = await db().fetch2(LIST_ATTESTATIONS, {});
-        const rows = Array.isArray(raw) ? raw : [raw];
-        return rows.filter((r: any) => r?.attestation).map((r: any) => ({ ...r.attestation, origin: originOf(r.labels ?? []) }));
-    } catch (err: any) {
-        log.error('assurance.repo: listAttestations failed', err.message);
-        return [];
-    }
+    const raw: any = await db().fetch(LIST_ATTESTATIONS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.filter((r: any) => r?.attestation).map((r: any) => ({ ...r.attestation, origin: originOf(r.labels ?? []) }));
 };
 
 const LIST_EVIDENCE_PACKAGES = `
@@ -185,14 +165,9 @@ const LIST_EVIDENCE_PACKAGES = `
 `;
 
 export const listEvidencePackages = async () => {
-    try {
-        const raw: any = await db().fetch2(LIST_EVIDENCE_PACKAGES, {});
-        const rows = Array.isArray(raw) ? raw : [raw];
-        return rows.filter((r: any) => r?.evidencePackage).map((r: any) => ({ ...r.evidencePackage, origin: originOf(r.labels ?? []) }));
-    } catch (err: any) {
-        log.error('assurance.repo: listEvidencePackages failed', err.message);
-        return [];
-    }
+    const raw: any = await db().fetch(LIST_EVIDENCE_PACKAGES, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.filter((r: any) => r?.evidencePackage).map((r: any) => ({ ...r.evidencePackage, origin: originOf(r.labels ?? []) }));
 };
 
 const LIST_ASSURANCE_STATEMENTS = `
@@ -204,14 +179,9 @@ const LIST_ASSURANCE_STATEMENTS = `
 `;
 
 export const listAssuranceStatements = async () => {
-    try {
-        const raw: any = await db().fetch2(LIST_ASSURANCE_STATEMENTS, {});
-        const rows = Array.isArray(raw) ? raw : [raw];
-        return rows.filter(Boolean).map((r: any) => ({ ...r.statement, regulations: r.regulations ?? [], origin: originOf(r.labels ?? []) }));
-    } catch (err: any) {
-        log.error('assurance.repo: listAssuranceStatements failed', err.message);
-        return [];
-    }
+    const raw: any = await db().fetch(LIST_ASSURANCE_STATEMENTS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.filter(Boolean).map((r: any) => ({ ...r.statement, regulations: r.regulations ?? [], origin: originOf(r.labels ?? []) }));
 };
 
 const LIST_AUDITS = `
@@ -223,12 +193,7 @@ const LIST_AUDITS = `
 `;
 
 export const listAudits = async () => {
-    try {
-        const raw: any = await db().fetch2(LIST_AUDITS, {});
-        const rows = Array.isArray(raw) ? raw : [raw];
-        return rows.filter(Boolean).map((r: any) => ({ ...r.audit, statementIds: r.statementIds ?? [], origin: originOf(r.labels ?? []) }));
-    } catch (err: any) {
-        log.error('assurance.repo: listAudits failed', err.message);
-        return [];
-    }
+    const raw: any = await db().fetch(LIST_AUDITS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.filter(Boolean).map((r: any) => ({ ...r.audit, statementIds: r.statementIds ?? [], origin: originOf(r.labels ?? []) }));
 };
