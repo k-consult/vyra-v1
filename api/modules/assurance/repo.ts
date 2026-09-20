@@ -25,7 +25,7 @@ export const listEvidence = async () => {
 };
 
 // Coverage Scoring (L6, Phase 4a) — catalog-origin data only. Obligation -> Control and
-// Asset -> ComplianceArea are dual-origin relationships (see vyra-graph-spine.md): the 15 legacy
+// Asset -> ComplianceArea are dual-origin relationships (see graph.md): the 15 legacy
 // per-incident Controls carry no BELONGS_TO -> ComplianceArea edge, so an unfiltered query would
 // silently exclude them from the denominator rather than the numerator. Filtering explicitly to
 // :Catalog/:Enterprise makes that scoping decision visible in the query, not an accident of the data.
@@ -38,7 +38,7 @@ const OBLIGATION_COVERAGE_TOTAL = `
 `;
 
 // unmappedComplianceArea isolates the known Security-category gap (2 of 31 assets, see
-// vyra-graph-spine.md's Asset section) as its own bucket rather than folding it into "uncovered".
+// graph.md's Asset section) as its own bucket rather than folding it into "uncovered".
 const ASSET_COVERAGE_TOTAL = `
     MATCH (ast:Asset:Enterprise)
     OPTIONAL MATCH (ast)-[:IN_COMPLIANCE_AREA]->(ca:ComplianceArea)
@@ -106,7 +106,7 @@ export const getCoverageScore = async () => {
         });
 
         return {
-            scope: 'catalog-origin only — legacy (unlabeled) Controls and Assets are excluded, see vyra-implementation-plan.md Phase 4a',
+            scope: 'catalog-origin only — legacy (unlabeled) Controls and Assets are excluded, see plan.md Phase 4a',
             obligations: {
                 total: req.totalObligations ?? 0,
                 covered: req.coveredObligations ?? 0,

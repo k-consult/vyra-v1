@@ -26,7 +26,7 @@ export interface DecisionPayload {
 
 // (d)-[:ABOUT]->(src): written directly by agents, not the CLI pipeline — not in
 // v2.ts's rels (that field only drives CSV-embedded-FK compilation). Documented
-// under vyra-graph-spine.md's derived/live-write relationships.
+// under graph.md's derived/live-write relationships.
 export const writeDecision = async (decision: DecisionPayload): Promise<void> => {
     const cypher = `
         MERGE (d:Decision {id: $id})

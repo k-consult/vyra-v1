@@ -174,7 +174,7 @@ const APPROVE_DEVIATION_ASSESSMENT = `
 // Control:AgentProposed. inherentScore/residualScore are computed here in Cypher from the
 // Decision's own proposed values (never trusted from the LLM as arithmetic) — the agent's
 // own likelihood x consequence convention, not a fit to the legacy 7-incident scores (see
-// vyra-implementation-plan.md Phase 8). residual == inherent at proposal time: no CAPA has
+// plan.md Phase 8). residual == inherent at proposal time: no CAPA has
 // closed yet for a newly-scored Finding, so there is no mitigation to discount.
 const APPROVE_RISK_ASSESSMENT = `
     MATCH (d:Decision {id: $id})-[:ABOUT]->(f:Finding)

@@ -1,8 +1,8 @@
 # Vyra Architecture
 
-**The platform's layers and components — how Vyra is built.** Where `vyra-graph-spine.md` is the ground truth for *what* Vyra stores (the graph model), this document is the ground truth for *how the software is layered around it*: the runtime components, who talks to whom, and the access rules that keep the layers honest.
+**The platform's layers and components — how Vyra is built.** Where `graph.md` is the ground truth for *what* Vyra stores (the graph model), this document is the ground truth for *how the software is layered around it*: the runtime components, who talks to whom, and the access rules that keep the layers honest.
 
-> Companion docs: `vyra-foundation.md` (the capability specification — model, value, guarantees), `vyra-graph-spine.md` (the graph schema this architecture serves), `vyra-implementation-plan.md` (sequencing + build status). Full reading order: `.design/README.md`.
+> Companion docs: `foundation.md` (the capability specification — model, value, guarantees), `graph.md` (the graph schema this architecture serves), `plan.md` (sequencing + build status). Full reading order: `.design/README.md`.
 
 ---
 
@@ -26,16 +26,16 @@ Everything below the API — the agent runtime, the ingestion pipeline, the API 
 
 ## Context Map — Bounded Contexts and the Catalog/Enterprise Relationship
 
-DDD terms, applied precisely rather than decoratively. The five graph *domains* in `vyra-graph-spine.md` are **subdomains**, not Bounded Contexts — they share one physical graph, one schema, and one consistency boundary, which is the actual test for "same context." The real Bounded Context boundary in this system is the **tenant**: one Neo4j database per enterprise is one Bounded Context. Two enterprises never share a model, a query, or a transaction — that is what `vyra-foundation.md`'s "isolation of data" principle means in DDD terms.
+DDD terms, applied precisely rather than decoratively. The five graph *domains* in `graph.md` are **subdomains**, not Bounded Contexts — they share one physical graph, one schema, and one consistency boundary, which is the actual test for "same context." The real Bounded Context boundary in this system is the **tenant**: one Neo4j database per enterprise is one Bounded Context. Two enterprises never share a model, a query, or a transaction — that is what `foundation.md`'s "isolation of data" principle means in DDD terms.
 
-Inside that one Bounded Context, the five subdomains stay cohesive because each has exactly one owning writer (`vyra-graph-spine.md` §3.3 — Catalog Ingester, Enterprise Sync, Events Sink, Agent Runtime) — the **Common Closure Principle** applied at graph scale: things that change for the same reason (a regulation revision, an incident) are written by the same owner, and no owner writes into another's territory.
+Inside that one Bounded Context, the five subdomains stay cohesive because each has exactly one owning writer (`graph.md` §3.3 — Catalog Ingester, Enterprise Sync, Events Sink, Agent Runtime) — the **Common Closure Principle** applied at graph scale: things that change for the same reason (a regulation revision, an incident) are written by the same owner, and no owner writes into another's territory.
 
 **The one real cross-context relationship is Vyra Central ↔ Tenant, and it is asymmetric on purpose:**
 
 | DDD relationship | Direction | Mechanism |
 |---|---|---|
 | **Open Host Service + Published Language** | Vyra Central → Tenant | The versioned `Regulation/Clause/Obligation/Control` catalog schema is a published contract every tenant conforms to — tenants don't negotiate or fork it |
-| **Anti-Corruption Layer, reversed** | Tenant ← sync | Runs opposite to the textbook direction: it isn't protecting the tenant from a messy upstream model, it's protecting the tenant's own local extensions from being clobbered by the *next* sync. The mechanism is `vyra-foundation.md` §1's additive `MERGE ... ON MATCH SET n += row` — a write discipline, not a translation layer, because both sides already share the same node shape |
+| **Anti-Corruption Layer, reversed** | Tenant ← sync | Runs opposite to the textbook direction: it isn't protecting the tenant from a messy upstream model, it's protecting the tenant's own local extensions from being clobbered by the *next* sync. The mechanism is `foundation.md` §1's additive `MERGE ... ON MATCH SET n += row` — a write discipline, not a translation layer, because both sides already share the same node shape |
 | **Separate Ways** | Enterprise subdomain ↔ Vyra Central | The Enterprise subdomain (org, roles, facilities, incidents) has no upstream dependency at all — pure tenant data, never synced anywhere today. Collective Intelligence's corroboration gate is the *planned* exception, and only for identifier-free typed patterns, never rows |
 
 This is what makes the `:Catalog`/`:Enterprise` dual-label an architectural decision, not a schema convenience: it lets two different Context Map relationships — conform-to-upstream, and fully autonomous — coexist on the *same node type* inside one Bounded Context, told apart structurally rather than by a hidden flag.
@@ -51,13 +51,13 @@ This is what makes the `:Catalog`/`:Enterprise` dual-label an architectural deci
 | **Agent Runtime** | `agents/` | — | `runtime` (observe→reason→act→verify loop + `reasonWithLLM` helper), `tools` (graph-read / graph-write), agent families — `control-intelligence` (live), `risk-`/`signal-`/`assurance-intelligence` (stubs) | `lib/graph-db` + local Ollama (`localhost:11434`) — **never** the API |
 | **Ingestion** | `cli/` | — | Pipeline: `parser` → `compiler` → `projection` → `runtime`; orchestrators `index.ts` / `catalog-sync.ts` / `enterprise-sync.ts`; `semantic-contract/v2.ts` (column→node contract); `scripts/` (converters, backfill) | `lib/graph-db` (via `LOAD CSV`) |
 | **Shared Foundation** | `lib/` | — | `graph-db` (sole Neo4j driver), `log`, `config` — **built before all others** | Neo4j |
-| **Data / Graph** | Neo4j `agentic-grc` | — | The five-domain Compliance Digital Twin — see `vyra-graph-spine.md` | — |
+| **Data / Graph** | Neo4j `agentic-grc` | — | The five-domain Compliance Digital Twin — see `graph.md` | — |
 
 **Access rules (the invariants):**
 - The **UI never touches Neo4j** — all reads go through the API over HTTP.
 - **`lib/graph-db` is the only door to Neo4j** — API, agents, and CLI all go through it; nothing else holds a driver.
 - **Agents never call the API**, and the API never calls agents — they meet only in the graph.
-- **The graph is the integration bus** — a change lands in its owner's sub-graph and propagates through relationships (see `vyra-graph-spine.md` §3.3).
+- **The graph is the integration bus** — a change lands in its owner's sub-graph and propagates through relationships (see `graph.md` §3.3).
 
 ---
 
@@ -80,7 +80,7 @@ Concrete, code-grounded gaps — named so they're tracked, not rediscovered as s
 | Smell | Where | What's missing | Fix |
 |---|---|---|---|
 | **Edge and Service collapsed into one layer** | Every `api/modules/<domain>/index.ts` — the Fastify route handler calls `repo.ts` directly; nothing validates input or sequences domain rules between them | Node-spine's own `edge → core → repo` spine calls for a Service/Domain layer; today it's `edge → repo` — two layers, not three | Target Architecture §6, **Domain Validation Layer**, below — scoped to the 3 endpoints that actually mutate state, not all 30+ read endpoints (YAGNI: a GET has nothing to validate beyond route params) |
-| **Errors silently become empty results** | The dominant pattern in `repo.ts` reads — 34 of 41 `catch` blocks across `api/modules/*/repo.ts` log the error and `return []` (or `void`) | Fail-fast (clean-code §5): a Neo4j connection failure and "genuinely zero rows" are indistinguishable to every caller, including the UI — the one thing `vyra-foundation.md` calls non-negotiable for *business* gaps ("documented absence is a first-class state") is being silently violated for *infrastructure* failures instead | Let read failures reject; translate to a 5xx at the edge. A repo manufacturing a false empty success is worse than a visible error, because it looks like data |
+| **Errors silently become empty results** | The dominant pattern in `repo.ts` reads — 34 of 41 `catch` blocks across `api/modules/*/repo.ts` log the error and `return []` (or `void`) | Fail-fast (clean-code §5): a Neo4j connection failure and "genuinely zero rows" are indistinguishable to every caller, including the UI — the one thing `foundation.md` calls non-negotiable for *business* gaps ("documented absence is a first-class state") is being silently violated for *infrastructure* failures instead | Let read failures reject; translate to a 5xx at the edge. A repo manufacturing a false empty success is worse than a visible error, because it looks like data |
 | **A Gateway with two names for one operation** | `lib/graph-db`'s `db` interface exposes `fetch`/`fetch2` and `exec`/`exec2`; `fetch2`/`exec2` are pass-throughs with no distinct behavior. In practice the whole codebase already voted: 71 call sites use `fetch2`, zero call `fetch` directly; 9 use `exec2` vs. 3 for `exec` | DRY — one piece of knowledge (`how do I read/write`), two names | Collapse to one name each (the "2" ones, since that's what call sites already standardized on), or give the "2" variants real distinct semantics if one was actually intended (e.g., a transactional read) |
 
 ---
@@ -106,7 +106,7 @@ Concrete, code-grounded gaps — named so they're tracked, not rediscovered as s
 
 ## Target Architecture — What Scale Requires
 
-> This half of the document describes **target design, not built state** — the mechanisms `vyra-foundation.md` requires (per-enterprise isolation, coordinated multi-agent reasoning, a real human-in-the-loop gate, versioned/audited persistence, and the two centrally-held assets) but that don't exist in code today. Every subsection states plainly what exists instead. Sequencing, phasing, and open decisions for building any of this live in `vyra-implementation-plan.md`, not here — this section only fixes the shape.
+> This half of the document describes **target design, not built state** — the mechanisms `foundation.md` requires (per-enterprise isolation, coordinated multi-agent reasoning, a real human-in-the-loop gate, versioned/audited persistence, and the two centrally-held assets) but that don't exist in code today. Every subsection states plainly what exists instead. Sequencing, phasing, and open decisions for building any of this live in `plan.md`, not here — this section only fixes the shape.
 
 ### New Components at a Glance
 
@@ -134,7 +134,7 @@ Concrete, code-grounded gaps — named so they're tracked, not rediscovered as s
 | Corroboration Gate | Vyra Central | tenant twins, Collective Intelligence Store | target |
 | Entitlement Store | Vyra Central | Access Gateway, Usage Metering | target |
 | Usage Metering | Vyra Central (read-only) | Audit Writer, `SyncRun` records | target |
-| Onboarding Agent Family | `agents/` (`onboarding-intelligence`) | `Blueprint`/`CutoverCriterion`/`ContinuityBaseline` (pending `vyra-graph-spine.md` ratification) | target |
+| Onboarding Agent Family | `agents/` (`onboarding-intelligence`) | `Blueprint`/`CutoverCriterion`/`ContinuityBaseline` (pending `graph.md` ratification) | target |
 
 ---
 
@@ -147,7 +147,7 @@ Two problems are conflated in "no edge layer" and need separate treatment:
 - **Identity & access** — who is calling, as which actor, with which permissions. Owned by a new **Access Gateway**: a Fastify plugin registered in `api/API.ts` ahead of every domain module, validating the caller (AuthN) and their role (AuthZ) against the foundation's unified `Actor`/`Role` model, and attaching a resolved **Tenant Context** (`tenantId`, `database`, `actorId`, roles, entitlements) to the request — the object that replaces every hardcoded `config.db.twin.database` reference in `api/modules/*/repo.ts`, `agents/tools/graph-*.ts`, and `cli/orchestration/*.ts`.
 - **Tenant resolution & provisioning** — which enterprise's graph a request or job runs against, and how a new enterprise gets one in the first place. Owned by a **Tenant Registry** (central record of `Tenant {id, databaseName, credentialsRef, status}`, living in Vyra Central) and a **Tenant Provisioner** that creates a new tenant end to end: call out explicitly that the provisioner's core dependency — a named, per-tenant Neo4j database — is **not a gap**; `lib/graph-db/index.ts` already exposes `DB.createDB()` and a `Map<string, Driver>` keyed by database name. No caller uses either today. Wiring the Access Gateway and Tenant Provisioner to this existing mechanism is closer to plumbing than to new infrastructure.
 
-Sequencing and open decisions for building this: `vyra-implementation-plan.md`.
+Sequencing and open decisions for building this: `plan.md`.
 
 ### 2. Agent Orchestration — Coordination Beyond the Sequential Loop
 
@@ -199,13 +199,13 @@ sequenceDiagram
 
 **Reading the diagram:** graph reads happen in parallel across families; only the Ollama inference step is forced serial, through the Reasoning Broker — everything else in the loop is free to run concurrently once the Coordination Ledger and version checks exist.
 
-Sequencing and open decisions for building this: `vyra-implementation-plan.md`.
+Sequencing and open decisions for building this: `plan.md`.
 
 ### 3. Human-in-the-Loop — Decision Lifecycle, SLA & Notification
 
 > **Status: target design — 0% built** (notification/SLA). What exists today: `POST /intelligence/decisions/:id/{approve,reject}` (live, Phase 7) — a correct but purely **pull** mechanism. A full-repo search confirms zero email, webhook, websocket, or pub/sub code exists anywhere in this repository.
 
-- **Decision Watchdog** — scans `pending` Decisions against a new `dueBy` property (set at proposal time) and flips state to `decision-overdue` once it elapses — the same alarm-state idiom `vyra-foundation.md` already uses for onboarding's `cutover-overdue`, applied to the smaller unit of a single Decision.
+- **Decision Watchdog** — scans `pending` Decisions against a new `dueBy` property (set at proposal time) and flips state to `decision-overdue` once it elapses — the same alarm-state idiom `foundation.md` already uses for onboarding's `cutover-overdue`, applied to the smaller unit of a single Decision.
 - **Notification Gateway** — a new `lib/notify` module, a sibling to `lib/graph-db` and `lib/log`, exposing one channel-agnostic `notify(event)` call with pluggable email/webhook/websocket adapters underneath.
 - **Decision Feed** — a push channel (WebSocket or SSE) from `api/` to `ui/`, replacing the current implicit assumption that a human happens to open `/intelligence` and look.
 - New `Decision.status` values: `decision-overdue`, and optionally `escalated` for a Decision that has been overdue long enough to page a different reviewer.
@@ -225,7 +225,7 @@ stateDiagram-v2
 
 **Reading the diagram:** `pending → approved/rejected` is the live Phase 7 path. Everything reachable through `decision-overdue`/`escalated` is target — a Decision can sit in `pending` indefinitely today with no alarm.
 
-Sequencing and open decisions for building this: `vyra-implementation-plan.md`.
+Sequencing and open decisions for building this: `plan.md`.
 
 ### 4. Persistence — Transactions, Audit & Versioning
 
@@ -235,30 +235,30 @@ Sequencing and open decisions for building this: `vyra-implementation-plan.md`.
 - **Audit Writer** — a write-through wrapper around every mutating `exec`/`exec2` call, emitting an immutable `AuditEvent {actor, action, targetId, before, after, ts}` record. Two placements are possible; this doc recommends one:
   - *(a)* graph-native `AuditEvent` nodes inside the tenant's own twin — keeps everything on one integration bus, but bloats the twin with write-history it doesn't need for reasoning.
   - *(b, recommended)* a second, append-only database per tenant (e.g. `<tenant>-audit`), opened through the *same already-existing* `DB.get(name, credentials)` multi-driver mechanism in `lib/graph-db` that Tenant Provisioning (§1) also depends on — no new infrastructure, and the mutable twin stays lean.
-- **Append-and-Supersede Protocol** — the name for the pattern `vyra-foundation.md` already requires ("nothing is deleted, only superseded"), enforced at the Audit Writer / repo layer rather than as a Neo4j schema constraint (Cypher has no native "supersede, don't overwrite" guard). Which node types beyond `Regulation` must carry a `supersededBy` property is `vyra-graph-spine.md`'s decision, not this document's — architecture only fixes *where in the write path* the protocol is enforced.
+- **Append-and-Supersede Protocol** — the name for the pattern `foundation.md` already requires ("nothing is deleted, only superseded"), enforced at the Audit Writer / repo layer rather than as a Neo4j schema constraint (Cypher has no native "supersede, don't overwrite" guard). Which node types beyond `Regulation` must carry a `supersededBy` property is `graph.md`'s decision, not this document's — architecture only fixes *where in the write path* the protocol is enforced.
 
 | Mechanism | Today | Target |
 |---|---|---|
 | Multi-statement atomicity | none — independent `exec()` calls | `Unit of Work.transact(fn)` |
 | Write history | none — `MERGE...SET` overwrites in place | `Audit Writer` → append-only audit database |
-| Supersession | `Regulation.supersededBy` only | Append-and-Supersede Protocol, scope set by `vyra-graph-spine.md` |
+| Supersession | `Regulation.supersededBy` only | Append-and-Supersede Protocol, scope set by `graph.md` |
 
-Sequencing and open decisions for building this: `vyra-implementation-plan.md`.
+Sequencing and open decisions for building this: `plan.md`.
 
 ### 5. Vyra Central — Topology, Catalog Distribution & Collective Intelligence
 
-> **Status:** Catalog Sync itself is **live** (Phase 1, real data) but writes into the *same* tenant database under a `:Catalog` label — not the physically separate "one master, many synced copies" split `vyra-foundation.md` §1 requires. Collective Intelligence, entitlement, and metering have **zero architectural footprint today**. `vyra-implementation-plan.md` already flags this open item in almost the same words used here: *"There's no separate 'master catalog' service today... Don't design against that split until it's explicitly scoped."*
+> **Status:** Catalog Sync itself is **live** (Phase 1, real data) but writes into the *same* tenant database under a `:Catalog` label — not the physically separate "one master, many synced copies" split `foundation.md` §1 requires. Collective Intelligence, entitlement, and metering have **zero architectural footprint today**. `plan.md` already flags this open item in almost the same words used here: *"There's no separate 'master catalog' service today... Don't design against that split until it's explicitly scoped."*
 
 - **Vyra Central** — the deployment boundary itself: one shared service, distinct from any tenant's deployment, holding everything below.
 - **Master Catalog** — the central, versioned `Regulation/Clause/Obligation/Control` store. Target: its own database (e.g. `vyra-catalog-master`), reusing the multi-driver mechanism again rather than colocating with any tenant.
 - **Catalog Sync Service** — the evolution of `cli/orchestration/catalog-sync.ts`: Master Catalog → **Sync Diff Engine** → fan-out into every tenant database, instead of reading local CSVs into whichever database happens to be configured.
-- **Sync Diff Engine** — computes a real diff instead of today's blind `MERGE...SET n += row` overwrite, which is what actually makes `vyra-foundation.md`'s "customization survives re-sync" and "freshness as a measurable SLA" requirements checkable rather than aspirational.
+- **Sync Diff Engine** — computes a real diff instead of today's blind `MERGE...SET n += row` overwrite, which is what actually makes `foundation.md`'s "customization survives re-sync" and "freshness as a measurable SLA" requirements checkable rather than aspirational.
 - **`SyncRun`** — a new provenance node (`id, sourceCatalogVersion, startedAt, completedAt, nodesWritten, diffSummary`) — the sync-run audit trail that doesn't exist today (only a bare `catalogVersion` property does).
-- **Collective Intelligence Store** — the central store of corroborated, identifier-free `TypedPattern` objects per `vyra-foundation.md` §3.
+- **Collective Intelligence Store** — the central store of corroborated, identifier-free `TypedPattern` objects per `foundation.md` §3.
 - **Corroboration Gate** — gives the foundation doc's "corroboration" concept an actual place: a Vyra Central service that accepts pattern submissions from tenants and only promotes one into the Collective Intelligence Store once corroborated across N unrelated tenants.
-- **Entitlement Store** — tenant licensing (catalog scope, jurisdictions, agent families, collective-intelligence participation) as graph state, per `vyra-foundation.md` §4 ("entitlement is data, never a build flag").
+- **Entitlement Store** — tenant licensing (catalog scope, jurisdictions, agent families, collective-intelligence participation) as graph state, per `foundation.md` §4 ("entitlement is data, never a build flag").
 - **Usage Metering** — deliberately *not* a new instrumentation path: a read over the Audit Writer (§4) and `SyncRun` records already being produced, per §4's own rule ("if billing needs its own instrumentation, the provenance model was incomplete").
-- **Onboarding Agent Family** (`onboarding-intelligence`) — a fifth agent family (not in `agents/registry.ts` today) owning three new per-tenant concepts named in `vyra-foundation.md` §0: `Blueprint`, `CutoverCriterion`, `ContinuityBaseline`. This document only places them; formally defining them as graph entities is `vyra-graph-spine.md`'s decision to ratify.
+- **Onboarding Agent Family** (`onboarding-intelligence`) — a fifth agent family (not in `agents/registry.ts` today) owning three new per-tenant concepts named in `foundation.md` §0: `Blueprint`, `CutoverCriterion`, `ContinuityBaseline`. This document only places them; formally defining them as graph entities is `graph.md`'s decision to ratify.
 
 ```mermaid
 graph LR
@@ -293,7 +293,7 @@ graph LR
 
 **Reading the diagram:** solid arrows are the one link that's partially real today (catalog sync, though same-database rather than cross-database as drawn); every dashed arrow — pattern feed-down, corroboration harvest, metering, tenant resolution — is fully target.
 
-Sequencing and open decisions for building this: `vyra-implementation-plan.md`.
+Sequencing and open decisions for building this: `plan.md`.
 
 ---
 
@@ -307,6 +307,6 @@ Not every endpoint needs this. Of the ~30 routes across `api/modules/`, exactly 
 - **Where it plugs in** — the route handler calls `spec.isValid(body)` before `repo.ts`, and lets a failure throw with the field/rule/value named (clean-code §5.2) rather than the route handler's current ad hoc `try { ... } catch (err) { reply.code(400).send({ error: err.message }) }`, which today reports whatever the *repo* or *driver* happened to throw — not a validation error at all.
 - **What this deliberately does not do** — it does not introduce a `core/` orchestration layer, a factory, or a new entity type. Two layers (edge+repo) are fine for the 27 read-only routes (a legitimate **Transaction Script** choice, per clean-code §8.6, for simple CRUD-shaped reads); the fix is scoped to where a real domain rule is actually being skipped today — the three writes.
 
-Sequencing and open decisions for building this: `vyra-implementation-plan.md`.
+Sequencing and open decisions for building this: `plan.md`.
 
-Sequencing and open decisions for building this: `vyra-implementation-plan.md`.
+Sequencing and open decisions for building this: `plan.md`.

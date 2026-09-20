@@ -1,6 +1,6 @@
 # Vyra v1 — Implementation Plan
 
-**What's next, and what's blocking it** — that's all this doc carries now. For *what's live today*, see `vyra-tracker.md` (single source of truth for status, not duplicated here). For the full build narrative behind every closed phase — what was scoped, what actually shipped, deviations, bugs found, live-verification evidence — see `.design/__ref/implementation-history.md`; nothing there is more current than this doc or the tracker. Full reading order: `.design/README.md`.
+**What's next, and what's blocking it** — that's all this doc carries now. For *what's live today*, see `track.md` (single source of truth for status, not duplicated here). For the full build narrative behind every closed phase — what was scoped, what actually shipped, deviations, bugs found, live-verification evidence — see `.design/__ref/implementation-history.md`; nothing there is more current than this doc or the tracker. Full reading order: `.design/README.md`.
 
 ## Context
 
@@ -19,7 +19,7 @@ Vyra started as a demo pipeline (CSV → Neo4j → read-only API) seeded from a 
 
 ## Status
 
-**Phases 0 through 9 are done**, plus three standalone (non-numbered) closures: the L1 Contract entity, a Gap Review confirming three tracker items (Escalation Paths, `HAS_ROLE`, SOPs) have no real closure path, and an Intelligence-UI usability pass. Full narrative for all of it: `.design/__ref/implementation-history.md`. Current per-layer status: `vyra-tracker.md`.
+**Phases 0 through 9 are done**, plus three standalone (non-numbered) closures: the L1 Contract entity, a Gap Review confirming three tracker items (Escalation Paths, `HAS_ROLE`, SOPs) have no real closure path, and an Intelligence-UI usability pass. Full narrative for all of it: `.design/__ref/implementation-history.md`. Current per-layer status: `track.md`.
 
 | Phase | Shipped | Date |
 |---|---|---|
@@ -54,7 +54,7 @@ Phases 10–11 are each blocked on a decision that hasn't been made yet — neit
 
 ### Phase 11 — Scenario Simulation (L7) 🔲 PLANNED — UNSCOPED
 
-The one capability that needs *multiple* agent families reasoning over the same graph state together (e.g. risk + control) — `vyra-tracker.md` already flags this as the one genuine remaining L7 gap.
+The one capability that needs *multiple* agent families reasoning over the same graph state together (e.g. risk + control) — `track.md` already flags this as the one genuine remaining L7 gap.
 
 **Blocking**: there is currently no working definition of what a "scenario" is here (a regulation changing? a control failing? something else?) — needs a product spec from the user before it can become a real phase.
 
@@ -66,9 +66,9 @@ The one capability that needs *multiple* agent families reasoning over the same 
 
 ## Where to go next
 
-- **Why this must be agentic at all** → `vyra-foundation.md`
-- **Model, value and guarantees** (no status) → `vyra-foundation.md`
-- **Current build status** → `vyra-tracker.md`
-- **Schema, relationships, Cypher patterns** → `vyra-graph-spine.md`
-- **Software layers & components** → `vyra-architecture.md`
+- **Why this must be agentic at all** → `foundation.md`
+- **Model, value and guarantees** (no status) → `foundation.md`
+- **Current build status** → `track.md`
+- **Schema, relationships, Cypher patterns** → `graph.md`
+- **Software layers & components** → `architecture.md`
 - **Full historical build narrative** → `.design/__ref/implementation-history.md`

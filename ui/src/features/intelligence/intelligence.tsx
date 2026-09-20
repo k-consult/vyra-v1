@@ -412,7 +412,7 @@ function PeoplePanel({ items }: { items: any[] }) {
             <div className="flex items-center gap-2">
                 <Users size={11} className="text-zinc-600" />
                 <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">People</p>
-                <p className="text-[10px] text-zinc-700" title="Extracted from free-text name fields already in the data — see vyra-graph-spine.md">
+                <p className="text-[10px] text-zinc-700" title="Extracted from free-text name fields already in the data — see graph.md">
                     · extracted from free-text names, no roleId match (different Role catalog vertical)
                 </p>
             </div>

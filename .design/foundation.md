@@ -1,6 +1,6 @@
 # Vyra Foundation — Requirements for a True Agentic GRC Platform
 
-**Vyra's capability specification — the model, the value, and the guarantees.** This is the primary document: what Vyra is, whose job each layer serves, what compounds commercially, and *what must be technically true for a GRC system to earn the word "agentic."* Its technical references sit alongside it — `vyra-graph-spine.md` (the graph schema) and `vyra-architecture.md` (software layers and access rules). Build status is deliberately elsewhere: `vyra-tracker.md` for what's live, `vyra-implementation-plan.md` for what's next. Full doc map: `.design/README.md`.
+**Vyra's capability specification — the model, the value, and the guarantees.** This is the primary document: what Vyra is, whose job each layer serves, what compounds commercially, and *what must be technically true for a GRC system to earn the word "agentic."* Its technical references sit alongside it — `graph.md` (the graph schema) and `architecture.md` (software layers and access rules). Build status is deliberately elsewhere: `track.md` for what's live, `plan.md` for what's next. Full doc map: `.design/README.md`.
 
 > **Audience: founders, architects, and technical stakeholders.** The right-hand column of every table below is deliberately concrete — a claim about compliance that can't be stated as a structure is not a claim this document makes. Readers who want the pitch without the mechanism should be shown the two diagrams, not this file.
 
@@ -14,7 +14,7 @@ The operating loop, end to end:
 Regulations → Obligations → Execution → Operations → Signals → Reasoning → Risk → Remediation → Assurance → Trust
 ```
 
-That loop runs across five graph domains (full detail in `vyra-graph-spine.md`):
+That loop runs across five graph domains (full detail in `graph.md`):
 
 | Graph | Question |
 |---|---|
@@ -57,7 +57,7 @@ The catalog democratizes *what must be done*. Collective intelligence democratiz
 
 Sourced from the GRC Operating Model bow-tie. Each layer names a **persona** — who does the job today, and which agent family eventually absorbs it — and its **capabilities**, the jobs-to-be-done Vyra exists to serve.
 
-> This table is the operating model, not a status report. For where each capability stands today (live / partial / gap) and what backs or blocks it, see **`vyra-tracker.md`**.
+> This table is the operating model, not a status report. For where each capability stands today (live / partial / gap) and what backs or blocks it, see **`track.md`**.
 
 | L | Layer | Persona → Agent Family | Capabilities |
 |---|---|---|---|
@@ -72,7 +72,7 @@ Sourced from the GRC Operating Model bow-tie. Each layer names a **persona** —
 **Operating principles** — the subset that governs day-to-day design decisions, not the full pitch:
 
 - Agents collaborate **through the graph**, not through messaging — the graph is the operating system, not the product.
-- Every compliance outcome must be traceable, **forward and reverse** (mechanics: `vyra-graph-spine.md`'s Graph Traversal Patterns).
+- Every compliance outcome must be traceable, **forward and reverse** (mechanics: `graph.md`'s Graph Traversal Patterns).
 - Every agent follows the same lifecycle: **Observe → Interpret → Reason → Act → Verify → Learn.**
 - Not every action gets full autonomy. **Autonomy Levels 0–4** — Human Driven → Agent Recommends → Agent Assisted → Agent Executed → Fully Autonomous. Default is **Level 1 (Agent Recommends, Human Approves)** unless a specific workflow is explicitly elevated.
 

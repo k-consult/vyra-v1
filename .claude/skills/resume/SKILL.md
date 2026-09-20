@@ -1,6 +1,0 @@
----
-name: resume
-description: Reads .design/README.md and vyra-implementation-plan.md to find the next unstarted phase, implements it end-to-end, verifies live, then commits. INVOKE to pick up and execute the next planned Vyra phase.
----
-
-Read .design/README.md, then .design/vyra-implementation-plan.md, to identify the next unstarted phase (current status: .design/vyra-tracker.md). Implement it end-to-end across schema, ingest, API, and UI. Before reporting completion, follow .claude/skills/verify/SKILL.md: (1) run typecheck and fix all errors, (2) query the live Neo4j graph to confirm nodes/relationships were created correctly (no cypher-shell in this environment — use the throwaway-.ts-script pattern verify/SKILL.md documents), (3) hit each new API endpoint and confirm the response is unwrapped and well-formed (no [object Object]), and (4) verify the data renders in the actual UI page (Playwright, per verify/SKILL.md). List each verification with its evidence, then commit with a descriptive message. Do not declare success on any layer you have not independently proven against the running system.

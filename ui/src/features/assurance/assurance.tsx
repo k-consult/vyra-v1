@@ -175,7 +175,7 @@ function AuditChainCard({ chain }: { chain: AuditChain }) {
                 className="text-[10px] text-zinc-600"
                 title={agentProposed
                     ? 'Phase 8 — proposed by assurance-intelligence, approved via the Decision gate'
-                    : 'Phase 4b — synthetic, script-generated seed data; see vyra-graph-spine.md'}
+                    : 'Phase 4b — synthetic, script-generated seed data; see graph.md'}
             >
                 {agentProposed ? 'agent-proposed' : 'synthetic seed data'}
             </p>

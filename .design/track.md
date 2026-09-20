@@ -1,22 +1,22 @@
 # Vyra Build Tracker
 
-**The current build status of Vyra, mapped to the 7-layer GRC operating model** — what's live, what's partial, what's still a gap, right now. This is the *tracking* view, deliberately kept out of `vyra-foundation.md` so the specification stays a clean model/value/guarantees read without build-status noise.
+**The current build status of Vyra, mapped to the 7-layer GRC operating model** — what's live, what's partial, what's still a gap, right now. This is the *tracking* view, deliberately kept out of `foundation.md` so the specification stays a clean model/value/guarantees read without build-status noise.
 
-> **Audience: internal** — engineering and product. For the operating model itself (personas, capabilities, the loop) with no status, read `vyra-foundation.md`. For *why* an item sits where it does and what unblocks it, follow the phase references into `vyra-implementation-plan.md`.
+> **Audience: internal** — engineering and product. For the operating model itself (personas, capabilities, the loop) with no status, read `foundation.md`. For *why* an item sits where it does and what unblocks it, follow the phase references into `plan.md`.
 
-**Keep this in sync with the plan on every phase — it drifts otherwise.** When a phase changes a layer's status, update the matching row here *and* the "Net" summary below. `vyra-implementation-plan.md` is the authoritative source for phase completion; this doc is a layer-readiness lens over it, not a second source of truth.
+**Keep this in sync with the plan on every phase — it drifts otherwise.** When a phase changes a layer's status, update the matching row here *and* the "Net" summary below. `plan.md` is the authoritative source for phase completion; this doc is a layer-readiness lens over it, not a second source of truth.
 
 ---
 
 ## Phase rollup
 
-**Phases 0–9 are ✅ done**, plus three standalone closures: the L1 Contract entity, a Gap Review (Escalation Paths / `HAS_ROLE` / SOPs — all confirmed to have no real closure path), and an Intelligence-UI usability pass. **Phases 10–11 ("Agentic Completion Track") are 🔲 planned, not started.** Sequencing and open decisions → `vyra-implementation-plan.md`. Full per-phase narrative and verification evidence → `.design/__ref/implementation-history.md`.
+**Phases 0–9 are ✅ done**, plus three standalone closures: the L1 Contract entity, a Gap Review (Escalation Paths / `HAS_ROLE` / SOPs — all confirmed to have no real closure path), and an Intelligence-UI usability pass. **Phases 10–11 ("Agentic Completion Track") are 🔲 planned, not started.** Sequencing and open decisions → `plan.md`. Full per-phase narrative and verification evidence → `.design/__ref/implementation-history.md`.
 
 ---
 
 ## JTBD Layer Status
 
-One row per capability from `vyra-foundation.md`'s 7-layer operating model, scored on **whether the graph can actually feed it right now.** The layer/persona/capability definitions themselves live in the foundation doc — this table only adds the status lens. Full investigation detail behind any 🟡/🔴 row → `.design/__ref/implementation-history.md`.
+One row per capability from `foundation.md`'s 7-layer operating model, scored on **whether the graph can actually feed it right now.** The layer/persona/capability definitions themselves live in the foundation doc — this table only adds the status lens. Full investigation detail behind any 🟡/🔴 row → `.design/__ref/implementation-history.md`.
 
 Status key: **🟢 live** = real data, working queries · **🟡 partial** = modeled but incomplete or unstructured · **🔴 gap** = nothing built.
 
@@ -28,9 +28,9 @@ Status key: **🟢 live** = real data, working queries · **🟡 partial** = mod
 | | | SOPs | 🟡 partial | Folded into `Control.controlType='policy-sop'` — no real Policy-vs-SOP discriminator in either source (investigated, closed by decision) |
 | L2 | **Interpret** | Applicability Scoping | 🟡 partial | `Asset -[:COVERED_BY]-> Control -[:IMPLEMENTS]-> Obligation` resolved for 29/31 `:Enterprise` assets (2 `Security`-category assets unmapped, documented gap) |
 | | | Obligation Linkage | 🟡 partial | `Obligation→Clause→Regulation/Standard` + `Control→Obligation` live, scoped per asset via `COVERED_BY` |
-| L3 | **Planning** | 52-Week Calendar | 🟡 partial | `Schedule -> Task -> Control` live, 50 cadences, `/calendar` UI (full `Task→Regulation` traversal in `vyra-graph-spine.md` Part IV). Partial: no task-completion tracking yet; 10/60 tasks are event-triggered (correctly excluded) |
+| L3 | **Planning** | 52-Week Calendar | 🟡 partial | `Schedule -> Task -> Control` live, 50 cadences, `/calendar` UI (full `Task→Regulation` traversal in `graph.md` Part IV). Partial: no task-completion tracking yet; 10/60 tasks are event-triggered (correctly excluded) |
 | | | Location + Role Assign | 🟡 partial | `Organization` (12) / `Role` (16) / `Person` (7) live, `WORKS_AT` many-valued. `HAS_ROLE` never fires — no real title match to the 16 seeded Roles, different vertical (investigated, documented gap) |
-| L4 | **CTN Knowledge Graph Spine** — Capture • Review | *(the graph itself)* | 🟢 live (as infrastructure) | This layer *is* `vyra-graph-spine.md`. "Review" = a real Autonomy Level 1 approve/reject gate (Phase 7) |
+| L4 | **CTN Knowledge Graph Spine** — Capture • Review | *(the graph itself)* | 🟢 live (as infrastructure) | This layer *is* `graph.md`. "Review" = a real Autonomy Level 1 approve/reject gate (Phase 7) |
 | L5 | **Oversight** | Deviation Alerts | 🟢 live | `signal-intelligence` watches Signals directly, writes `Decision`s, idempotent on re-run; polled continuously via `agents/scheduler.ts` (Phase 9) |
 | | | Escalation Paths | 🟡 partial | `Incident.escalationPath` is free text — zero title matches to seeded Roles, no hierarchy property to hang a chain on (investigated, documented gap) |
 | L6 | **Assurance** | Coverage Scoring | 🟢 live | `GET /assurance/posture` — Obligation coverage 30/34, Asset coverage 29/31; UI at `/assurance`. Catalog-origin data only |
@@ -44,8 +44,8 @@ Status key: **🟢 live** = real data, working queries · **🟡 partial** = mod
 
 ## Where to go next
 
-- **Why this must be agentic at all** (no status) → `vyra-foundation.md`
-- **Model, value and guarantees** (no status) → `vyra-foundation.md`
-- **Phase sequencing, what's done, what's next, verification** → `vyra-implementation-plan.md`
-- **Schema, relationships, live/dormant status, Cypher patterns** → `vyra-graph-spine.md`
-- **Software layers & components** → `vyra-architecture.md`
+- **Why this must be agentic at all** (no status) → `foundation.md`
+- **Model, value and guarantees** (no status) → `foundation.md`
+- **Phase sequencing, what's done, what's next, verification** → `plan.md`
+- **Schema, relationships, live/dormant status, Cypher patterns** → `graph.md`
+- **Software layers & components** → `architecture.md`

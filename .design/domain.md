@@ -1,6 +1,6 @@
 # Vyra Domain Model (DDD)
 
-**Bounded Contexts, Aggregates, Value Objects, Domain Events, Factories, Repositories, and Specifications** — derived from `vyra-graph-spine.md` (Appendices A/B) and `vyra-architecture.md`'s Context Map + Target Architecture sections. Full reading order: `.design/README.md`.
+**Bounded Contexts, Aggregates, Value Objects, Domain Events, Factories, Repositories, and Specifications** — derived from `graph.md` (Appendices A/B) and `architecture.md`'s Context Map + Target Architecture sections. Full reading order: `.design/README.md`.
 
 > **2026-09-07 revision.** The prior version of this document listed Entities and Value Objects per subdomain with no Aggregate, no Domain Event, and no Factory — a critical review found this was an anemic data catalog wearing DDD vocabulary, not a domain model: nothing said what had to change together, nothing owned construction of derived state, and nothing named the events that already drive the live write path (Signal ingestion, Decision approval, CAPA closure). This revision fixes that, and both BC1/BC2 diagrams under `artifacts/` are redrawn to match — each subdomain/sub-boundary box now shows **Aggregates** (root plus `(owns X)` child entities), **Value Objects**, **Domain Events**, **Factories**, **Repositories**, and **Specifications**, in that order.
 
@@ -23,8 +23,8 @@ Every subdomain is described the same way:
 
 ## Bounded Contexts
 
-1. **Tenant Compliance Twin** — one per enterprise (one Neo4j database = one BC, per `vyra-architecture.md`'s Context Map). The five graph domains are **subdomains inside this one BC**, not separate contexts — they share one schema and one consistency boundary, which in DDD terms makes them a Shared Kernel with each other, not independent contexts.
-2. **Vyra Central** — the platform BC (separate deployment, separate stores). Per `vyra-foundation.md` §4 ("every monetizable asset is structurally separable"), it splits into three sub-boundaries: **Master Catalog Distribution**, **Collective Intelligence**, **Tenancy & Entitlement**.
+1. **Tenant Compliance Twin** — one per enterprise (one Neo4j database = one BC, per `architecture.md`'s Context Map). The five graph domains are **subdomains inside this one BC**, not separate contexts — they share one schema and one consistency boundary, which in DDD terms makes them a Shared Kernel with each other, not independent contexts.
+2. **Vyra Central** — the platform BC (separate deployment, separate stores). Per `foundation.md` §4 ("every monetizable asset is structurally separable"), it splits into three sub-boundaries: **Master Catalog Distribution**, **Collective Intelligence**, **Tenancy & Entitlement**.
 
 ![Architecture diagram showing the Tenant Compliance Twin bounded context, one per enterprise, receiving a live catalog sync from Vyra Central's Master Catalog Distribution sub-boundary, with target pattern feed-down and harvest to Collective Intelligence, and target tenant resolution from Tenancy and Entitlement.](artifacts/domain-model-overview.svg)
 
@@ -36,13 +36,13 @@ Every subdomain is described the same way:
 
 ![UML-style class diagram of the Tenant Compliance Twin bounded context, showing seven subdomains — Knowledge, Operational, Intelligence, Execution, Assurance, Onboarding, and cross-cutting platform mechanics — each with its Entities, Value Objects, Repositories, and Specifications, connected by the compliance operating loop and onboarding's touchpoints into Operational and Intelligence.](artifacts/domain-model-bc1-tenant-twin.svg)
 
-*Seven subdomains inside one Bounded Context. Solid arrows are the compliance operating loop (Knowledge → Operational → Intelligence → Execution → Assurance); dashed arrows are Onboarding's transitional touchpoints into Operational (Discovery) and Intelligence (Proving Run). Intelligence is coral — the agentic reasoning core `vyra-foundation.md`'s throughline centers on. Each box lists its Aggregates first, `(owns X)` marking a child Entity inside that root's consistency boundary, followed by Value Objects, Domain Events, Factories, Repositories, and Specifications.*
+*Seven subdomains inside one Bounded Context. Solid arrows are the compliance operating loop (Knowledge → Operational → Intelligence → Execution → Assurance); dashed arrows are Onboarding's transitional touchpoints into Operational (Discovery) and Intelligence (Proving Run). Intelligence is coral — the agentic reasoning core `foundation.md`'s throughline centers on. Each box lists its Aggregates first, `(owns X)` marking a child Entity inside that root's consistency boundary, followed by Value Objects, Domain Events, Factories, Repositories, and Specifications.*
 
 ### Subdomain: Knowledge
 
 **Aggregates**
 - **`Regulation`** (root) — owns `Clause[]` that belong to it. Refs: `Authority` (by id). Invariant: a `Clause` added to this aggregate belongs to exactly this parent — enforced at add-time, not by a nullable FK on the Clause side.
-- **`Standard`** (root) — owns `Clause[]` that belong to it. Same invariant as `Regulation`, mirrored because `Clause`'s parent is XOR (`vyra-graph-spine.md` Appendix A), never both.
+- **`Standard`** (root) — owns `Clause[]` that belong to it. Same invariant as `Regulation`, mirrored because `Clause`'s parent is XOR (`graph.md` Appendix A), never both.
 - **`Obligation`** (root, standalone) — refs `Clause` (by id). Kept independent of the `Regulation`/`Standard` aggregate because an Obligation has its own version lifecycle and is referenced by many `Control`s — embedding it under `Clause` would force loading a whole Regulation to revise one obligation.
 - **`Control`** (root, standalone) — refs `Obligation`, `ComplianceArea` (by id). Origin (`:Catalog` / `:Enterprise` / `:AgentProposed` / legacy) is a VO field on this one Entity type, not a subtype — this is deliberate: it forecloses a future `if (control.origin === ...)` branch by keeping origin as data, not as a type hierarchy.
 - **`ComplianceArea`** (root, reference data) — no owned children, no refs.
@@ -70,7 +70,7 @@ Every subdomain is described the same way:
 - **`Contract`** (root) — refs `Vendor`, `Role`, `Facility[]` (COVERS, by id). Invariant: every id in its site-coverage range must resolve to a real Facility at write time.
 - **`Signal`** (root, standalone) — refs `Asset` (by id). Deliberately not a child of `Asset`: signals arrive independently, at volume, and writing one must never require loading the Asset aggregate.
 
-**Value Objects**: MappingProvenance (origin: ingestion|declared|inferred|observed, confidence, timestamp — attaches to the `COVERED_BY` edge; see the open note below on edge-property VOs), SiteCoverageRange, EscalationPath (**free text by decision, not a VO candidate** — `vyra-graph-spine.md`'s Gap Review already closed this: zero title matches to seeded Roles, no hierarchy property to model against; keeping it "candidate" status here was itself stale)
+**Value Objects**: MappingProvenance (origin: ingestion|declared|inferred|observed, confidence, timestamp — attaches to the `COVERED_BY` edge; see the open note below on edge-property VOs), SiteCoverageRange, EscalationPath (**free text by decision, not a VO candidate** — `graph.md`'s Gap Review already closed this: zero title matches to seeded Roles, no hierarchy property to model against; keeping it "candidate" status here was itself stale)
 
 **Domain Events**
 - `SignalReceived` — raised on `Signal` write; consumed by `SignalTaskFactory` and by `signal-intelligence`'s observe step.
@@ -92,7 +92,7 @@ Every subdomain is described the same way:
 - **`Schedule`** (root, standalone) — owns its `CadenceRule` state; refs nothing. **Deliberately not a VO embedded on `Task`**: a cadence like "quarterly fire-safety check" can legitimately drive more than one `Task` (or a future non-Task action), and a VO has no identity to be shared across owners. `Task` and any future action-aggregate hold a `scheduleId` reference instead of a private copy — one change to the cadence is one write, not N.
 - **`Task`** (root) — refs `Control` (IMPLEMENTS), `Schedule` (by id, not embedded).
 - **`CAPA`** (root) — owns `Verification` (child). Refs `Finding`. Invariant: a CAPA transitions to closed only via `capa.close(verifiedBy, outcome)`, which constructs its own `Verification` as one behavior — not two independent writes joined after the fact by `CLOSES`. This is where `CAPAIsClosedSpecification` gets **enforced**, not merely queried.
-- `Workflow`, `Program` (designed, not yet active) — will be standalone aggregates, referenced by id from `Task`/`Workflow` respectively via `PART_OF`, once ratified in `vyra-graph-spine.md`.
+- `Workflow`, `Program` (designed, not yet active) — will be standalone aggregates, referenced by id from `Task`/`Workflow` respectively via `PART_OF`, once ratified in `graph.md`.
 
 **Value Objects**: CadenceRule (now internal state of `Schedule`, not a per-Task copy), ComplianceWindow (derived occurrence set — computed on `Schedule`, never stored)
 
@@ -119,7 +119,7 @@ This is the reasoning core, and where aggregate size matters most — every root
 
 **Value Objects**: RiskScore (likelihood, consequence, residualScore, rating), ReviewOutcome (status, reviewedBy, reviewedAt, reviewNote)
 
-> **`AutonomyLevel` is removed from this subdomain's VO list.** The prior draft placed it here modeling `Decision.autonomyLevel`, but `vyra-foundation.md` is explicit that autonomy level is "a property of the **assignment**, not of the platform" — i.e. it belongs on a `Task -[:ASSIGNED_TO]-> Actor` assignment, which has no Entity to attach to yet (`ASSIGNED_TO` doesn't appear anywhere in `vyra-graph-spine.md`, live or designed-not-active). `Decision.autonomyLevel` stays as a plain field on `Decision` describing the level *that decision* was proposed at; the assignment-level concept foundation.md requires is an open gap, not something this VO should silently stand in for. See Cross-cutting, below.
+> **`AutonomyLevel` is removed from this subdomain's VO list.** The prior draft placed it here modeling `Decision.autonomyLevel`, but `foundation.md` is explicit that autonomy level is "a property of the **assignment**, not of the platform" — i.e. it belongs on a `Task -[:ASSIGNED_TO]-> Actor` assignment, which has no Entity to attach to yet (`ASSIGNED_TO` doesn't appear anywhere in `graph.md`, live or designed-not-active). `Decision.autonomyLevel` stays as a plain field on `Decision` describing the level *that decision* was proposed at; the assignment-level concept foundation.md requires is an open gap, not something this VO should silently stand in for. See Cross-cutting, below.
 
 **Domain Events** — type-specific, not one generic `DecisionApproved` + a switch on `decision.type`:
 - `ControlRecommendationApproved`
@@ -132,7 +132,7 @@ This is the reasoning core, and where aggregate size matters most — every root
 **Factories**
 - `ControlFactory` — consumes `ControlRecommendationApproved` → constructs `Control:AgentProposed`.
 - `FindingFactory` — consumes `DeviationAssessmentApproved` → constructs `Finding:AgentProposed` (resolving `AGAINST`/`ABOUT`). Also used, via a second named construction method, when `Finding`s are seeded from `Incident` ingestion — one Factory owns both valid construction paths.
-- `RiskFactory` — consumes `RiskAssessmentApproved` → constructs `Risk:AgentProposed`, computing `inherentScore = likelihood × consequence` itself. This determinism requirement ("never trusted from the LLM as arithmetic," per `vyra-graph-spine.md`) is exactly what a Factory is for: pure, deterministic construction, no I/O, no model call.
+- `RiskFactory` — consumes `RiskAssessmentApproved` → constructs `Risk:AgentProposed`, computing `inherentScore = likelihood × consequence` itself. This determinism requirement ("never trusted from the LLM as arithmetic," per `graph.md`) is exactly what a Factory is for: pure, deterministic construction, no I/O, no model call.
 
 **Repositories**: DecisionRepository, FindingRepository, RiskRepository (`RCA` has no repository of its own — read/written only through `FindingRepository`)
 
@@ -166,13 +166,13 @@ This is the reasoning core, and where aggregate size matters most — every root
 **Aggregates**
 - **`Blueprint`**, **`CutoverCriterion`**, **`ContinuityBaseline`** — each a standalone root, no owned children yet defined.
 
-> **Status flag, carried here explicitly because the rest of this document now marks it elsewhere and this subdomain shouldn't be the exception:** all three of these are **target** — `vyra-architecture.md` states they are "pending `vyra-graph-spine.md` ratification." None exist as graph entities today. Treat this subdomain's Aggregates/Events/Factories as a proposed shape, not a built one.
+> **Status flag, carried here explicitly because the rest of this document now marks it elsewhere and this subdomain shouldn't be the exception:** all three of these are **target** — `architecture.md` states they are "pending `graph.md` ratification." None exist as graph entities today. Treat this subdomain's Aggregates/Events/Factories as a proposed shape, not a built one.
 
 **Value Objects**: ContinuityMetric (baseline metric name, value, capturedAt), ProvingRunWindow (target date + agreement-rate criterion)
 
-**Domain Events**: `WorkflowCutoverCriterionMet`, `WorkflowCutoverOverdue` (the `dueBy`-elapsed alarm state `vyra-foundation.md` §0 requires)
+**Domain Events**: `WorkflowCutoverCriterionMet`, `WorkflowCutoverOverdue` (the `dueBy`-elapsed alarm state `foundation.md` §0 requires)
 
-**Factories**: none scoped yet — deferred until Phase 11's onboarding agent family is scoped (`vyra-implementation-plan.md`).
+**Factories**: none scoped yet — deferred until Phase 11's onboarding agent family is scoped (`plan.md`).
 
 **Repositories**: BlueprintRepository, CutoverCriterionRepository, ContinuityBaselineRepository
 
@@ -186,14 +186,14 @@ This is the reasoning core, and where aggregate size matters most — every root
 - **`Actor`** (root, standalone) — polymorphic Human/Agent base for `Person`/agent identities.
 - **`WorkItem`** (root, standalone, target) — the Coordination Ledger's claim-lease unit.
 
-> **`AuditEvent` is removed as an Entity.** It isn't a business object with behavior — it's the **persisted form of a Domain Event**, the Transactional-Outbox record `vyra-architecture.md`'s Audit Writer already names. Every `DomainEvent` listed in this document (SignalReceived, CAPAClosed, ControlRecommendationApproved, …) is what an `AuditEvent` row *is*, once written. Keeping it as a separate flat Entity in the old draft obscured that it's the event log, not a sixth kind of business thing. It keeps an append-only repository (below) for infrastructure reasons, not because it has domain behavior.
+> **`AuditEvent` is removed as an Entity.** It isn't a business object with behavior — it's the **persisted form of a Domain Event**, the Transactional-Outbox record `architecture.md`'s Audit Writer already names. Every `DomainEvent` listed in this document (SignalReceived, CAPAClosed, ControlRecommendationApproved, …) is what an `AuditEvent` row *is*, once written. Keeping it as a separate flat Entity in the old draft obscured that it's the event log, not a sixth kind of business thing. It keeps an append-only repository (below) for infrastructure reasons, not because it has domain behavior.
 
 **Value Objects**: TenantContext (tenantId, database, actorId, roles — request-scoped), ClaimLease (WorkItem claim protocol)
 
 **Domain Events**: every event named in the subdomains above, in its persisted form, is what flows through here — this section is the sink, not a separate producer.
 
 **Aggregates**
-- **`Assignment`** (root, target) — owns `AutonomyLevel` as its own VO; refs `Task`/action and `Actor` (by id). Closes the gap this document flagged: `vyra-foundation.md`'s "the autonomy level is a property of the assignment, not of the platform" now has an Entity to attach to — `Assignment` and `Actor` were added to `vyra-graph-spine.md` (Execution Graph) as designed-not-active in the 2026-09-07 revision. Neither has seed data or a live write path yet; `Decision.autonomyLevel` remains the only live autonomy-level property, and describes one proposal's level, not a standing assignment.
+- **`Assignment`** (root, target) — owns `AutonomyLevel` as its own VO; refs `Task`/action and `Actor` (by id). Closes the gap this document flagged: `foundation.md`'s "the autonomy level is a property of the assignment, not of the platform" now has an Entity to attach to — `Assignment` and `Actor` were added to `graph.md` (Execution Graph) as designed-not-active in the 2026-09-07 revision. Neither has seed data or a live write path yet; `Decision.autonomyLevel` remains the only live autonomy-level property, and describes one proposal's level, not a standing assignment.
 
 **Repositories**: ActorRepository, WorkItemRepository, AuditEventRepository (append-only, infrastructure)
 
@@ -205,7 +205,7 @@ This is the reasoning core, and where aggregate size matters most — every root
 
 ![UML-style class diagram of the Vyra Central bounded context, showing its three sub-boundaries — Master Catalog Distribution, Collective Intelligence, and Tenancy and Entitlement — each with its Entities, Value Objects, Repositories, and Specifications, with Tenancy and Entitlement's target entitlement checks gating the other two.](artifacts/domain-model-bc2-vyra-central.svg)
 
-*Three independently monetized sub-boundaries (`vyra-foundation.md` §4). Tenancy & Entitlement's target entitlement gate reaches into both of the others; Master Catalog Distribution and Collective Intelligence have no direct link to each other — each is Separate Ways, sold and scaled independently. **Status: everything in this BC is target — 0% built per `vyra-architecture.md` — except Master Catalog Distribution's same-database catalog sync, which is live but not yet split into its own physical store.***
+*Three independently monetized sub-boundaries (`foundation.md` §4). Tenancy & Entitlement's target entitlement gate reaches into both of the others; Master Catalog Distribution and Collective Intelligence have no direct link to each other — each is Separate Ways, sold and scaled independently. **Status: everything in this BC is target — 0% built per `architecture.md` — except Master Catalog Distribution's same-database catalog sync, which is live but not yet split into its own physical store.***
 
 ### Sub-boundary: Master Catalog Distribution
 
@@ -217,7 +217,7 @@ This is the reasoning core, and where aggregate size matters most — every root
 
 **Value Objects**: CatalogDiff, SyncSchedule
 
-**Domain Events**: `CatalogVersionPublished`, `SyncRunCompleted` — these are **cross-context integration events**, not same-model domain events: this is the one place a tenant twin's Catalog Ingester subscribes across the BC boundary, and it's the concrete mechanism behind the Open Host Service + Published Language relationship `vyra-architecture.md` already names.
+**Domain Events**: `CatalogVersionPublished`, `SyncRunCompleted` — these are **cross-context integration events**, not same-model domain events: this is the one place a tenant twin's Catalog Ingester subscribes across the BC boundary, and it's the concrete mechanism behind the Open Host Service + Published Language relationship `architecture.md` already names.
 
 **Factories**: none — catalog authoring is direct CRUD, not derived from another aggregate's event. The **Sync Diff Engine is a Domain Service, not a Factory**: it computes a `CatalogDiff` VO by comparing two existing aggregates' state; it doesn't construct a new Entity, which is what a Factory is for.
 
@@ -236,7 +236,7 @@ This is the reasoning core, and where aggregate size matters most — every root
 
 **Domain Events**: `PatternSubmitted` (a tenant offers an observation), `PatternCorroborated` (threshold met — admits the pattern to the Collective Intelligence Store)
 
-**Factories**: `TypedPatternFactory` — the Anti-Corruption translator the prior review flagged as missing entirely: the one place raw tenant Signal/Decision history is converted into an identifier-free `TypedPattern` before it can cross the tenant boundary. This is the highest-stakes Factory in the whole model — it's what makes "isolation of data, circulation of intelligence" (`vyra-foundation.md`) an enforced code boundary instead of a promise in prose.
+**Factories**: `TypedPatternFactory` — the Anti-Corruption translator the prior review flagged as missing entirely: the one place raw tenant Signal/Decision history is converted into an identifier-free `TypedPattern` before it can cross the tenant boundary. This is the highest-stakes Factory in the whole model — it's what makes "isolation of data, circulation of intelligence" (`foundation.md`) an enforced code boundary instead of a promise in prose.
 
 **Repositories**: CollectiveIntelligenceRepository
 
@@ -254,10 +254,10 @@ This is the reasoning core, and where aggregate size matters most — every root
 
 **Value Objects**: EntitlementScope (catalog scope, jurisdictions, agent families, CI participation), ProvisioningCredentialsRef
 
-**Domain Events**: `TenantProvisioned`, `EntitlementChanged`, `TenantOptedOutOfCollectiveIntelligence` (revocable per `vyra-foundation.md` §3 — feedback participation is opt-in and reversible, never conditioning the base platform on it)
+**Domain Events**: `TenantProvisioned`, `EntitlementChanged`, `TenantOptedOutOfCollectiveIntelligence` (revocable per `foundation.md` §3 — feedback participation is opt-in and reversible, never conditioning the base platform on it)
 
-**Factories**: `TenantProvisioningFactory` — constructs a new `Tenant` + `Entitlement` pair at onboarding, wired to the already-existing `DB.createDB()` multi-driver mechanism `vyra-architecture.md` names as reusable (not new infrastructure).
+**Factories**: `TenantProvisioningFactory` — constructs a new `Tenant` + `Entitlement` pair at onboarding, wired to the already-existing `DB.createDB()` multi-driver mechanism `architecture.md` names as reusable (not new infrastructure).
 
-**Repositories**: TenantRegistryRepository, EntitlementRepository, UsageRecordRepository (reads the Audit Writer + `SyncRun` records, not its own instrumentation — per `vyra-foundation.md` §4: "if billing needs its own instrumentation, the provenance model was incomplete")
+**Repositories**: TenantRegistryRepository, EntitlementRepository, UsageRecordRepository (reads the Audit Writer + `SyncRun` records, not its own instrumentation — per `foundation.md` §4: "if billing needs its own instrumentation, the provenance model was incomplete")
 
 **Specifications**: TenantIsEntitledToSpecification, TenantIsProvisionedSpecification

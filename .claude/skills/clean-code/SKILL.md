@@ -1,16 +1,17 @@
 ---
 name: clean-code
-description: The Code-Craft Bible — gate for every design/code review: layered architecture, encapsulation, Tell-Don't-Ask, OCP/YAGNI/DRY, naming, Ubiquitous Language, fail-fast validation, GOF/Fowler patterns, micro-craft, complexity management, distributed patterns. INVOKE before designing or reviewing any component, module, interface, or pattern. Pairs with `node-spine`.
+description: The agentic-grc platform's general design & dev skill — Part 0 grounds structural/naming/functional-style conventions in this repo's actual stack (Fastify api/, Next.js ui/, agents/, cli/ pipeline, lib/); Parts 1–11 are the Code-Craft Bible (layered architecture, encapsulation, Tell-Don't-Ask, OCP/YAGNI/DRY, naming, Ubiquitous Language, fail-fast validation, GOF/Fowler patterns, micro-craft, complexity management, distributed patterns). INVOKE before designing or reviewing any component, module, interface, or pattern, and before any Edit/Write under `api/`, `agents/`, `cli/`, `ui/`, `lib/`.
 ---
 
-# clean-code — The Code-Craft Bible
+# clean-code — Design & Dev Standard
 
-This skill is the definitive gate for design and code quality.
+This skill is the definitive gate for design and code quality on this project.
 Each rule names what makes a design **unshippable**, and what the correct form looks like.
 If a proposed design cannot satisfy every rule in the checklist at the end, redesign before writing code.
 
-The rules are grouped into eleven concerns:
+The rules are grouped into twelve concerns:
 
+0. **Platform Conventions** — how the general principles below map onto this repo's actual workspaces
 1. **Layers** — how to cut the system
 2. **Contracts** — how to enforce the cuts
 3. **Extension** — how to add without breaking
@@ -22,6 +23,64 @@ The rules are grouped into eleven concerns:
 9. **Micro-Craft** — function size, arguments, comments, CQS, error handling
 10. **Complexity Management** — essential vs accidental, deep modules, strategic programming, package principles
 11. **Distributed & Event-Driven** — idempotency, CQRS, domain events, outbox
+
+**Note on the worked examples below:** Parts 1–11 use a recurring "Studio" example set (Recipe/Ingredient/Op) to illustrate universal patterns — these are generic illustrations of the principle, not code that exists in this repo. For how each principle actually lands in this platform's code, see Part 0 and the paired skills (`graph-spine`, `api-route-spine`).
+
+---
+
+## Part 0 — Platform Conventions
+
+Ground truth for how the universal principles in Parts 1–11 apply to this specific monorepo. This section supersedes any generic Node/React convention that conflicts with it.
+
+### 0.1 Workspace layout and build order
+
+```
+lib/       shared: graph-db, log, config — MUST be built before other workspaces
+cli/       ingestion: Parser → Compiler → Projection → Runtime (fixed order, never reorder)
+agents/    agent runtime: TypeScript + local Ollama LLM
+api/       Fastify REST API (:4001), reads Neo4j via lib/graph-db
+ui/        Next.js + React frontend (:3002)
+```
+
+Other workspaces import `lib/` via relative paths (`../../lib/<module>`), never as an npm package. See root `CLAUDE.md` for the full picture.
+
+### 0.2 `api/` module shape — flat, no factory/spec split
+
+Each domain is one folder: `api/modules/<domain>/{index.ts, repo.ts}`. This is deliberately flatter than a classic edge/core/factory/spec/repo stack:
+
+- `index.ts` — a Fastify plugin (`Module = FastifyPluginAsync & { prefix: string }`). A route handler does exactly two things: `await` one function from the sibling `repo.ts`, then `reply.send({ <namedKey>: result })`. No try/catch in the handler — `repo.ts` already handles errors (see 0.4).
+- `repo.ts` — Cypher queries only. Lazy `db()` handle, named `UPPER_SNAKE` query constants. See `graph-spine` for the full rule set.
+- New domain → new folder + register in `api/index.ts`'s `modules` array. No auto-discovery, no master router — this is intentionally the smallest structure that satisfies OCP (Part 3.1) at this scale: adding a domain is additive, never an edit to an existing module.
+- Full route lookup and add-a-route workflow: `api-route-spine`.
+
+### 0.3 `agents/` shape — observe → reason → act → verify
+
+Each agent (`agents/agents/<name>/index.ts`) plugs into the shared loop in `agents/runtime/index.ts` (`runAgentLoop`) with its own `observe`/`reason`/`act`/`verify` steps — this is Template Method (Part 8.1) applied at the agent level: the skeleton is fixed, agents fill in the four steps. Agents read/write the graph only via `agents/tools/graph-read.ts` / `graph-write.ts` — never the REST API, never a raw driver call. Agent-authored writes are `Decision` nodes (Level 1 autonomy: recommend, not act) unless explicitly elevated.
+
+### 0.4 Functional style, naming, and error handling (cross-cutting)
+
+These apply across `api/`, `agents/`, `cli/`, and `lib/`:
+
+- **Functional composition with Ramda** (`import * as R from 'ramda'` or `import R from 'ramda'`) for data transformation — see `lib/graph-db/index.ts` for the house style (`R.compose`, `R.when`, `R.zipObj`).
+- **`lib/log` only** — `log.info` / `log.debug` / `log.error` / `log.cypher`. Never `console.*`.
+- **Guard functions** for argument validation; prefer `R.defaultTo`, `R.nth`, `R.path` for safe access. Standard string fallback for an unresolved value is `'UNKNOWN'` (see `agents/runtime/index.ts`'s `reasonWithLLM`), not `null` or `undefined`.
+- **No identifiers ending in** `Manager`, `Controller`, `Plugin`, `Helper`, `Util` (Part 4.4's naming rules, enforced project-wide).
+- **Error handling — the actual pattern in every `repo.ts` and `agents/tools/*.ts`:** `async/await` + `try/catch`. Writes always rethrow after `log.error(...)`. Reads return a safe default (`[]`) instead of throwing, so a list endpoint degrades gracefully instead of 500ing. This is Part 9.4's "never return null" rule made concrete: the safe default here is `[]`, never `null`.
+- **No soft-delete / `archived` convention.** Unlike the generic Part 6.2 guidance, this schema has no soft-delete fields — see `graph-spine` §7 for the actual node-identity fields (`id`, `createdAt`, `version`, plus `agentId`/`autonomyLevel`/`confidence` on agent-generated nodes).
+
+### 0.5 `ui/` shape — route shell + feature component + one API client
+
+- `ui/src/app/<route>/page.tsx` — the Next.js route shell; thin, delegates to a feature component.
+- `ui/src/features/<feature>/<feature>.tsx` — the actual UI logic for that route.
+- `ui/src/lib/api.ts` — the **single** client file: one exported object per API domain, each a map of typed call functions built on shared `get`/`post` helpers. All server calls go through this file — never a raw `fetch` scattered in a component, never a direct Neo4j call from `ui/` (it has no DB credentials; API-only, MATCH-safe by construction).
+- When adding a UI call for a new/changed route, add the function here in the same change — see `api-route-spine` §3.
+
+### 0.6 Paired skills and docs
+
+- `graph-spine` — Cypher/`lib/graph-db` rules in full
+- `api-route-spine` — `api/` route lookup and the add-a-route workflow
+- `.design/graph.md` — graph domain/schema ground truth
+- `grc` — project status and session resume
 
 ---
 
