@@ -1,4 +1,4 @@
-import { assetExists, CreateSignalInput } from './repo';
+import { assetExists, personExists, CreateSignalInput } from './repo';
 
 const isNonEmptyString = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
 
@@ -18,5 +18,11 @@ export const isValid = async (input: Partial<CreateSignalInput>): Promise<void> 
     }
     if (!(await assetExists(input.assetId))) {
         throw new Error(`assetId must reference an existing Asset; got "${input.assetId}"`);
+    }
+    if (!isNonEmptyString(input.raisedBy)) {
+        throw new Error(`raisedBy must be a non-empty string; got ${JSON.stringify(input.raisedBy)}`);
+    }
+    if (!(await personExists(input.raisedBy))) {
+        throw new Error(`raisedBy must reference an existing Person; got "${input.raisedBy}"`);
     }
 };

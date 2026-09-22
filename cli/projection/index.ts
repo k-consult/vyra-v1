@@ -7,7 +7,7 @@ const outDir    = path.resolve(__dirname, '..', 'out');
 const cypherDir = path.resolve(__dirname, '..', 'cypher');
 
 export interface NodeBatch  { label: string; rows: Record<string, any>[] }
-export interface EdgeBatch  { relType: string; sourceLabel: string; targetLabel: string; pairs: { sourceId: string; targetId: string }[] }
+export interface EdgeBatch  { relType: string; sourceLabel: string; targetLabel: string; pairs: { sourceId: string; targetId: string; props?: Record<string, any> }[] }
 
 export interface ProjectionResult {
     nodeBatches: NodeBatch[];
@@ -67,12 +67,12 @@ export const project = (ir: GraphIR): ProjectionResult => {
 
     // ── Edge batches + debug CSVs ─────────────────────────────────────────
     for (const edges of Object.values(edgesByRel)) {
-        const pairs = edges.map(e => ({ sourceId: e.sourceId, targetId: e.targetId }));
+        const pairs = edges.map(e => ({ sourceId: e.sourceId, targetId: e.targetId, ...(e.props ? { props: e.props } : {}) }));
         const { relType, sourceLabel, targetLabel } = edges[0];
         edgeBatches.push({ relType, sourceLabel, targetLabel, pairs });
 
         const csvPath = path.join(outDir, `edges-${relType}-${sourceLabel}-${targetLabel}.csv`);
-        writeCSV(csvPath, pairs);
+        writeCSV(csvPath, pairs.map(({ sourceId, targetId, props }) => ({ sourceId, targetId, ...props })));
         edgeCSVs.push(csvPath);
     }
 

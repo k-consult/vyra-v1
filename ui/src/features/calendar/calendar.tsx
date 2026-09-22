@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { AlertTriangle, RefreshCw, ShieldCheck, Grid3x3, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { catalog } from '@/lib/api';
+import { catalog, execution } from '@/lib/api';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -11,10 +11,13 @@ export type CalendarTask = {
     taskId: string;
     taskName: string;
     frequency: string;
+    status?: string;
     controlId: string;
     controlName: string;
     occurrences: string[];
 };
+
+const TASK_STATUSES = ['open', 'in-progress', 'done', 'closed'] as const;
 
 // Same anchor convention as cli/scripts/convert-catalog-seed.ts's parseWeekAnchor —
 // naive 7-day blocks from 2026-01-01, not ISO week numbering.
@@ -82,6 +85,12 @@ export function CalendarView() {
     };
 
     useEffect(load, []);
+
+    const updateStatus = (taskId: string, status: string) => {
+        execution.updateTaskStatus(taskId, status)
+            .then(() => setTasks(prev => prev && prev.map(t => (t.taskId === taskId ? { ...t, status } : t))))
+            .catch(() => setError(true));
+    };
 
     // taskId -> week -> occurrence dates that week
     const presence = useMemo(() => {
@@ -198,7 +207,17 @@ export function CalendarView() {
                                         title={`${task.controlName} · ${task.frequency}`}
                                         className={`sticky left-0 z-10 ${rowShade} group-hover:bg-zinc-800 text-zinc-300 px-3 py-1 border-r border-b border-zinc-700 whitespace-nowrap overflow-hidden text-ellipsis max-w-[240px]`}
                                     >
-                                        {task.taskName}
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="overflow-hidden text-ellipsis">{task.taskName}</span>
+                                            <select
+                                                value={task.status ?? 'open'}
+                                                onChange={e => updateStatus(task.taskId, e.target.value)}
+                                                onClick={e => e.stopPropagation()}
+                                                className="shrink-0 text-[9px] bg-zinc-900 border border-zinc-700 rounded px-1 py-0.5 text-zinc-400"
+                                            >
+                                                {TASK_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                                            </select>
+                                        </div>
                                     </td>
                                     {WEEKS.map(week => {
                                         const dates = weekMap.get(week);

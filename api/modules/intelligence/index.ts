@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { listFindings, listRisks, listDecisions, listRcas, getReverseTrace, getDecision, resolveDecision } from './repo';
+import { listFindings, listRisks, listDecisions, listRcas, getReverseTrace, getDecision, resolveDecision, getAgreementRates } from './repo';
 import * as spec from './spec';
 
 const resolve = (action: 'approve' | 'reject') => async (req: any, reply: any) => {
@@ -27,6 +27,10 @@ const intelligence: any = async (fastify: FastifyInstance) => {
 
     fastify.get('/decisions', async (_req, reply) => {
         reply.send({ decisions: await listDecisions() });
+    });
+
+    fastify.get('/decisions/agreement-rates', async (_req, reply) => {
+        reply.send({ agreementRates: await getAgreementRates() });
     });
 
     fastify.post('/decisions/:id/approve', resolve('approve'));

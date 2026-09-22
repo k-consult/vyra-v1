@@ -12,6 +12,7 @@ export interface GraphEdge {
     relType: string;
     targetId: string;
     targetLabel: string;
+    props?: Record<string, any>;
 }
 
 export interface GraphIR {
@@ -32,4 +33,5 @@ export interface EdgeDef {
     sourceLabel: string;
     targetCol: string;
     targetLabel: string;
+    propCols?: Record<string, string>;
 }

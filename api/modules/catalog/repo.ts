@@ -97,6 +97,7 @@ export const fetchTaskCalendar = async (horizonWeeks = 52) => {
             taskId: r.task.id,
             taskName: r.task.name,
             frequency: r.task.frequency,
+            status: r.task.status,
             controlId: r.control.id,
             controlName: r.control.name,
             occurrences: computeWindow(cadence, horizonWeeks),

@@ -60,6 +60,35 @@ export const listDecisions = async () => {
     }));
 };
 
+// origin = 'agent' excludes human-authored proposals (e.g. contract-proposal) from
+// a per-agent-family agreement stat — a human's own decision has no "agreement
+// rate" with itself.
+const GET_AGREEMENT_RATES = `
+    MATCH (d:Decision)
+    WHERE d.status IN ['approved', 'rejected'] AND d.origin = 'agent'
+    RETURN d.agentId AS agentId,
+           sum(CASE WHEN d.status = 'approved' THEN 1 ELSE 0 END) AS approved,
+           sum(CASE WHEN d.status = 'rejected' THEN 1 ELSE 0 END) AS rejected
+    ORDER BY agentId
+`;
+
+export const getAgreementRates = async () => {
+    const raw: any = await db().fetch(GET_AGREEMENT_RATES, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.filter((r: any) => r?.agentId).map((r: any) => {
+        const approved = Number(r.approved ?? 0);
+        const rejected = Number(r.rejected ?? 0);
+        const total = approved + rejected;
+        return {
+            agentId: r.agentId,
+            approved,
+            rejected,
+            total,
+            agreementRate: total > 0 ? approved / total : null,
+        };
+    });
+};
+
 const GET_DECISION = `
     MATCH (d:Decision {id: $id})
     RETURN properties(d) AS decision
@@ -227,6 +256,47 @@ const APPROVE_ASSURANCE_PACKAGE = `
     RETURN properties(d) AS decision
 `;
 
+// Contract:HumanProposed alongside the existing :AgentProposed convention — same
+// fourth-origin idiom, but for a human-authored proposal. Never mutates an existing
+// Contract's own fields: an amendment creates a NEW Contract node with the updated
+// terms and only ever SETs old.supersededBy on the prior one (succession metadata,
+// not a change to contractual terms) — the same append-and-supersede discipline as
+// Regulation.supersededBy. The old Contract's serviceType/SLA/AMC dates are
+// untouched, forever.
+const APPROVE_CONTRACT_PROPOSAL = `
+    MATCH (d:Decision {id: $id})
+    MATCH (vendor:Vendor {id: d.proposedVendorId})
+    MERGE (ctr:Contract:HumanProposed {id: $contractId})
+    ON CREATE SET
+        ctr.name = d.proposedServiceType + ' - ' + vendor.name,
+        ctr.serviceType = d.proposedServiceType,
+        ctr.slaResponseTime = d.proposedSlaResponseTime,
+        ctr.amcStartDate = d.proposedAmcStartDate,
+        ctr.amcExpiryDate = d.proposedAmcExpiryDate,
+        ctr.vendorId = vendor.id,
+        ctr.coordinatorRoleId = coalesce(d.proposedCoordinatorRoleId, ''),
+        ctr.effectiveFrom = datetime(),
+        ctr.supersededBy = '',
+        ctr.status = 'active',
+        ctr.createdAt = datetime()
+    MERGE (ctr)-[:WITH_VENDOR]->(vendor)
+    WITH d, ctr
+    OPTIONAL MATCH (role:Role {id: d.proposedCoordinatorRoleId})
+    FOREACH (_ IN CASE WHEN role IS NOT NULL THEN [1] ELSE [] END | MERGE (ctr)-[:COORDINATED_BY]->(role))
+    WITH d, ctr
+    OPTIONAL MATCH (prior:Contract {id: d.priorContractId})
+    FOREACH (_ IN CASE WHEN prior IS NOT NULL THEN [1] ELSE [] END | SET prior.supersededBy = ctr.id)
+    MERGE (d)-[:RESULTED_IN]->(ctr)
+    SET d.status = 'approved',
+        d.reviewedAt = datetime(),
+        d.reviewedBy = $reviewedBy,
+        d.reviewNote = $reviewNote
+    WITH d, ctr
+    OPTIONAL MATCH (p:Person {id: $reviewedBy})
+    FOREACH (_ IN CASE WHEN p IS NOT NULL THEN [1] ELSE [] END | MERGE (d)-[:REVIEWED_BY]->(p))
+    RETURN properties(d) AS decision, properties(ctr) AS contract
+`;
+
 // YYYY-Qn off an incidentTime-shaped "YYYY-MM-DD HH:mm" string — same derivation
 // cli/scripts/generate-assurance-seed.ts's quarterOf() uses, ported to JS since this is a
 // live API path rather than a batch script.
@@ -266,6 +336,12 @@ export const resolveDecision = async (
             const row = Array.isArray(raw) ? raw[0] : raw;
             if (!row?.decision) throw new Error(`Decision ${id} has no linked Finding to approve`);
             return { decision: row.decision, risk: row.risk };
+        }
+        if (type === 'contract-proposal') {
+            const raw: any = await db().exec(APPROVE_CONTRACT_PROPOSAL, { ...params, contractId: `CTR-${id}` });
+            const row = Array.isArray(raw) ? raw[0] : raw;
+            if (!row?.decision) throw new Error(`Decision ${id} has no linked Vendor to approve`);
+            return { decision: row.decision, contract: row.contract };
         }
         if (type === 'assurance-package-proposal') {
             const incRaw: any = await db().fetch(

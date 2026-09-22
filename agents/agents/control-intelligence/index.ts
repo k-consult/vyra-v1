@@ -1,6 +1,6 @@
 import * as R from 'ramda';
-import { defaultContext, runAgentLoop, reasonWithLLM, Reasoning } from '../../runtime';
-import { fetchObligations } from '../../tools/graph-read';
+import { defaultContext, runAgentLoop, reasonWithTools, Reasoning } from '../../runtime';
+import { fetchObligations, fetchAgreementRate, TOOL_REGISTRY } from '../../tools/graph-read';
 import { writeDecision, DecisionPayload } from '../../tools/graph-write';
 import { DB } from '../../../lib/graph-db';
 import { config } from '../../../lib/config';
@@ -26,13 +26,31 @@ export const run = async (regulationId?: string): Promise<void> => {
     const ctx = defaultContext();
     ctx.agentId = 'control-intelligence-agent';
 
+    // Fetched once per cycle, not per item — a family's agreement rate doesn't move
+    // within a single run, and re-querying it per observed item would be wasted work.
+    const { approved, rejected, agreementRate } = await fetchAgreementRate(ctx.agentId);
+    const agreementContext = agreementRate === null
+        ? 'You have no prior approved/rejected history yet.'
+        : `Your historical agreement rate is ${Math.round(agreementRate * 100)}% (${approved} approved, ${rejected} rejected) — weight your confidence accordingly.`;
+
     await runAgentLoop<Obligation>(ctx.agentId, {
         observe: () => fetchObligations(regulationId) as Promise<Obligation[]>,
 
-        reason: (req): Promise<Reasoning> => reasonWithLLM(
-            `A compliance obligation has no Control implementing it yet:\n` +
+        // First (and so far only) family wired to reasonWithTools as a proof of
+        // concept — the other three families keep using reasonWithLLM unchanged. Gives
+        // the model an explicit escape hatch to check for partial existing coverage
+        // before recommending a Control type, rather than reasoning blind off the
+        // Obligation's name alone.
+        reason: (req): Promise<Reasoning> => reasonWithTools(
+            `A compliance obligation (id: "${req.id}") has no Control implementing it yet:\n` +
             `Obligation: "${req.name}" (mandatory: ${req.mandatory ?? 'UNKNOWN'}, type: ${req.obligationType ?? 'UNKNOWN'})\n` +
-            `Recommend, in one or two sentences, what kind of Control (policy, SOP, or operational check) should implement this obligation, and state your recommended type explicitly.`,
+            `Recommend, in one or two sentences, what kind of Control (policy, SOP, or operational check) should implement this obligation, and state your recommended type explicitly.\n` +
+            agreementContext,
+            [{
+                name: 'fetchControlsForObligation',
+                description: 'Look up any Control nodes already linked to this Obligation, given { obligationId: string }. Use this to check for partial existing coverage before recommending a type.',
+            }],
+            TOOL_REGISTRY,
             `"recommendedControlType": one of "policy" | "sop" | "operational-check"`
         ),
 

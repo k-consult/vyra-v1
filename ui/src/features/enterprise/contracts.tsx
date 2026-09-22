@@ -2,9 +2,126 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, RefreshCw, FileText, ArrowLeft } from 'lucide-react';
-import { enterprise } from '@/lib/api';
+import { AlertTriangle, RefreshCw, FileText, ArrowLeft, Plus, CheckCircle2 } from 'lucide-react';
+import { enterprise, operational, ProposeContractInput } from '@/lib/api';
 import { PropRow } from '@/features/landscape/landscape';
+
+// Never writes a Contract directly — every submission is a Decision proposal,
+// reviewed the same way an agent's proposal is (see /intelligence). Contracts
+// are an immutable source of truth; an amendment creates a new version rather
+// than editing the selected one.
+function ProposeContractForm({ vendors, roles, people, contracts, onSubmitted }: {
+    vendors: any[]; roles: any[]; people: any[]; contracts: any[]; onSubmitted: () => void;
+}) {
+    const [proposedBy, setProposedBy] = useState('');
+    const [proposedVendorId, setProposedVendorId] = useState('');
+    const [proposedServiceType, setProposedServiceType] = useState('');
+    const [proposedSlaResponseTime, setProposedSlaResponseTime] = useState('');
+    const [proposedAmcStartDate, setProposedAmcStartDate] = useState('');
+    const [proposedAmcExpiryDate, setProposedAmcExpiryDate] = useState('');
+    const [proposedCoordinatorRoleId, setProposedCoordinatorRoleId] = useState('');
+    const [priorContractId, setPriorContractId] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+    const [submitted, setSubmitted] = useState(false);
+
+    const submit = async () => {
+        setSubmitting(true);
+        setSubmitError(null);
+        const input: ProposeContractInput = {
+            proposedBy,
+            proposedVendorId,
+            proposedServiceType,
+            proposedSlaResponseTime: proposedSlaResponseTime || undefined,
+            proposedAmcStartDate: proposedAmcStartDate || undefined,
+            proposedAmcExpiryDate: proposedAmcExpiryDate || undefined,
+            proposedCoordinatorRoleId: proposedCoordinatorRoleId || undefined,
+            priorContractId: priorContractId || undefined,
+        };
+        try {
+            await enterprise.proposeContract(input);
+            setSubmitted(true);
+            onSubmitted();
+        } catch (err: any) {
+            setSubmitError(err.message || 'Proposal was rejected by the API');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    if (submitted) {
+        return (
+            <div className="rounded-lg border border-emerald-800 bg-emerald-950/30 px-4 py-3 flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-400" />
+                <p className="text-sm text-emerald-200">
+                    Proposal submitted — check <Link href="/intelligence" className="underline">Intelligence</Link> to approve.
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4 flex flex-col gap-3">
+            <p className="text-sm font-medium text-zinc-200">Propose a new or amended contract</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className="flex flex-col gap-1">
+                    <span className="text-[11px] text-zinc-500 uppercase tracking-wider">Proposed by</span>
+                    <select value={proposedBy} onChange={e => setProposedBy(e.target.value)} className="rounded-md border border-zinc-700 bg-zinc-950 text-zinc-200 text-sm px-3 py-2">
+                        <option value="">Select person…</option>
+                        {people.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                </label>
+                <label className="flex flex-col gap-1">
+                    <span className="text-[11px] text-zinc-500 uppercase tracking-wider">Vendor</span>
+                    <select value={proposedVendorId} onChange={e => setProposedVendorId(e.target.value)} className="rounded-md border border-zinc-700 bg-zinc-950 text-zinc-200 text-sm px-3 py-2">
+                        <option value="">Select vendor…</option>
+                        {vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                    </select>
+                </label>
+                <label className="flex flex-col gap-1">
+                    <span className="text-[11px] text-zinc-500 uppercase tracking-wider">Service type</span>
+                    <input value={proposedServiceType} onChange={e => setProposedServiceType(e.target.value)} className="rounded-md border border-zinc-700 bg-zinc-950 text-zinc-200 text-sm px-3 py-2" />
+                </label>
+                <label className="flex flex-col gap-1">
+                    <span className="text-[11px] text-zinc-500 uppercase tracking-wider">SLA response time</span>
+                    <input value={proposedSlaResponseTime} onChange={e => setProposedSlaResponseTime(e.target.value)} className="rounded-md border border-zinc-700 bg-zinc-950 text-zinc-200 text-sm px-3 py-2" />
+                </label>
+                <label className="flex flex-col gap-1">
+                    <span className="text-[11px] text-zinc-500 uppercase tracking-wider">AMC start date</span>
+                    <input type="date" value={proposedAmcStartDate} onChange={e => setProposedAmcStartDate(e.target.value)} className="rounded-md border border-zinc-700 bg-zinc-950 text-zinc-200 text-sm px-3 py-2" />
+                </label>
+                <label className="flex flex-col gap-1">
+                    <span className="text-[11px] text-zinc-500 uppercase tracking-wider">AMC expiry date</span>
+                    <input type="date" value={proposedAmcExpiryDate} onChange={e => setProposedAmcExpiryDate(e.target.value)} className="rounded-md border border-zinc-700 bg-zinc-950 text-zinc-200 text-sm px-3 py-2" />
+                </label>
+                <label className="flex flex-col gap-1">
+                    <span className="text-[11px] text-zinc-500 uppercase tracking-wider">Coordinator role</span>
+                    <select value={proposedCoordinatorRoleId} onChange={e => setProposedCoordinatorRoleId(e.target.value)} className="rounded-md border border-zinc-700 bg-zinc-950 text-zinc-200 text-sm px-3 py-2">
+                        <option value="">None</option>
+                        {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                    </select>
+                </label>
+                <label className="flex flex-col gap-1">
+                    <span className="text-[11px] text-zinc-500 uppercase tracking-wider">Supersedes existing contract (optional)</span>
+                    <select value={priorContractId} onChange={e => setPriorContractId(e.target.value)} className="rounded-md border border-zinc-700 bg-zinc-950 text-zinc-200 text-sm px-3 py-2">
+                        <option value="">None — new contract</option>
+                        {contracts.map(c => <option key={c.id} value={c.id}>{c.id} — {c.serviceType}</option>)}
+                    </select>
+                </label>
+            </div>
+            {submitError && <p className="text-xs text-red-400">{submitError}</p>}
+            <div>
+                <button
+                    onClick={submit}
+                    disabled={submitting || !proposedBy || !proposedVendorId || !proposedServiceType}
+                    className="text-xs px-4 py-2 rounded-md bg-emerald-500 text-zinc-950 font-medium hover:bg-emerald-400 transition-colors disabled:opacity-50"
+                >
+                    {submitting ? 'Submitting…' : 'Submit proposal'}
+                </button>
+            </div>
+        </div>
+    );
+}
 
 function ContractCard({ contract, vendorName }: { contract: any; vendorName: string }) {
     const facilityCount = (contract.facilityIds ?? []).length;
@@ -25,16 +142,21 @@ function ContractCard({ contract, vendorName }: { contract: any; vendorName: str
 export function ContractsView() {
     const [contracts, setContracts] = useState<any[]>([]);
     const [vendors, setVendors]     = useState<any[]>([]);
+    const [roles, setRoles]         = useState<any[]>([]);
+    const [people, setPeople]       = useState<any[]>([]);
     const [loading, setLoading]     = useState(true);
     const [error, setError]         = useState(false);
+    const [showForm, setShowForm]   = useState(false);
 
     const load = () => {
         setLoading(true);
         setError(false);
-        Promise.all([enterprise.contracts(), enterprise.vendors()])
-            .then(([c, v]) => {
+        Promise.all([enterprise.contracts(), enterprise.vendors(), enterprise.roles(), operational.people()])
+            .then(([c, v, r, p]) => {
                 setContracts(c.contracts ?? []);
                 setVendors(v.vendors ?? []);
+                setRoles(r.roles ?? []);
+                setPeople(p.people ?? []);
             })
             .catch(() => setError(true))
             .finally(() => setLoading(false));
@@ -83,6 +205,12 @@ export function ContractsView() {
                         </div>
                     </div>
                     <div className="flex items-center gap-5">
+                        <button
+                            onClick={() => setShowForm(s => !s)}
+                            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-emerald-500 text-zinc-950 font-medium hover:bg-emerald-400 transition-colors"
+                        >
+                            <Plus size={13} /> Propose contract
+                        </button>
                         <button onClick={load} className="p-2 rounded-md hover:bg-zinc-800 transition-colors" title="Refresh">
                             <RefreshCw size={14} className="text-zinc-500" />
                         </button>
@@ -95,6 +223,15 @@ export function ContractsView() {
 
             {/* ── Content ── */}
             <div className="flex-1 min-h-0 overflow-auto px-6 py-4 flex flex-col gap-3">
+                {showForm && (
+                    <ProposeContractForm
+                        vendors={vendors}
+                        roles={roles}
+                        people={people}
+                        contracts={contracts}
+                        onSubmitted={load}
+                    />
+                )}
                 <div className="flex items-center gap-2">
                     <FileText size={11} className="text-zinc-600" />
                     <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">

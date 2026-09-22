@@ -87,7 +87,7 @@ async function main() {
     log.info(`[projection] ${projection.nodeBatches.length} node batches, ${projection.edgeBatches.length} edge batches (CSVs in cli/out/ for debug)`);
 
     // ── 5. Load into Neo4j, stamped with the :Enterprise origin label ──────
-    await run(projection, { originLabel: 'Enterprise' });
+    await run(projection, { originLabel: 'Enterprise', sourceRevision: v2.version });
     await DB.closeAll();
 }
 

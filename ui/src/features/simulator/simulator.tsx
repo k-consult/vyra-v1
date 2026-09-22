@@ -22,6 +22,7 @@ const SIGNAL_TYPES = [
 type Tab = 'signals' | 'feeds';
 
 type Asset = { id: string; name: string; category?: string; assetType?: string; facilityId?: string };
+type Person = { id: string; name: string; roleTitle?: string };
 
 type SignalResult = { signal: any; task: any };
 type FiredSignal = SignalResult & { firedAt: string };
@@ -102,6 +103,9 @@ function SignalsTab() {
     const [assetId, setAssetId] = useState('');
     const [type, setType] = useState(SIGNAL_TYPES[0]);
     const [payload, setPayload] = useState('');
+    const [people, setPeople] = useState<Person[]>([]);
+    const [loadingPeople, setLoadingPeople] = useState(true);
+    const [raisedBy, setRaisedBy] = useState('');
     const [firing, setFiring] = useState(false);
     const [result, setResult] = useState<SignalResult | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -117,6 +121,15 @@ function SignalsTab() {
             })
             .catch(() => setAssets([]))
             .finally(() => setLoadingAssets(false));
+
+        operational.people()
+            .then((r: any) => {
+                const list: Person[] = r?.people ?? [];
+                setPeople(list);
+                if (list.length > 0) setRaisedBy(list[0].id);
+            })
+            .catch(() => setPeople([]))
+            .finally(() => setLoadingPeople(false));
     }, []);
 
     const selectedAsset = useMemo(() => assets.find(a => a.id === assetId), [assets, assetId]);
@@ -124,13 +137,14 @@ function SignalsTab() {
     const fire = async (overrideAssetId?: string, overrideType?: string) => {
         const chosenAssetId = overrideAssetId ?? assetId;
         const chosenType = overrideType ?? type;
-        if (!chosenAssetId) return;
+        if (!chosenAssetId || !raisedBy) return;
         setFiring(true);
         setError(null);
         const input: CreateSignalInput = {
             id: `SIG-SIM-${Date.now()}`,
             assetId: chosenAssetId,
             type: chosenType,
+            raisedBy,
             source: 'simulator',
             payload: payload || undefined,
         };
@@ -200,6 +214,24 @@ function SignalsTab() {
                 </div>
 
                 <label className="flex flex-col gap-1">
+                    <span className="text-[11px] text-zinc-500 uppercase tracking-wider">Reported by</span>
+                    <select
+                        value={raisedBy}
+                        onChange={e => setRaisedBy(e.target.value)}
+                        disabled={loadingPeople || people.length === 0}
+                        className="rounded-md border border-zinc-700 bg-zinc-950 text-zinc-200 text-sm px-3 py-2 disabled:opacity-50"
+                    >
+                        {loadingPeople && <option>Loading people…</option>}
+                        {!loadingPeople && people.length === 0 && <option>No people found</option>}
+                        {people.map(p => (
+                            <option key={p.id} value={p.id}>
+                                {p.name}{p.roleTitle ? ` — ${p.roleTitle}` : ''}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+
+                <label className="flex flex-col gap-1">
                     <span className="text-[11px] text-zinc-500 uppercase tracking-wider">Payload (optional)</span>
                     <input
                         value={payload}
@@ -220,14 +252,14 @@ function SignalsTab() {
                 <div className="flex items-center gap-3 pt-1">
                     <button
                         onClick={() => fire()}
-                        disabled={firing || !assetId}
+                        disabled={firing || !assetId || !raisedBy}
                         className="flex items-center gap-2 text-xs px-4 py-2 rounded-md bg-emerald-500 text-zinc-950 font-medium hover:bg-emerald-400 transition-colors disabled:opacity-50"
                     >
                         <Zap size={13} /> {firing ? 'Posting…' : 'Fire signal'}
                     </button>
                     <button
                         onClick={fireRandom}
-                        disabled={firing || assets.length === 0}
+                        disabled={firing || assets.length === 0 || people.length === 0}
                         className="flex items-center gap-2 text-xs px-4 py-2 rounded-md border border-zinc-700 text-zinc-300 hover:bg-zinc-800 transition-colors disabled:opacity-50"
                     >
                         <Shuffle size={13} /> Surprise me

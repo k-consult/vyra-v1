@@ -78,6 +78,14 @@ export const assetExists = async (id: string): Promise<boolean> => {
     return Boolean(row?.assetExists);
 };
 
+const PERSON_EXISTS = `MATCH (p:Person {id: $id}) RETURN count(p) > 0 AS personExists`;
+
+export const personExists = async (id: string): Promise<boolean> => {
+    const raw: any = await db().fetch(PERSON_EXISTS, { id });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    return Boolean(row?.personExists);
+};
+
 export interface CreateSignalInput {
     id: string;
     name?: string;
@@ -86,11 +94,18 @@ export interface CreateSignalInput {
     timestamp?: string;
     payload?: string;
     assetId: string;
+    raisedBy: string;
 }
 
+// raisedBy has no default — an unattributed signal is a materially weaker audit
+// record than an unattributed source string, so this throws rather than falling
+// back to 'UNKNOWN' the way source/timestamp/payload do below.
 const guardSignalInput = (input: Partial<CreateSignalInput>): CreateSignalInput => {
     if (!input.id || !input.assetId || !input.type) {
         throw new Error('Signal requires id, assetId, and type');
+    }
+    if (!input.raisedBy) {
+        throw new Error('Signal requires raisedBy — an unattributed signal cannot be recorded');
     }
     return {
         id: input.id,
@@ -100,6 +115,7 @@ const guardSignalInput = (input: Partial<CreateSignalInput>): CreateSignalInput 
         timestamp: R.defaultTo(new Date().toISOString(), input.timestamp),
         payload: R.defaultTo('', input.payload),
         assetId: input.assetId,
+        raisedBy: input.raisedBy,
     };
 };
 
@@ -112,9 +128,11 @@ const guardSignalInput = (input: Partial<CreateSignalInput>): CreateSignalInput 
 // row (lowest person.id) before the Task is written, rather than left to arbitrary order.
 const CREATE_SIGNAL_AND_TASK = `
     MATCH (a:Asset {id: $assetId})
+    MATCH (reporter:Person {id: $raisedBy})
     MERGE (s:Signal {id: $signalId})
     ON CREATE SET s += $signalProps, s.createdAt = datetime(), s.status = 'new'
     MERGE (s)-[:EMITTED_BY]->(a)
+    MERGE (s)-[:RAISED_BY]->(reporter)
     WITH s, a
     OPTIONAL MATCH (a)-[:LOCATED_AT]->(fac:Facility)<-[:WORKS_AT]-(person:Person)
     WITH s, a, person ORDER BY person.id LIMIT 1
@@ -132,7 +150,12 @@ const CREATE_SIGNAL_AND_TASK = `
         t.controlIds = controlIds,
         t.obligationIds = obligationIds
     MERGE (s)-[:HAS_TASK]->(t)
-    RETURN properties(s) AS signal, properties(t) AS task
+    WITH s, t, controlIds
+    UNWIND (CASE WHEN size(controlIds) = 0 THEN [null] ELSE controlIds END) AS coveredControlId
+    OPTIONAL MATCH (preseeded:Task {controlId: coveredControlId})
+    WHERE preseeded IS NOT NULL AND preseeded.status = 'closed'
+    SET preseeded.status = 'open', preseeded.lastTriggeredAt = datetime()
+    RETURN DISTINCT properties(s) AS signal, properties(t) AS task
 `;
 
 export const createSignal = async (input: Partial<CreateSignalInput>) => {
@@ -140,8 +163,9 @@ export const createSignal = async (input: Partial<CreateSignalInput>) => {
     const taskId = `TSK-${signal.id}`;
     const raw: any = await db().exec(CREATE_SIGNAL_AND_TASK, {
         assetId: signal.assetId,
+        raisedBy: signal.raisedBy,
         signalId: signal.id,
-        signalProps: { name: signal.name, type: signal.type, source: signal.source, timestamp: signal.timestamp, payload: signal.payload, assetId: signal.assetId },
+        signalProps: { name: signal.name, type: signal.type, source: signal.source, timestamp: signal.timestamp, payload: signal.payload, assetId: signal.assetId, raisedBy: signal.raisedBy },
         taskId,
         taskName: `Respond to ${signal.type} signal on ${signal.assetId}`,
     });

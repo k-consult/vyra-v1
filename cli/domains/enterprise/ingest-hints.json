@@ -11,6 +11,7 @@
     "enterprise/contracts.csv":     "Contract"
   },
   "edgeMap": {
-    "enterprise/edges/contract_facility.csv": { "relType": "COVERS", "sourceCol": "contractId", "sourceLabel": "Contract", "targetCol": "facilityId", "targetLabel": "Facility" }
+    "enterprise/edges/contract_facility.csv": { "relType": "COVERS", "sourceCol": "contractId", "sourceLabel": "Contract", "targetCol": "facilityId", "targetLabel": "Facility" },
+    "edges/incident_escalation.csv": { "relType": "ESCALATES_TO", "sourceCol": "incidentId", "sourceLabel": "Incident", "targetCol": "roleId", "targetLabel": "Role", "propCols": { "order": "order" } }
   }
 }

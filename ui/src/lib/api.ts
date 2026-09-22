@@ -19,12 +19,27 @@ const post = async <T>(path: string, body?: any): Promise<T> => {
     return res.json();
 };
 
+const patch = async <T>(path: string, body?: any): Promise<T> => {
+    const res = await fetch(`${BASE}${path}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body ?? {}),
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `API ${path} ${res.status}`);
+    }
+    return res.json();
+};
+
 export const knowledge = {
     regulations: () => get<{ regulations: any[] }>('/knowledge/regulations'),
     controls:    () => get<{ controls: any[] }>('/knowledge/controls'),
     agentProposedControls: () => get<{ controls: any[] }>('/knowledge/controls/agent-proposed'),
-    traceForward: (id: string) => get(`/knowledge/trace/${id}`),
+    traceForward: (id: string) => get<{ regulationId: string; chain: any[] }>(`/knowledge/trace/${id}`),
     traceReverse: (id: string) => get(`/knowledge/reverse/${id}`),
+    regulationHistory: (id: string) => get<{ regulationId: string; history: any[] }>(`/knowledge/regulations/${id}/history`),
+    syncStatus: () => get<{ lastSyncedAt: any }>('/knowledge/sync-status'),
 };
 
 export const execution = {
@@ -32,12 +47,14 @@ export const execution = {
     tasks:         (workflowId?: string) => get(`/execution/tasks${workflowId ? `?workflowId=${workflowId}` : ''}`),
     capas:         () => get<{ capas: any[] }>('/execution/capas'),
     verifications: () => get<{ verifications: any[] }>('/execution/verifications'),
+    updateTaskStatus: (id: string, status: string) => patch<{ task: any }>(`/execution/tasks/${id}`, { status }),
 };
 
 export type CreateSignalInput = {
     id: string;
     assetId: string;
     type: string;
+    raisedBy: string;
     name?: string;
     source?: string;
     payload?: string;
@@ -58,6 +75,7 @@ export const intelligence = {
     findings:     () => get<{ findings: any[] }>('/intelligence/findings'),
     risks:        () => get<{ risks: any[] }>('/intelligence/risks'),
     decisions:    () => get<{ decisions: any[] }>('/intelligence/decisions'),
+    agreementRates: () => get<{ agreementRates: { agentId: string; approved: number; rejected: number; total: number; agreementRate: number | null }[] }>('/intelligence/decisions/agreement-rates'),
     rcas:         () => get<{ rcas: any[] }>('/intelligence/rcas'),
     reverseTrace: (id: string) => get<any>(`/intelligence/incidents/${id}/reverse-trace`),
     approve: (id: string, reviewedBy?: string, reviewNote?: string) =>
@@ -109,10 +127,22 @@ export const catalog = {
     calendar:         (horizonWeeks?: number) => get<{ calendar: any[] }>(`/catalog/calendar${horizonWeeks ? `?horizonWeeks=${horizonWeeks}` : ''}`),
 };
 
+export type ProposeContractInput = {
+    proposedBy: string;
+    proposedServiceType: string;
+    proposedVendorId: string;
+    proposedSlaResponseTime?: string;
+    proposedAmcStartDate?: string;
+    proposedAmcExpiryDate?: string;
+    proposedCoordinatorRoleId?: string;
+    priorContractId?: string;
+};
+
 export const enterprise = {
     organizations: () => get<{ organizations: any[] }>('/enterprise/organizations'),
     roles:         () => get<{ roles: any[] }>('/enterprise/roles'),
     orgChart:      (id: string) => get(`/enterprise/org-chart/${id}`),
     vendors:       () => get<{ vendors: any[] }>('/enterprise/vendors'),
     contracts:     () => get<{ contracts: any[] }>('/enterprise/contracts'),
+    proposeContract: (input: ProposeContractInput) => post<{ decision: any }>('/enterprise/contracts', input),
 };

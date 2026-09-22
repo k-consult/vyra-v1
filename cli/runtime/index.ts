@@ -2,9 +2,10 @@ import { ProjectionResult } from '../projection';
 import { execCypherFile, loadNodes, loadEdges } from './repo';
 import log from '../../lib/log';
 
-export const run = async (projection: ProjectionResult, options: { originLabel?: string } = {}): Promise<void> => {
+export const run = async (projection: ProjectionResult, options: { originLabel?: string; sourceRevision?: string } = {}): Promise<void> => {
     const { cypherFiles, nodeBatches, edgeBatches } = projection;
     const extraLabels = options.originLabel ? [options.originLabel] : [];
+    const sourceRevision = options.sourceRevision;
 
     // ── 1. Constraints ────────────────────────────────────────────────────
     log.info(`[runtime] creating constraints...`);
@@ -17,14 +18,14 @@ export const run = async (projection: ProjectionResult, options: { originLabel?:
     // ── 3. Nodes via UNWIND (parameterized — no file I/O) ─────────────────
     log.info(`[runtime] loading ${nodeBatches.length} node types...`);
     for (const batch of nodeBatches) {
-        const count = await loadNodes(batch.label, batch.rows, extraLabels);
+        const count = await loadNodes(batch.label, batch.rows, extraLabels, sourceRevision);
         log.info(`[runtime]   ${batch.label}${options.originLabel ? `:${options.originLabel}` : ''}: +${count} nodes`);
     }
 
     // ── 4. Edges via UNWIND ───────────────────────────────────────────────
     log.info(`[runtime] loading ${edgeBatches.length} relationship types...`);
     for (const batch of edgeBatches) {
-        const count = await loadEdges(batch.relType, batch.sourceLabel, batch.targetLabel, batch.pairs);
+        const count = await loadEdges(batch.relType, batch.sourceLabel, batch.targetLabel, batch.pairs, sourceRevision);
         log.info(`[runtime]   ${batch.relType}: +${count} edges`);
     }
 

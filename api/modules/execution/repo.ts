@@ -42,3 +42,16 @@ export const listTasks = async (workflowId?: string) => {
         : `MATCH (t:Task) RETURN properties(t) AS task LIMIT 200`;
     return db().fetch(cypher, { id: workflowId });
 };
+
+const UPDATE_TASK_STATUS = `
+    MATCH (t:Task {id: $id})
+    SET t.status = $status, t.statusUpdatedAt = datetime()
+    RETURN properties(t) AS task
+`;
+
+export const updateTaskStatus = async (id: string, status: string) => {
+    const raw: any = await db().exec(UPDATE_TASK_STATUS, { id, status });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    if (!row?.task) throw new Error(`Task not found: ${id}`);
+    return row.task;
+};

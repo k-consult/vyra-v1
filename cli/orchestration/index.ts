@@ -87,7 +87,7 @@ async function main() {
     log.info(`[projection] ${projection.nodeBatches.length} node batches, ${projection.edgeBatches.length} edge batches (CSVs in cli/out/ for debug)`);
 
     // ── 5. Load into Neo4j ────────────────────────────────────────────────
-    await run(projection);
+    await run(projection, { sourceRevision: v2.version });
     await DB.closeAll();
 }
 

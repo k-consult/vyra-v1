@@ -23,19 +23,19 @@ export const execCypherFile = async (cypherFile: string): Promise<void> => {
 };
 
 // Load nodes via UNWIND — no file I/O, parameterized
-export const loadNodes = async (label: string, rows: Record<string, any>[], extraLabels: string[] = []): Promise<number> => {
+export const loadNodes = async (label: string, rows: Record<string, any>[], extraLabels: string[] = [], sourceRevision?: string): Promise<number> => {
     if (!rows.length) return 0;
 
     const labelClause = [label, ...extraLabels].map(l => `\`${l}\``).join(':');
     const cypher = `
         UNWIND $args.rows AS row
         MERGE (n:${labelClause} {id: row.id})
-        ON CREATE SET n += row, n.createdAt = datetime()
-        ON MATCH  SET n += row, n.updatedAt = datetime()
+        ON CREATE SET n += row, n.createdAt = datetime(), n.syncedAt = datetime(), n.sourceRevision = $args.sourceRevision
+        ON MATCH  SET n += row, n.updatedAt = datetime(), n.syncedAt = datetime(), n.sourceRevision = $args.sourceRevision
         RETURN count(n) AS total
     `;
     try {
-        const result = await db().exec(cypher, { args: { rows } }) as any[];
+        const result = await db().exec(cypher, { args: { rows, sourceRevision: sourceRevision ?? null } }) as any[];
         const raw = Array.isArray(result) ? result : [result];
         return Number(raw[0]?.total ?? rows.length);
     } catch (err: any) {
@@ -49,7 +49,8 @@ export const loadEdges = async (
     relType: string,
     sourceLabel: string,
     targetLabel: string,
-    pairs: { sourceId: string; targetId: string }[]
+    pairs: { sourceId: string; targetId: string; props?: Record<string, any> }[],
+    sourceRevision?: string
 ): Promise<number> => {
     if (!pairs.length) return 0;
 
@@ -57,11 +58,12 @@ export const loadEdges = async (
         UNWIND $args.pairs AS pair
         MATCH (src:\`${sourceLabel}\` {id: pair.sourceId})
         MATCH (tgt:\`${targetLabel}\` {id: pair.targetId})
-        MERGE (src)-[:\`${relType}\`]->(tgt)
+        MERGE (src)-[r:\`${relType}\`]->(tgt)
+        SET r += coalesce(pair.props, {}), r.syncedAt = datetime(), r.sourceRevision = $args.sourceRevision
         RETURN count(*) AS total
     `;
     try {
-        const result = await db().exec(cypher, { args: { pairs } }) as any[];
+        const result = await db().exec(cypher, { args: { pairs, sourceRevision: sourceRevision ?? null } }) as any[];
         const raw = Array.isArray(result) ? result : [result];
         return Number(raw[0]?.total ?? pairs.length);
     } catch (err: any) {

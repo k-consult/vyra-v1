@@ -1,8 +1,5 @@
+import { KnowledgeView } from '@/features/knowledge/knowledge';
+
 export default function KnowledgePage() {
-    return (
-        <main>
-            <h1>Knowledge Graph</h1>
-            {/* TODO: regulatory traceability — Regulation → Clause → Obligation → Control */}
-        </main>
-    );
+    return <KnowledgeView />;
 }

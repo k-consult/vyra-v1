@@ -15,9 +15,13 @@ const db = () => DB.get(config.db.twin.database, {
 // Derived edge, not a CSV-embedded FK — Asset and Control never share a row.
 // Both point at the same ComplianceArea taxonomy, so the join is real, not fabricated.
 // Idempotent (MERGE) — safe to rerun after any catalog-sync/enterprise-sync.
+// confidence: 0.6 is a fixed constant — taxonomy-only inference via shared
+// ComplianceArea, not a validated per-asset review, so a middling rather than
+// high confidence is the honest value to stamp.
 const BACKFILL_ASSET_CONTROL = `
     MATCH (a:Asset)-[:IN_COMPLIANCE_AREA]->(ca:ComplianceArea)<-[:BELONGS_TO]-(ctl:Control)
-    MERGE (a)-[:COVERED_BY]->(ctl)
+    MERGE (a)-[r:COVERED_BY]->(ctl)
+    SET r.origin = 'inferred', r.confidence = 0.6, r.derivedAt = datetime()
     RETURN count(*) AS edgesCreated
 `;
 

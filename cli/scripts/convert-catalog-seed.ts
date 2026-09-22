@@ -91,7 +91,13 @@ const convert = (): void => {
         description: r['Description'],
     })));
 
-    writeCSV('regulations.csv', regulationRows.map(r => ({
+    // Every regulation is v1.0 with no successor, except REG-001, which carries a real
+    // second version below — this exercises catalogVersion/supersededBy end to end
+    // rather than leaving them declared-but-unpopulated schema fields.
+    const REVISED_REGULATION_ID = 'REG-001';
+    const REVISED_REGULATION_SUCCESSOR_ID = `${REVISED_REGULATION_ID}-V2`;
+
+    const regulationCatalogRows = regulationRows.map(r => ({
         id: r['RegulationID'],
         name: r['Name'],
         authorityId: r['AuthorityID'],
@@ -99,8 +105,26 @@ const convert = (): void => {
         effectiveDate: r['Effective Date'],
         effectiveFrom: r['Effective Date'],
         catalogVersion: '1.0',
+        supersededBy: r['RegulationID'] === REVISED_REGULATION_ID ? REVISED_REGULATION_SUCCESSOR_ID : '',
         description: r['Description'],
-    })));
+    }));
+
+    const revisedRegulationSource = regulationRows.find(r => r['RegulationID'] === REVISED_REGULATION_ID);
+    if (!revisedRegulationSource) throw new Error(`convert-catalog-seed: ${REVISED_REGULATION_ID} not found in source data — cannot generate its v2`);
+
+    regulationCatalogRows.push({
+        id: REVISED_REGULATION_SUCCESSOR_ID,
+        name: `${revisedRegulationSource['Name']} (Revised)`,
+        authorityId: revisedRegulationSource['AuthorityID'],
+        jurisdictionId: slugJurisdiction(revisedRegulationSource['Jurisdiction']),
+        effectiveDate: '2026-01-01',
+        effectiveFrom: '2026-01-01',
+        catalogVersion: '2.0',
+        supersededBy: '',
+        description: `${revisedRegulationSource['Description']} (2026 revision — supersedes ${REVISED_REGULATION_ID}.)`,
+    });
+
+    writeCSV('regulations.csv', regulationCatalogRows);
 
     writeCSV('standards.csv', standardRows.map(r => ({
         id: r['StandardID'],
@@ -110,24 +134,45 @@ const convert = (): void => {
         description: r['Description'],
     })));
 
-    writeCSV('clauses.csv', clauseRows.map(r => ({
-        id: r['ClauseID'],
-        name: r['Title'],
-        clauseRef: r['Clause Number'],
-        text: r['Clause Text (Synthetic)'],
-        regulationId: r['Source Type'] === 'REG' ? r['Source ID'] : '',
-        standardId: r['Source Type'] === 'STD' ? r['Source ID'] : '',
-        catalogVersion: '1.0',
-    })));
+    // 05_Clauses has no real page/paragraph locator — only Source Type/ID (which
+    // regulation/standard) and Clause Number (position within it). sourceAnchor is
+    // synthesized from that real Clause Number, not a fabricated page number; an
+    // auditor gets the actual in-document position, just not a PDF page reference
+    // the source data was never given.
+    const clauseSourceSpans = new Map<string, { sourceDocumentId: string; sourceAnchor: string }>();
+    const clauseCatalogRows = clauseRows.map(r => {
+        const sourceDocumentId = `${r['Source ID']}-DOC`;
+        const sourceAnchor = `Clause ${r['Clause Number']}`;
+        clauseSourceSpans.set(r['ClauseID'], { sourceDocumentId, sourceAnchor });
+        return {
+            id: r['ClauseID'],
+            name: r['Title'],
+            clauseRef: r['Clause Number'],
+            text: r['Clause Text (Synthetic)'],
+            regulationId: r['Source Type'] === 'REG' ? r['Source ID'] : '',
+            standardId: r['Source Type'] === 'STD' ? r['Source ID'] : '',
+            catalogVersion: '1.0',
+            sourceDocumentId,
+            sourceAnchor,
+        };
+    });
+    writeCSV('clauses.csv', clauseCatalogRows);
 
-    writeCSV('obligations.csv', obligationRows.map(r => ({
-        id: r['ObligationID'],
-        name: r['Description'],
-        obligationType: r['Obligation Type'],
-        clauseId: r['ClauseID'],
-        mandatory: r['Mandatory (Y/N)'],
-        catalogVersion: '1.0',
-    })));
+    // Obligation's source span derives from its parent Clause's — an obligation has
+    // no independent document position, it inherits the clause it was extracted from.
+    writeCSV('obligations.csv', obligationRows.map(r => {
+        const parentSpan = clauseSourceSpans.get(r['ClauseID']);
+        return {
+            id: r['ObligationID'],
+            name: r['Description'],
+            obligationType: r['Obligation Type'],
+            clauseId: r['ClauseID'],
+            mandatory: r['Mandatory (Y/N)'],
+            catalogVersion: '1.0',
+            sourceDocumentId: parentSpan?.sourceDocumentId ?? '',
+            sourceAnchor: parentSpan?.sourceAnchor ?? '',
+        };
+    }));
 
     writeCSV('complianceAreas.csv', complianceAreaRows.map(r => ({
         id: r['ComplianceAreaID'],
@@ -152,12 +197,20 @@ const convert = (): void => {
     // 09_Task_Master is a 39-column denormalized rollup — deliberately kept thin here rather
     // than ingested as-is (see entity-alignment.md). Only the fields the graph needs: what the
     // task is, which Control it implements, and its display frequency.
+    //
+    // status: a Fixed-schedule task is on a recurring calendar and starts 'open'; a
+    // Triggered task (event/sensor/condition/risk/AI) has nothing due until its trigger
+    // fires, so it starts 'closed' — agents/tools/graph-write.ts's
+    // reactivateRiskAndAiTriggeredTasks() and the live Signal ingress flip it back to
+    // 'open' when that happens (see api/modules/operational/repo.ts).
+    const fixedTaskIds = new Set(scheduleRuleRows.filter(r => r['Schedule Type'] === 'Fixed').map(r => r['TaskID']));
     writeCSV('tasks.csv', taskMasterRows.map(r => ({
         id: r['TaskID'],
         name: r['Task Name'],
         controlId: r['Control ID'],
         frequency: r['Frequency'],
         priority: r['Priority'],
+        status: fixedTaskIds.has(r['TaskID']) ? 'open' : 'closed',
     })));
 
     const fixedScheduleRows = scheduleRuleRows.filter(r => r['Schedule Type'] === 'Fixed');

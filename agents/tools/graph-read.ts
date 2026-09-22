@@ -109,6 +109,34 @@ export const fetchUnbundledEvidenceIncidents = async () => {
     }));
 };
 
+// Read-back of an agent family's own approve/reject history — the concrete
+// insertion point for Gap #17's learning-from-overrides loop. Duplicated here
+// rather than imported from api/modules/intelligence/repo.ts, per this codebase's
+// cross-workspace isolation convention (agents never import from api/).
+export const fetchAgreementRate = async (agentId: string): Promise<{ approved: number; rejected: number; agreementRate: number | null }> => {
+    const cypher = `
+        MATCH (d:Decision {agentId: $agentId})
+        WHERE d.status IN ['approved', 'rejected'] AND d.origin = 'agent'
+        RETURN sum(CASE WHEN d.status = 'approved' THEN 1 ELSE 0 END) AS approved,
+               sum(CASE WHEN d.status = 'rejected' THEN 1 ELSE 0 END) AS rejected
+    `;
+    const raw: any = await db().fetch(cypher, { agentId });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    const approved = Number(row?.approved ?? 0);
+    const rejected = Number(row?.rejected ?? 0);
+    const total = approved + rejected;
+    return { approved, rejected, agreementRate: total > 0 ? approved / total : null };
+};
+
+// Allowlist of graph reads an agent's reasonWithTools() loop may call mid-reasoning —
+// the LLM chooses a tool by name and supplies args, but can only ever reach a plain
+// function already defined here, never arbitrary code (agents/runtime/index.ts's
+// reasonWithTools). Starts with the one control-intelligence needs; extend as other
+// families adopt multi-turn reasoning.
+export const TOOL_REGISTRY: Record<string, (args: any) => Promise<any>> = {
+    fetchControlsForObligation: (args: { obligationId: string }) => fetchControlsForObligation(args.obligationId),
+};
+
 export const traceForward = async (regulationId: string) => {
     const cypher = `
         MATCH path = (:Regulation {id: $id})<-[:BELONGS_TO]-(:Clause)<-[:DEFINED_BY]-(:Obligation)<-[:IMPLEMENTS]-(:Control)

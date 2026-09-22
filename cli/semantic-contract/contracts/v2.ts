@@ -68,6 +68,8 @@ export const v2: Contract = {
                 catalogVersion: 'catalogVersion',
                 effectiveFrom: 'effectiveFrom',
                 supersededBy: 'supersededBy',
+                sourceDocumentId: 'sourceDocumentId',
+                sourceAnchor: 'sourceAnchor',
             },
             axes: [Axis.Regulatory],
             rels: [
@@ -87,6 +89,8 @@ export const v2: Contract = {
                 catalogVersion: 'catalogVersion',
                 effectiveFrom: 'effectiveFrom',
                 supersededBy: 'supersededBy',
+                sourceDocumentId: 'sourceDocumentId',
+                sourceAnchor: 'sourceAnchor',
             },
             axes: [Axis.Regulatory],
             rels: [{ type: 'DEFINED_BY', targetLabel: 'Clause', sourceField: 'clauseId' }],
@@ -98,6 +102,7 @@ export const v2: Contract = {
             props: {
                 ...baseProps,
                 controlType: 'controlType',
+                docType: 'docType',
                 owner: 'owner',
                 obligationId: 'obligationId',
                 complianceAreaId: 'complianceAreaId',
@@ -265,6 +270,11 @@ export const v2: Contract = {
         // Vendor service agreement (AMC/SLA) — its own node, not fields on Vendor,
         // since AMC start/expiry and SLA are contract-lifecycle facts (a vendor can
         // have multiple contracts/renewals over time), not vendor-identity facts.
+        // Append-and-supersede, same discipline as Regulation (foundation.md: "nothing is
+        // deleted, only superseded") — a Contract's terms are never mutated in place. A
+        // renewal/amendment is always a new Contract node, linked back via supersededBy;
+        // see api/modules/enterprise/repo.ts's proposeContractChange and
+        // api/modules/intelligence/repo.ts's contract-proposal resolution branch.
         Contract: {
             label: 'Contract',
             graph: Graph.Operational,
@@ -276,6 +286,8 @@ export const v2: Contract = {
                 amcExpiryDate: 'amcExpiryDate',
                 vendorId: 'vendorId',
                 coordinatorRoleId: 'coordinatorRoleId',
+                effectiveFrom: 'effectiveFrom',
+                supersededBy: 'supersededBy',
             },
             axes: [Axis.Enterprise],
             rels: [
@@ -317,12 +329,18 @@ export const v2: Contract = {
             ],
         },
 
+        // Signal has no CSV feed — it's written live by the operational API
+        // (api/modules/operational/repo.ts), not by the ingestion pipeline. rels below
+        // documents the shape that live write path creates; it's not compiler-driven.
         Signal: {
             label: 'Signal',
             graph: Graph.Operational,
-            props: { ...baseProps, type: 'type', source: 'source', timestamp: 'timestamp', payload: 'payload', assetId: 'assetId' },
+            props: { ...baseProps, type: 'type', source: 'source', timestamp: 'timestamp', payload: 'payload', assetId: 'assetId', raisedBy: 'raisedBy' },
             axes: [Axis.Signal],
-            rels: [{ type: 'EMITTED_BY', targetLabel: 'Asset', sourceField: 'assetId' }],
+            rels: [
+                { type: 'EMITTED_BY', targetLabel: 'Asset', sourceField: 'assetId' },
+                { type: 'RAISED_BY', targetLabel: 'Person', sourceField: 'raisedBy' },
+            ],
         },
 
         Evidence: {
@@ -353,10 +371,13 @@ export const v2: Contract = {
             rels: [{ type: 'RAISED_BY', targetLabel: 'Finding', sourceField: 'findingId' }],
         },
 
+        // Decision has no CSV feed — written live by agents/tools/graph-write.ts (origin:
+        // 'agent') or api/modules/enterprise/repo.ts's proposeContractChange (origin:
+        // 'human'), never by the ingestion pipeline. Documentation only, like Signal above.
         Decision: {
             label: 'Decision',
             graph: Graph.Intelligence,
-            props: { ...baseProps, type: 'type', rationale: 'rationale', decidedAt: 'decidedAt', agentId: 'agentId', autonomyLevel: 'autonomyLevel', confidence: 'confidence' },
+            props: { ...baseProps, type: 'type', rationale: 'rationale', decidedAt: 'decidedAt', agentId: 'agentId', autonomyLevel: 'autonomyLevel', confidence: 'confidence', origin: 'origin', proposedBy: 'proposedBy' },
             axes: [Axis.Agent],
             rels: [],
         },

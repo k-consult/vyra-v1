@@ -5,6 +5,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 import log from '../lib/log';
 import { DB } from '../lib/graph-db';
 import { agents } from './registry';
+import { reactivateRiskAndAiTriggeredTasks } from './tools/graph-write';
 
 const POLL_INTERVAL_MS = Number(process.env.AGENT_POLL_INTERVAL_MS) || 60000;
 
@@ -15,6 +16,14 @@ const POLL_INTERVAL_MS = Number(process.env.AGENT_POLL_INTERVAL_MS) || 60000;
 // would otherwise take the whole scheduler down).
 const runCycle = async (): Promise<void> => {
     log.info('scheduler: cycle start');
+    try {
+        const { riskTriggered, aiTriggered } = await reactivateRiskAndAiTriggeredTasks();
+        if (riskTriggered || aiTriggered) {
+            log.info(`scheduler: reactivated ${riskTriggered} risk-triggered, ${aiTriggered} AI-triggered task(s)`);
+        }
+    } catch (err: any) {
+        log.error('scheduler: task reactivation failed', err.message);
+    }
     for (const [name, run] of Object.entries(agents)) {
         try {
             log.info(`scheduler: running ${name}`);

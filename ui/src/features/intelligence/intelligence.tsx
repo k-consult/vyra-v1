@@ -260,6 +260,31 @@ function DecisionsPanel({ items, people, onResolved, onViewResult }: {
     );
 }
 
+// ── Agreement Rates ────────────────────────────────────────────────────────────
+
+function AgreementRatesPanel({ items }: { items: { agentId: string; approved: number; rejected: number; total: number; agreementRate: number | null }[] }) {
+    if (items.length === 0) return null;
+    return (
+        <section className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+                <TrendingUp size={11} className="text-zinc-600" />
+                <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">Agent Agreement Rates</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {items.map(a => (
+                    <div key={a.agentId} className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 flex flex-col gap-1">
+                        <p className="text-[11px] font-mono text-zinc-500">{a.agentId}</p>
+                        <p className="text-lg text-zinc-100 font-semibold">
+                            {a.agreementRate === null ? '—' : `${Math.round(a.agreementRate * 100)}%`}
+                        </p>
+                        <p className="text-[11px] text-zinc-500">{a.approved} approved · {a.rejected} rejected</p>
+                    </div>
+                ))}
+            </div>
+        </section>
+    );
+}
+
 // ── Agent-Proposed Controls ──────────────────────────────────────────────────────
 
 function AgentProposedControlCard({ control }: { control: any }) {
@@ -432,6 +457,7 @@ export function IntelligenceView() {
     const [rcas, setRcas] = useState<any[]>([]);
     const [people, setPeople] = useState<any[]>([]);
     const [agentProposedControls, setAgentProposedControls] = useState<any[]>([]);
+    const [agreementRates, setAgreementRates] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [activeTab, setActiveTab] = useState<Tab>('decisions');
@@ -442,14 +468,16 @@ export function IntelligenceView() {
         Promise.all([
             intelligence.decisions(), intelligence.findings(), intelligence.risks(),
             intelligence.rcas(), operational.people(), knowledge.agentProposedControls(),
+            intelligence.agreementRates(),
         ])
-            .then(([dec, find, risk, rca, ppl, ctl]: any[]) => {
+            .then(([dec, find, risk, rca, ppl, ctl, rates]: any[]) => {
                 setDecisions(dec.decisions ?? []);
                 setFindings(find.findings ?? []);
                 setRisks(risk.risks ?? []);
                 setRcas(rca.rcas ?? []);
                 setPeople(ppl.people ?? []);
                 setAgentProposedControls(ctl.controls ?? []);
+                setAgreementRates(rates.agreementRates ?? []);
             })
             .catch(() => setError(true))
             .finally(() => setLoading(false));
@@ -540,7 +568,10 @@ export function IntelligenceView() {
             {/* ── Content ── */}
             <div className="flex-1 min-h-0 overflow-auto px-6 py-4">
                 {activeTab === 'decisions' && (
-                    <DecisionsPanel items={decisions} people={people} onResolved={load} onViewResult={setActiveTab} />
+                    <div className="flex flex-col gap-6">
+                        <AgreementRatesPanel items={agreementRates} />
+                        <DecisionsPanel items={decisions} people={people} onResolved={load} onViewResult={setActiveTab} />
+                    </div>
                 )}
                 {activeTab === 'controls' && <ControlsPanel items={agentProposedControls} />}
                 {activeTab === 'findings' && <FindingsPanel items={findings} rcas={rcas} />}

@@ -81,3 +81,77 @@ export const reasonWithLLM = async (prompt: string, extraSchema?: string): Promi
         return { rationale: 'UNKNOWN', confidence: 0 };
     }
 };
+
+export interface ToolSpec {
+    name: string;
+    description: string;
+}
+
+const finalAnswerInstruction = (extraSchema?: string): string =>
+    `Give your final answer as ONLY a JSON object of the form {"rationale": string, "confidence": number between 0 and 1${extraSchema ? `, ${extraSchema}` : ''}}. No other text.`;
+
+// Bounded, strictly sequential tool-calling — additive to reasonWithLLM, which stays
+// untouched so every other agent family keeps its existing one-shot behavior. Each
+// turn is one awaited Ollama call after another *inside a single reason() call*, so
+// this adds no concurrency: scheduler.ts still awaits one family at a time, and one
+// reasonWithTools() call still makes exactly one Ollama request at a time — the one
+// shared local model is never asked to serve two inferences at once. A tool is a
+// zero-arg or caller-bound async function (see agents/tools/graph-read.ts's
+// TOOL_REGISTRY) — the LLM chooses whether to call one, never supplies arbitrary code.
+export const reasonWithTools = async (
+    prompt: string,
+    tools: ToolSpec[],
+    toolRegistry: Record<string, (args: any) => Promise<any>>,
+    extraSchema?: string,
+    maxTurns = 3
+): Promise<Reasoning> => {
+    const toolMenu = tools.map(t => `- ${t.name}: ${t.description}`).join('\n');
+    const messages: { role: string; content: string }[] = [{
+        role: 'user',
+        content:
+            `${prompt}\n\nBefore answering, you may call one of these tools to gather more context:\n${toolMenu}\n\n` +
+            `Respond with ONLY a JSON object — either a tool call: {"toolCall": {"name": string, "args": {}}}, ` +
+            `or your final answer: {"rationale": string, "confidence": number between 0 and 1${extraSchema ? `, ${extraSchema}` : ''}}. No other text.`,
+    }];
+
+    for (let turn = 0; turn < maxTurns; turn++) {
+        const isLastTurn = turn === maxTurns - 1;
+        const res = await fetch(`${OLLAMA_HOST}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: MODEL, stream: false, format: 'json', messages }),
+        });
+        if (!res.ok) throw new Error(`runtime: Ollama request failed: ${res.status} ${await res.text()}`);
+        const data: any = await res.json();
+        const text = data?.message?.content ?? '';
+
+        let parsed: any;
+        try {
+            parsed = JSON.parse(text);
+        } catch {
+            log.error('runtime: reasonWithTools failed to parse LLM response as JSON', text);
+            return { rationale: 'UNKNOWN', confidence: 0 };
+        }
+
+        const toolCall = parsed?.toolCall;
+        if (toolCall?.name && toolRegistry[toolCall.name] && !isLastTurn) {
+            log.info(`runtime: reasonWithTools calling tool ${toolCall.name}`);
+            const toolResult = await toolRegistry[toolCall.name](toolCall.args ?? {});
+            messages.push({ role: 'assistant', content: text });
+            messages.push({
+                role: 'user',
+                content: `Tool result for ${toolCall.name}: ${JSON.stringify(toolResult)}\n\n${finalAnswerInstruction(extraSchema)}`,
+            });
+            continue;
+        }
+
+        return {
+            ...parsed,
+            rationale: String(parsed.rationale ?? 'UNKNOWN'),
+            confidence: Number(parsed.confidence ?? 0),
+        };
+    }
+
+    log.error('runtime: reasonWithTools exhausted maxTurns without a final answer');
+    return { rationale: 'UNKNOWN', confidence: 0 };
+};

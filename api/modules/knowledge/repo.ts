@@ -56,6 +56,18 @@ const LIST_AGENT_PROPOSED_CONTROLS = `
     ORDER BY n.createdAt DESC
 `;
 
+const LAST_SYNCED_AT = `
+    MATCH (n)
+    WHERE n.syncedAt IS NOT NULL
+    RETURN max(n.syncedAt) AS lastSyncedAt
+`;
+
+export const getLastSyncedAt = async () => {
+    const raw: any = await db().fetch(LAST_SYNCED_AT, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows[0]?.lastSyncedAt ?? null;
+};
+
 export const listRegulations = async () => {
     const raw: any = await db().fetch(LIST_REGULATIONS, {});
     const rows = Array.isArray(raw) ? raw : [raw];
@@ -72,6 +84,20 @@ export const listAgentProposedControls = async () => {
     const raw: any = await db().fetch(LIST_AGENT_PROPOSED_CONTROLS, {});
     const rows = Array.isArray(raw) ? raw : [raw];
     return rows.map((r: any) => r.control).filter(Boolean);
+};
+
+const REGULATION_HISTORY = `
+    MATCH (target:Regulation {id: $id})
+    MATCH (r:Regulation)
+    WHERE r.id = target.id OR r.id = target.supersededBy OR r.supersededBy = target.id
+    RETURN properties(r) AS regulation
+    ORDER BY r.catalogVersion
+`;
+
+export const getRegulationHistory = async (regulationId: string) => {
+    const raw: any = await db().fetch(REGULATION_HISTORY, { id: regulationId });
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.regulation).filter(Boolean);
 };
 
 export const traceForward = async (regulationId: string) => db().fetch(TRACE_FORWARD, { id: regulationId });

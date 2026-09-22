@@ -45,13 +45,23 @@ export const compile = (
 export const compileEdges = (edgeDef: EdgeDef, rows: Record<string, any>[]): GraphEdge[] =>
     rows
         .filter(r => r[edgeDef.sourceCol] && r[edgeDef.targetCol])
-        .map(r => ({
-            sourceId:    String(r[edgeDef.sourceCol]).trim(),
-            sourceLabel: edgeDef.sourceLabel,
-            relType:     edgeDef.relType,
-            targetId:    String(r[edgeDef.targetCol]).trim(),
-            targetLabel: edgeDef.targetLabel,
-        }));
+        .map(r => {
+            const props: Record<string, any> = {};
+            for (const [propName, csvCol] of Object.entries(edgeDef.propCols ?? {})) {
+                const val = r[csvCol];
+                if (val !== undefined && val !== null && String(val).trim() !== '') {
+                    props[propName] = String(val).trim();
+                }
+            }
+            return {
+                sourceId:    String(r[edgeDef.sourceCol]).trim(),
+                sourceLabel: edgeDef.sourceLabel,
+                relType:     edgeDef.relType,
+                targetId:    String(r[edgeDef.targetCol]).trim(),
+                targetLabel: edgeDef.targetLabel,
+                ...(Object.keys(props).length ? { props } : {}),
+            };
+        });
 
 export const buildIR = (version: string, nodes: GraphNode[], edges: GraphEdge[]): GraphIR => ({
     nodes,

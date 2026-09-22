@@ -71,3 +71,71 @@ export const listContracts = async () => {
 };
 
 export const traceOrgChart = async (organizationId: string) => db().fetch(TRACE_ORG_CHART, { id: organizationId });
+
+const VENDOR_EXISTS = `MATCH (v:Vendor {id: $id}) RETURN count(v) > 0 AS vendorExists`;
+export const vendorExists = async (id: string): Promise<boolean> => {
+    const raw: any = await db().fetch(VENDOR_EXISTS, { id });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    return Boolean(row?.vendorExists);
+};
+
+const CONTRACT_EXISTS = `MATCH (c:Contract {id: $id}) RETURN count(c) > 0 AS contractExists`;
+export const contractExists = async (id: string): Promise<boolean> => {
+    const raw: any = await db().fetch(CONTRACT_EXISTS, { id });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    return Boolean(row?.contractExists);
+};
+
+export interface ProposeContractChangeInput {
+    proposedBy: string;
+    proposedServiceType: string;
+    proposedSlaResponseTime?: string;
+    proposedAmcStartDate?: string;
+    proposedAmcExpiryDate?: string;
+    proposedVendorId: string;
+    proposedCoordinatorRoleId?: string;
+    priorContractId?: string;
+}
+
+// Writes only a pending Decision — never a Contract. Contracts are an immutable
+// source of truth (same append-and-supersede discipline as Regulation); the actual
+// Contract node is created only on approval, via intelligence/repo.ts's
+// contract-proposal branch — see api/modules/intelligence/repo.ts.
+const PROPOSE_CONTRACT_CHANGE = `
+    MERGE (d:Decision {id: $id})
+    ON CREATE SET
+        d += $props,
+        d.decidedAt = datetime(),
+        d.status = 'pending',
+        d.origin = 'human'
+    WITH d
+    MATCH (src {id: $sourceId})
+    MERGE (d)-[:ABOUT]->(src)
+    RETURN properties(d) AS decision
+`;
+
+export const proposeContractChange = async (input: ProposeContractChangeInput) => {
+    const id = `DEC-CONTRACT-${Date.now()}`;
+    const sourceId = input.priorContractId ?? input.proposedVendorId;
+    const raw: any = await db().exec(PROPOSE_CONTRACT_CHANGE, {
+        id,
+        sourceId,
+        props: {
+            type: 'contract-proposal',
+            rationale: `Human-proposed ${input.priorContractId ? 'contract amendment' : 'new contract'}`,
+            agentId: input.proposedBy,
+            autonomyLevel: 0,
+            confidence: 1,
+            proposedBy: input.proposedBy,
+            proposedServiceType: input.proposedServiceType,
+            proposedSlaResponseTime: input.proposedSlaResponseTime ?? '',
+            proposedAmcStartDate: input.proposedAmcStartDate ?? '',
+            proposedAmcExpiryDate: input.proposedAmcExpiryDate ?? '',
+            proposedVendorId: input.proposedVendorId,
+            proposedCoordinatorRoleId: input.proposedCoordinatorRoleId ?? '',
+            priorContractId: input.priorContractId ?? '',
+        },
+    });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    return { decision: row?.decision };
+};

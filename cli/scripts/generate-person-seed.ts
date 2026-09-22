@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { parse } from 'csv-parse/sync';
 import log from '../../lib/log';
+import { TITLE_TO_ROLE } from './lib/title-role-map';
 
 const feedsDir = path.resolve(__dirname, '..', 'feeds', 'csv');
 const operationalDir = path.join(feedsDir, 'operational');
@@ -64,16 +65,16 @@ const generate = (): void => {
     risks.forEach(r => addPerson(r.owner));
     tasks.forEach(t => addPerson(t.owner));
 
-    // roleId intentionally left blank: none of these free-text titles (e.g. "QA
-    // Executive", "Corporate EHS") match any of the 16 seeded enterprise Roles —
-    // that catalog is from a different vertical (Industrial Parks/Warehouse/3PL).
-    // Forcing a match would be a guess; HAS_ROLE simply doesn't fire for these rows.
+    // roleId resolves through TITLE_TO_ROLE where a defensible functional-domain
+    // match exists (see cli/scripts/lib/title-role-map.ts); titles with no real
+    // equivalent among the 16 seeded Roles keep the prior fail-soft '' — forcing
+    // a match there would be a guess, and HAS_ROLE simply doesn't fire for them.
     writeCSV(operationalDir, 'people.csv', Array.from(people.entries()).map(([name, { title }]) => ({
         id: slugName(name),
         name,
         roleTitle: title,
         email: '',
-        roleId: '',
+        roleId: TITLE_TO_ROLE[title] ?? '',
         facilityId: '',
         status: 'active',
         version: '1.0',
