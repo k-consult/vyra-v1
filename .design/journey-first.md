@@ -32,22 +32,23 @@ This is a **journey**, not a feature list: each day builds on a checkpoint the p
 
 ## Where the platform actually is
 
-### Day X — mostly real, but not an experience
+### Day X — closer to real, still not a full experience (updated 2026-09-25)
 
 - Ingestion works: `cli/` pipeline is live (parser → compiler → projection → `LOAD CSV`).
 - `knowledge/`, `landscape/`, and `calendar/` screens exist and are backed by real graph data — see `track.md`'s L1/L3 rows (🟢 live).
-- **But** these are browse screens, not a guided "here's what you can see today" entry point. There is no Day-1 framing anywhere in the UI.
-- **Verdict:** capability exists, experience doesn't.
+- **The Day-1 framing gap is partially closed.** A persistent, persona-grouped nav shell (`ui/src/components/nav-shell.tsx`) now replaces the ad-hoc per-page header this section originally found — every screen is reachable from one "here's what you can see today" sidebar, grouped by the 7-layer operating model instead of by graph domain.
+- **`calendar/` is no longer browse-first.** It now lands on a ranked worklist (overdue / due-in-14-days), with the old full-grid demoted behind a toggle.
+- **`knowledge/`, `landscape/`, and `assurance/` are still browse-first** — the worklist treatment hasn't been extended to them.
+- **Verdict:** the entry point now exists. Of the "live" screens, only Calendar is actually ranked/actionable rather than browse-only — the other four are the natural next slice of the same pattern.
 
-### Day X+n — does not exist
+### Day X+n — org setup still does not exist; the transition-tracking half got a first slice (updated 2026-09-25)
 
-Confirmed by direct code search — zero hits for `cutover`, `shadowMode`, `continuityBaseline`, or `decommission` across `api/`, `agents/`, `cli/`, `lib/`. Confirmed again by the UI tree itself:
+Confirmed by direct code search — zero hits for `shadowMode`/`continuityBaseline`/`decommission` across `api/`, `agents/`, `cli/`, `lib/` (`cutover` now has real hits — see below). Confirmed again by the UI tree itself:
 
-- `ui/src/features/enterprise/` contains exactly one screen: `contracts.tsx`. No org, region, facility, role, or escalation builder exists anywhere.
-- `ui/src/features/dashboard/` and `ui/src/features/execution/` are **empty directories** — no landing experience, no task-execution cockpit.
-- `Organization`/`Role`/`Person`/`Facility`/`Asset`/`Vendor` are seeded entirely by CSV batch today (`track.md` Gap #10) — there is no "upload artifact vs. template vs. hybrid" flow, no select-domain flow, and no checkpoint concept anywhere in the product.
-- This is already tracked as **Gap #8 (`track.md`)**, flagged 🔴 and explicitly scoped out of the last closure batch as needing its own dedicated design pass.
-- **Verdict:** this is a total gap, not a partial one. It is also the literal bridge between Day X and Day X+n+n — nothing downstream can exist without it.
+- `ui/src/features/enterprise/` still contains exactly one screen: `contracts.tsx`. No org, region, facility, role, or escalation *builder* exists anywhere — `Organization`/`Role`/`Person`/`Facility`/`Asset`/`Vendor` are still seeded entirely by CSV batch (`track.md` Gap #10). There is still no "select domain/regulation," no "upload artifact vs. template vs. hybrid" flow, no checkpoint concept.
+- `ui/src/features/dashboard/` and `ui/src/features/execution/` are still **empty directories**.
+- **What did change:** `track.md` Gap #8 got its first real slice — `CutoverCriterion` is now live graph state (a workflow's proving window, system-of-record, and a queryable `cutover-overdue` status), visible at `/onboarding`. This is real, but it's the **transition-measurement** mechanic for a workflow already underway — it doesn't touch org/role/facility/asset setup at all, which is what this section is actually about.
+- **Verdict for org setup: unchanged, still a total gap.** `CutoverCriterion` is genuine progress on a different, later piece of `foundation.md` §0 — not this one. It is still the literal bridge between Day X and Day X+n+n; nothing downstream can exist without it.
 
 ### Day X+n+n — plumbing exists, product doesn't
 
@@ -75,12 +76,12 @@ The result is a technically correct data model with no product wrapped around it
 - A real onboarding flow for Day X+n: select domain/regulation → upload/template/hybrid → structure + people + roles + escalation → checkpoint gate that visibly re-renders the Day X calendar against the new org.
 - A real operational cockpit for Day X+n+n, not just live signal writes underneath existing domain screens.
 
-## Priority ordering
+## Priority ordering (updated 2026-09-25)
 
-1. **Onboarding-as-a-phase (Gap #8)** — the literal missing bridge. Nothing else in the vision can exist without it.
-2. **Reframe the UI around JTBD, not graph domain** — a new finding, not yet in `track.md`'s gap inventory. Screens should answer "what does a Planner do today," not "here's the Execution subgraph."
-3. **Domain model (Gap #9)** — becomes worth doing once there's an onboarding flow and JTBD-shaped screens to drive it; right now it's architecture with no workflow to serve.
-4. **Scenario Simulation (Gap #7)** — real, but secondary. It's a Day X+n+n capability, and Day X+n+n has no home to live in yet.
+1. **Onboarding-as-a-phase (Gap #8)** — first real slice done (`CutoverCriterion`, transition-tracking only, `track.md`). The literal missing bridge — org setup (select domain/regulation, upload/template/hybrid, structure+people+roles+escalation, checkpoint) — is still fully unbuilt.
+2. ~~Reframe the UI around JTBD, not graph domain~~ — **done.** Persistent persona-grouped nav shell replaced the graph-domain-organized header pattern; Ops Supervisor and Risk Manager each got their own screen split out of `/intelligence`'s mashup; Calendar became worklist-first. Not yet extended to Knowledge/Landscape/Assurance — those are still browse-first, the natural next slice of the same pattern, not a new priority.
+3. **Domain model (Gap #9)** — becomes worth doing once there's an onboarding flow to drive it; right now it's architecture with no workflow to serve. Unchanged.
+4. **Scenario Simulation (Gap #7)** — real, but secondary. It's a Day X+n+n capability, and Day X+n+n has no home to live in yet. Unchanged.
 
 ---
 
