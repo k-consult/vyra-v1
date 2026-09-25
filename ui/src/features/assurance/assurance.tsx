@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import {
-    AlertTriangle, RefreshCw, ShieldCheck, ArrowLeft,
+    AlertTriangle, RefreshCw, ShieldCheck,
     Gauge, TrendingUp, FileText, ClipboardCheck,
 } from 'lucide-react';
 import { assurance, CoverageScore, RiskRollup } from '@/lib/api';
 import { PropRow } from '@/features/landscape/landscape';
+import { PageHeader } from '@/components/page-header';
 
 // ── Config ─────────────────────────────────────────────────────────────────────
 
@@ -238,7 +238,7 @@ export function AssuranceView() {
 
     if (loading) {
         return (
-            <div className="h-screen bg-zinc-950 flex items-center justify-center">
+            <div className="h-full bg-zinc-950 flex items-center justify-center">
                 <div className="flex items-center gap-3 text-zinc-500">
                     <RefreshCw size={16} className="animate-spin" />
                     <span className="text-sm">Loading assurance posture…</span>
@@ -249,7 +249,7 @@ export function AssuranceView() {
 
     if (error || !coverage || !riskRollup) {
         return (
-            <div className="h-screen bg-zinc-950 flex items-center justify-center">
+            <div className="h-full bg-zinc-950 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
                     <AlertTriangle size={20} className="text-amber-500" />
                     <span className="text-sm text-zinc-500">Could not load assurance data</span>
@@ -260,30 +260,13 @@ export function AssuranceView() {
     }
 
     return (
-        <div className="h-screen flex flex-col overflow-hidden bg-zinc-950 text-zinc-100">
+        <div className="h-full flex flex-col overflow-hidden bg-zinc-950 text-zinc-100">
 
-            {/* ── Header ── */}
-            <header className="border-b border-zinc-800/60 shrink-0">
-                <div className="flex items-center justify-between px-6 py-5">
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0">
-                            <ShieldCheck size={18} className="text-zinc-950" />
-                        </div>
-                        <div>
-                            <p className="text-base font-semibold leading-tight">VYRA</p>
-                            <p className="text-xs text-zinc-500 leading-tight">Assurance &amp; Coverage</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-5">
-                        <button onClick={load} className="p-2 rounded-md hover:bg-zinc-800 transition-colors" title="Refresh">
-                            <RefreshCw size={14} className="text-zinc-500" />
-                        </button>
-                        <Link href="/" className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-100 transition-colors">
-                            <ArrowLeft size={13} /> Landscape
-                        </Link>
-                    </div>
-                </div>
-            </header>
+            <PageHeader icon={ShieldCheck} iconClassName="text-emerald-400" title="Assurance & Coverage">
+                <button onClick={load} className="p-2 rounded-md hover:bg-zinc-800 transition-colors" title="Refresh">
+                    <RefreshCw size={14} className="text-zinc-500" />
+                </button>
+            </PageHeader>
 
             {/* ── Content ── */}
             <div className="flex-1 min-h-0 overflow-auto px-6 py-4 flex flex-col gap-6">

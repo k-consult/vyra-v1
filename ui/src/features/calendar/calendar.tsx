@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { AlertTriangle, RefreshCw, ShieldCheck, Grid3x3, ArrowLeft, Clock, ChevronDown, CheckCircle2 } from 'lucide-react';
-import Link from 'next/link';
+import { AlertTriangle, RefreshCw, ShieldCheck, Grid3x3, Clock, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { catalog, execution } from '@/lib/api';
+import { PageHeader } from '@/components/page-header';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -174,7 +174,7 @@ export function CalendarView() {
 
     if (loading) {
         return (
-            <div className="h-screen bg-zinc-950 flex items-center justify-center">
+            <div className="h-full bg-zinc-950 flex items-center justify-center">
                 <div className="flex items-center gap-3 text-zinc-500">
                     <RefreshCw size={16} className="animate-spin" />
                     <span className="text-sm">Loading 52-week calendar…</span>
@@ -185,7 +185,7 @@ export function CalendarView() {
 
     if (error || !tasks) {
         return (
-            <div className="h-screen bg-zinc-950 flex items-center justify-center">
+            <div className="h-full bg-zinc-950 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
                     <AlertTriangle size={20} className="text-amber-500" />
                     <span className="text-sm text-zinc-500">Could not load calendar data</span>
@@ -199,30 +199,13 @@ export function CalendarView() {
         QUARTER_WEEKS.has(week) ? 'border-r border-zinc-700' : 'border-r border-zinc-800/50';
 
     return (
-        <div className="h-screen flex flex-col overflow-hidden bg-zinc-950 text-zinc-100">
+        <div className="h-full flex flex-col overflow-hidden bg-zinc-950 text-zinc-100">
 
-            {/* ── Header ── */}
-            <header className="border-b border-zinc-800/60 shrink-0">
-                <div className="flex items-center justify-between px-6 py-5">
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0">
-                            <ShieldCheck size={18} className="text-zinc-950" />
-                        </div>
-                        <div>
-                            <p className="text-base font-semibold leading-tight">VYRA</p>
-                            <p className="text-xs text-zinc-500 leading-tight">52-Week Compliance Calendar</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-5">
-                        <button onClick={load} className="p-2 rounded-md hover:bg-zinc-800 transition-colors" title="Refresh">
-                            <RefreshCw size={14} className="text-zinc-500" />
-                        </button>
-                        <Link href="/" className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-100 transition-colors">
-                            <ArrowLeft size={13} /> Landscape
-                        </Link>
-                    </div>
-                </div>
-            </header>
+            <PageHeader icon={ShieldCheck} iconClassName="text-emerald-400" title="52-Week Compliance Calendar">
+                <button onClick={load} className="p-2 rounded-md hover:bg-zinc-800 transition-colors" title="Refresh">
+                    <RefreshCw size={14} className="text-zinc-500" />
+                </button>
+            </PageHeader>
 
             {/* ── Worklist ── */}
             <section className="px-6 py-5 border-b border-zinc-800/60 shrink-0">

@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-    ShieldCheck, ArrowLeft,
+    ShieldCheck,
     Radio, Rss, CheckCircle2, XCircle, Zap, Shuffle,
 } from 'lucide-react';
 import { operational, CreateSignalInput } from '@/lib/api';
+import { PageHeader } from '@/components/page-header';
 
 // ── Config ─────────────────────────────────────────────────────────────────────
 
@@ -330,25 +331,9 @@ export function SimulatorView() {
     const [tab, setTab] = useState<Tab>('signals');
 
     return (
-        <div className="h-screen flex flex-col overflow-hidden bg-zinc-950 text-zinc-100">
+        <div className="h-full flex flex-col overflow-hidden bg-zinc-950 text-zinc-100">
 
-            {/* ── Header ── */}
-            <header className="border-b border-zinc-800/60 shrink-0">
-                <div className="flex items-center justify-between px-6 py-5">
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0">
-                            <ShieldCheck size={18} className="text-zinc-950" />
-                        </div>
-                        <div>
-                            <p className="text-base font-semibold leading-tight">VYRA</p>
-                            <p className="text-xs text-zinc-500 leading-tight">Simulator — trigger agents without a terminal</p>
-                        </div>
-                    </div>
-                    <Link href="/" className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-100 transition-colors">
-                        <ArrowLeft size={13} /> Landscape
-                    </Link>
-                </div>
-            </header>
+            <PageHeader icon={ShieldCheck} iconClassName="text-emerald-400" title="Simulator" subtitle="Trigger agents without a terminal" />
 
             {/* ── Tabs ── */}
             <div className="px-6 pt-4 flex items-center gap-1 shrink-0">

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import Link from 'next/link';
 import {
     AlertTriangle, BookOpen, Building2, Package, Server,
     Shield, ListChecks, FileText, TrendingUp, Search,
@@ -11,6 +10,7 @@ import {
 } from 'lucide-react';
 import { dashboard, knowledge, operational, assurance, intelligence, execution, catalog, enterprise } from '@/lib/api';
 import { formatValue } from '@/features/validation/display';
+import { PageHeader } from '@/components/page-header';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -109,6 +109,11 @@ export const BADGE_COLORS: Record<string, string> = {
 const BADGE_FIELDS = new Set(['status', 'riskRating', 'severity', 'priority', 'inherentRating', 'residualRating', 'riskTier']);
 
 // ── Shared display ─────────────────────────────────────────────────────────────
+
+export function Badge({ value }: { value: string }) {
+    const cls = BADGE_COLORS[value] ?? 'bg-zinc-800 text-zinc-300 border-zinc-600';
+    return <span className={`inline-flex rounded border px-1.5 py-0.5 text-[11px] font-medium ${cls}`}>{value}</span>;
+}
 
 export function PropRow({ label, value }: { label: string; value: any }) {
     const formatted = formatValue(value);
@@ -260,7 +265,7 @@ export function LandscapeView() {
 
     if (loading) {
         return (
-            <div className="h-screen bg-zinc-950 flex items-center justify-center">
+            <div className="h-full bg-zinc-950 flex items-center justify-center">
                 <div className="flex items-center gap-3 text-zinc-500">
                     <RefreshCw size={16} className="animate-spin" />
                     <span className="text-sm">Loading compliance landscape…</span>
@@ -271,7 +276,7 @@ export function LandscapeView() {
 
     if (error || !data) {
         return (
-            <div className="h-screen bg-zinc-950 flex items-center justify-center">
+            <div className="h-full bg-zinc-950 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
                     <AlertTriangle size={20} className="text-amber-500" />
                     <span className="text-sm text-zinc-500">Could not load landscape data</span>
@@ -305,40 +310,17 @@ export function LandscapeView() {
     ];
 
     return (
-        <div className="h-screen flex flex-col overflow-hidden bg-zinc-950 text-zinc-100">
+        <div className="h-full flex flex-col overflow-hidden bg-zinc-950 text-zinc-100">
 
-            {/* ── Header ── */}
-            <header className="border-b border-zinc-800/60 shrink-0">
-                <div className="flex items-center justify-between px-6 py-5">
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0">
-                            <ShieldCheck size={18} className="text-zinc-950" />
-                        </div>
-                        <div>
-                            <p className="text-base font-semibold leading-tight">VYRA</p>
-                            <p className="text-xs text-zinc-500 leading-tight">Compliance Handled.</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-5">
-                        <div className="hidden sm:flex items-center gap-1.5 text-sm text-zinc-500">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            Live · {new Date(data.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                        <button onClick={load} className="p-2 rounded-md hover:bg-zinc-800 transition-colors" title="Refresh">
-                            <RefreshCw size={14} className="text-zinc-500" />
-                        </button>
-                        <nav className="hidden md:flex items-center gap-5 text-sm text-zinc-400">
-                            <Link href="/validation/lifecycle"    className="hover:text-zinc-100 transition-colors">Lifecycle</Link>
-                            <Link href="/validation/traceability" className="hover:text-zinc-100 transition-colors">Traceability</Link>
-                            <Link href="/calendar"                className="hover:text-zinc-100 transition-colors">Calendar</Link>
-                            <Link href="/assurance"               className="hover:text-zinc-100 transition-colors">Assurance</Link>
-                            <Link href="/intelligence"             className="hover:text-zinc-100 transition-colors">Intelligence</Link>
-                            <Link href="/enterprise/contracts"     className="hover:text-zinc-100 transition-colors">Contracts</Link>
-                            <Link href="/simulator"                className="hover:text-zinc-100 transition-colors">Simulator</Link>
-                        </nav>
-                    </div>
+            <PageHeader icon={ShieldCheck} iconClassName="text-emerald-400" title="Landscape" subtitle="Compliance Handled.">
+                <div className="hidden sm:flex items-center gap-1.5 text-sm text-zinc-500">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    Live · {new Date(data.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
-            </header>
+                <button onClick={load} className="p-2 rounded-md hover:bg-zinc-800 transition-colors" title="Refresh">
+                    <RefreshCw size={14} className="text-zinc-500" />
+                </button>
+            </PageHeader>
 
             {/* ── Info band: posture + metrics ── */}
             <div className="border-b border-zinc-800/60 shrink-0">
