@@ -48,6 +48,10 @@ const CROSS_CUTTING: NavRow[] = [
     { kind: 'link', label: 'Validation — Traceability', href: '/validation/traceability' },
 ];
 
+const ONBOARDING: NavRow[] = [
+    { kind: 'link', label: 'Cutover Tracking', href: '/onboarding' },
+];
+
 const OTHER: NavRow[] = [
     { kind: 'link', label: 'Simulator (test-data tool)', href: '/simulator' },
 ];
@@ -130,6 +134,7 @@ export function NavShell({ children }: { children: React.ReactNode }) {
                         <NavGroupView key={group.persona} {...group} pathname={pathname} />
                     ))}
                     <NavSection title="Cross-cutting" items={CROSS_CUTTING} pathname={pathname} />
+                    <NavSection title="Onboarding" items={ONBOARDING} pathname={pathname} />
                     <NavSection title="Other" items={OTHER} pathname={pathname} />
                 </nav>
             </aside>

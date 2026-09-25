@@ -13,8 +13,9 @@ import assurance from './modules/assurance';
 import dashboard from './modules/dashboard';
 import catalog from './modules/catalog';
 import enterprise from './modules/enterprise';
+import onboarding from './modules/onboarding';
 
-const modules = [knowledge, execution, operational, intelligence, assurance, dashboard, catalog, enterprise];
+const modules = [knowledge, execution, operational, intelligence, assurance, dashboard, catalog, enterprise, onboarding];
 
 async function start() {
     try {

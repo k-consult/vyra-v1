@@ -100,6 +100,12 @@ export const getRegulationHistory = async (regulationId: string) => {
     return rows.map((r: any) => r.regulation).filter(Boolean);
 };
 
-export const traceForward = async (regulationId: string) => db().fetch(TRACE_FORWARD, { id: regulationId });
+export const traceForward = async (regulationId: string) => {
+    const raw: any = await db().fetch(TRACE_FORWARD, { id: regulationId });
+    return Array.isArray(raw) ? raw : [raw];
+};
 
-export const traceReverse = async (findingId: string) => db().fetch(TRACE_REVERSE, { id: findingId });
+export const traceReverse = async (findingId: string) => {
+    const raw: any = await db().fetch(TRACE_REVERSE, { id: findingId });
+    return Array.isArray(raw) ? raw : [raw];
+};

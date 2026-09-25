@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
     AlertTriangle, RefreshCw, Brain, ArrowRight,
     Sparkles, TrendingUp, Search, Users, ShieldCheck,
-    Radio, FileText, ClipboardCheck, Eye, Gavel, Flag,
+    Radio, FileText, ClipboardCheck, Eye, Gavel, Flag, GitPullRequestArrow,
 } from 'lucide-react';
 import { intelligence, operational, knowledge } from '@/lib/api';
 import { Badge, PropRow } from '@/features/landscape/landscape';
@@ -36,15 +36,18 @@ const RESULT_TAB: Partial<Record<string, Tab>> = {
 const RESULT_ROUTE_BY_TYPE: Partial<Record<string, string>> = {
     'deviation-assessment': '/ops-supervisor',
     'risk-assessment': '/risk-manager',
+    'cutover-criterion-proposal': '/onboarding',
 };
 
 const RESULT_ROUTE_BY_ENTITY: Partial<Record<string, string>> = {
     Finding: '/ops-supervisor',
     Risk: '/risk-manager',
+    CutoverCriterion: '/onboarding',
 };
 
 const ENTITY_ICON: Record<string, React.ElementType> = {
     Signal: Radio,
+    CutoverCriterion: GitPullRequestArrow,
     Finding: Search,
     Obligation: FileText,
     Incident: AlertTriangle,

@@ -10,7 +10,7 @@
 
 ## Phase rollup
 
-**Phases 0–9 are ✅ done**, plus three standalone closures: the L1 Contract entity, a Gap Review (Escalation Paths / `HAS_ROLE` / SOPs — all confirmed to have no real closure path), and an Intelligence-UI usability pass. **2026-09-22: 12 of the 17 onboarding-readiness gaps below closed in one batch** (#1, #3, #4, #5, #10, #11, #12, #13, #14, #15, #16, #17 — the last two partially, scoped to one agent family). #2/#6 remain correct-by-design (no work needed); #7/#8/#9 remain out of scope for this batch, still needing their own dedicated design pass. **Phases 10–11 ("Agentic Completion Track") are 🔲 planned, not started.** Sequencing and open decisions → `plan.md`. Full per-phase narrative and verification evidence → `.design/__ref/implementation-history.md`.
+**Phases 0–9 are ✅ done**, plus three standalone closures: the L1 Contract entity, a Gap Review (Escalation Paths / `HAS_ROLE` / SOPs — all confirmed to have no real closure path), and an Intelligence-UI usability pass. **2026-09-22: 12 of the 17 onboarding-readiness gaps below closed in one batch** (#1, #3, #4, #5, #10, #11, #12, #13, #14, #15, #16, #17 — the last two partially, scoped to one agent family). #2/#6 remain correct-by-design (no work needed); #7/#8/#9 remain out of scope for this batch, still needing their own dedicated design pass. **2026-09-25: #8 (Onboarding-as-a-phase) gets its first real slice** — `CutoverCriterion` is now a live node, closing the "cutover-overdue is queryable" half of `foundation.md` §0's claim; `Blueprint`/`ContinuityBaseline`/shadow-mode/decommissioning remain open, each its own future slice. **Phases 10–11 ("Agentic Completion Track") are 🔲 planned, not started.** Sequencing and open decisions → `plan.md`. Full per-phase narrative and verification evidence → `.design/__ref/implementation-history.md`.
 
 ---
 
@@ -58,8 +58,7 @@ Status tags used below: 🟡 **partial** = real but incomplete · 🔴 **gap** =
 
 **Open**
 1. [Scenario Simulation](#gap-7)
-2. [Onboarding-as-a-phase](#gap-8)
-3. [Domain model is anemic vs. `domain.md`](#gap-9)
+2. [Domain model is anemic vs. `domain.md`](#gap-9)
 
 **Closed**
 1. [SOPs](#gap-1)
@@ -68,14 +67,15 @@ Status tags used below: 🟡 **partial** = real but incomplete · 🔴 **gap** =
 4. [`HAS_ROLE`](#gap-4)
 5. [Escalation Paths](#gap-5)
 6. [Audit-Ready Export](#gap-6) *(by design)*
-7. [Onboarding UI is ingestion-only](#gap-10)
-8. [`Signal` has no "Who"](#gap-11)
-9. [Catalog versioning is scaffolded, not exercised](#gap-12)
-10. [No source-span retention on catalog text](#gap-13)
-11. [No sync-run attribution on catalog nodes/edges](#gap-14)
-12. [`COVERED_BY` edges carry no provenance](#gap-15)
-13. [Agent reasoning is single-shot, not multi-turn/tool-using](#gap-16)
-14. [No learning-from-overrides feedback loop](#gap-17)
+7. [Onboarding-as-a-phase](#gap-8) *(partial — `CutoverCriterion` slice only)*
+8. [Onboarding UI is ingestion-only](#gap-10)
+9. [`Signal` has no "Who"](#gap-11)
+10. [Catalog versioning is scaffolded, not exercised](#gap-12)
+11. [No source-span retention on catalog text](#gap-13)
+12. [No sync-run attribution on catalog nodes/edges](#gap-14)
+13. [`COVERED_BY` edges carry no provenance](#gap-15)
+14. [Agent reasoning is single-shot, not multi-turn/tool-using](#gap-16)
+15. [No learning-from-overrides feedback loop](#gap-17)
 
 <a id="gap-1"></a>
 
@@ -161,17 +161,17 @@ Status tags used below: 🟡 **partial** = real but incomplete · 🔴 **gap** =
 
 <a id="gap-8"></a>
 
-### 8. Onboarding-as-a-phase (§0) — 🔴 gap, mostly code + one feed piece
+### 8. Onboarding-as-a-phase (§0) — 🟡 partial, first slice closed 2026-09-25
 
 **Requirement:** Bringing a new enterprise onto Vyra should run as a measured, visible transition — legacy and Vyra running in parallel, a clear per-workflow cutover criterion, and a decommissioning decision made on evidence, including a **continuity baseline captured as graph data at day zero** (`foundation.md` §0).
 
-**Implementation:** None. No shadow mode, no continuity baseline, no cutover criteria, no decommissioning workflow exist anywhere in the code (`cutover`/`shadowMode`/`continuityBaseline`/`decommission` — zero hits across `api/`, `agents/`, `cli/`, `lib/`).
+**Implementation:** `CutoverCriterion` is now a live node (`graph.md`'s new Onboarding Graph section) — a workflow's target criterion, window (`dueBy`), and system-of-record are held as real graph state, human-proposed through the same Decision-gate discipline as `Contract` (`POST /onboarding/cutover-criteria` → pending Decision → approval creates the node). `foundation.md` §0's most concrete single claim — *"past that window it becomes a first-class, queryable `cutover-overdue` state"* — is real: `effectiveStatus` is derived live from `dueBy` vs. now(), never stamped, visible at `/onboarding`.
 
-**Gap:** There is no concept of "onboarding a new enterprise" anywhere in the platform — not even a status screen showing where a workflow sits in its transition.
+**Gap:** Still no shadow mode / dual-write parallel-run tracking, no continuity baseline, no decommissioning-as-a-Decision, and no real `Workflow` node — `CutoverCriterion.workflowName` is a plain string (documented exception: the one Decision-write path in the codebase with no `ABOUT` edge, since there's no real workflow entity to point at). `Blueprint` (org/role mapping ratification) is also still untouched.
 
-**Feed Datum Missing:** For the continuity-baseline piece specifically — a synthetic "pre-Vyra legacy" dataset (obligation coverage %, task cadence/completion rate, incident and escalation volumes as of a mock cutover date) that a feed-generator could produce and ingest as baseline nodes. Shadow mode, cutover criteria, and decommissioning are pure workflow state — no feed fixes those.
+**Feed Datum Missing:** For the continuity-baseline piece specifically — a synthetic "pre-Vyra legacy" dataset (obligation coverage %, task cadence/completion rate, incident and escalation volumes as of a mock cutover date) that a feed-generator could produce and ingest as baseline nodes. Shadow mode and decommissioning remain pure workflow state — no feed fixes those.
 
-**Resolution:** A new subsystem, not a small fix: graph state for shadow mode / cutover criteria per workflow, API routes to read and write it, and an onboarding-status screen — plus the baseline feed-generator above to make the continuity claim provable rather than asserted. Phase 11-class work to sequence deliberately.
+**Resolution:** `CutoverCriterion` (this slice) closes the cutover-tracking piece only. Still needed: `Blueprint`, `ContinuityBaseline` (+ its feed-generator), shadow-mode dual-tracking, decommissioning-as-a-Decision, and eventually a real `Workflow` node so `CutoverCriterion` can reference one instead of a free-text name. Each is its own future slice, not a batch fix.
 
 <a id="gap-9"></a>
 
@@ -271,7 +271,7 @@ Status tags used below: 🟡 **partial** = real but incomplete · 🔴 **gap** =
 
 **Net**: rows 1–7 are the existing JTBD partial/gap set, restated in Requirement/Implementation/Gap/Feed-Datum/Resolution form. Rows 8–17 are net-new, from a requirement-by-requirement audit of every `foundation.md` §0–§4 table row against the codebase. **Two rows were reclassified on this pass**: #2 (Applicability Scoping) and #6 (Audit-Ready Export) are **not gaps** — both are `foundation.md` requirements already correctly implemented (documented absence, honest provenance tagging respectively) and are listed for traceability only.
 
-**2026-09-22: 12 of the remaining 15 gaps closed in one batch** — #1, #3, #4, #5, #10, #11, #12, #13, #14, #15, #16, #17 (the last two scoped to `control-intelligence` only; #5, #10, #16 closed partially/scoped by design, documented above; every other one fully closed). **#8 (Onboarding-as-a-phase), #9 (anemic domain model), and #7 (Scenario Simulation)** remain open, excluded from this batch by explicit decision — each is Phase-11-class work needing its own dedicated design pass, not a batch fix. Of those three, **#7 Scenario Simulation is the one true ground-zero JTBD gap** (see the JTBD Layer Status table above); #8/#9 are architecture/subsystem decisions.
+**2026-09-22: 12 of the remaining 15 gaps closed in one batch** — #1, #3, #4, #5, #10, #11, #12, #13, #14, #15, #16, #17 (the last two scoped to `control-intelligence` only; #5, #10, #16 closed partially/scoped by design, documented above; every other one fully closed). **#8 (Onboarding-as-a-phase), #9 (anemic domain model), and #7 (Scenario Simulation)** remained open, excluded from this batch by explicit decision — each is Phase-11-class work needing its own dedicated design pass, not a batch fix. **2026-09-25: #8 gets its first real slice** (`CutoverCriterion`, above) — partial, not closed; `Blueprint`/`ContinuityBaseline`/shadow-mode/decommissioning still need their own passes. **#9 (anemic domain model) and #7 (Scenario Simulation)** remain fully open. Of those two, **#7 Scenario Simulation is the one true ground-zero JTBD gap** (see the JTBD Layer Status table above); #9 is an architecture/subsystem decision.
 
 ---
 

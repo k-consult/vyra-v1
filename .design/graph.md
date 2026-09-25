@@ -1154,6 +1154,33 @@ Together, Phase 8's `assurance-intelligence` agent means the Audit-Ready Export 
 
 ---
 
+## Onboarding Graph (transitional)
+
+Not one of the five permanent domains — `foundation.md`'s "dashed fourth region," a phase rather than a subject-matter graph. `domain.md`'s Onboarding subdomain designs three aggregates (`Blueprint`, `CutoverCriterion`, `ContinuityBaseline`); only `CutoverCriterion` is live so far (2026-09-25, first real slice of `track.md` Gap #8). `Blueprint`/`ContinuityBaseline` remain target — no graph footprint yet.
+
+### `CutoverCriterion`
+Per-workflow proof that a transition off legacy is measured, not asserted — `foundation.md` §0: *"Past that window it becomes a first-class, queryable `cutover-overdue` state."* Human-proposed only, via the same Decision-gate discipline as `Contract` (§ above): `POST /onboarding/cutover-criteria` (`api/modules/onboarding/repo.ts`'s `proposeCutoverCriterion`) writes only a `pending Decision {type: 'cutover-criterion-proposal'}` — the `CutoverCriterion` node itself is created only on approval, by `api/modules/intelligence/repo.ts`'s matching branch.
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `CUT-{decisionId}` |
+| workflowName | string | free text — no real `Workflow` node exists yet to reference (see below) |
+| criterionDescription | string | `≥90% agreement with legacy tracker for 8 consecutive weeks` |
+| systemOfRecord | string | `legacy` \| `vyra` — which system is authoritative right now (`foundation.md`: "exactly one system of record per workflow at any instant") |
+| agreementRateTarget | float | `0.9` |
+| dueBy | datetime | the proving-window deadline |
+| status | string | `proving` \| `cutover-complete` — **`cutover-overdue` is never stored.** It's derived live at read time (`GET /onboarding/cutover-criteria`: `status = 'proving' AND dueBy < datetime()`), the same "coverage gap is a graph pattern, not a stamped flag" discipline Coverage Scoring already uses |
+| enteredProvingAt | datetime | set on approval |
+| createdAt | datetime | set on approval |
+
+**No `ABOUT` edge on the proposing Decision — a deliberate, documented exception.** Every other Decision-write path in this codebase (`agents/tools/graph-write.ts`'s `writeDecision`, and every other `propose*` function in `api/modules/*/repo.ts`) merges `Decision -[:ABOUT]-> <real source node>`. `CutoverCriterion` has nothing real to point at: `Workflow`/`Program` are still "designed, not yet active" (Execution Graph, above) — `foundation.md` §0's cutover mechanism is defined per-workflow, but the graph has no `Workflow` entity yet for a criterion to reference by id. `workflowName` is a plain string until that changes.
+
+**Zero seed data, live-write-only** — same as `Contract`'s `:HumanProposed` path and `Signal`. No CSV feed, no `CREATE CONSTRAINT` (matching `Contract`/`Signal`'s precedent — idempotency comes from `MERGE`-by-id on a caller/Decision-derived id, not a schema constraint).
+
+**Explicitly not built in this slice**: `Blueprint` (org/role/facility mapping ratification), `ContinuityBaseline` (pre-Vyra legacy-metrics snapshot captured as graph data), shadow-mode dual-write/parallel-run tracking, and decommissioning-as-a-Decision. See `track.md` Gap #8.
+
+---
+
 # Appendix B · Relationship Catalog
 
 All relationships below are **live** and are the relationships the API actually queries. The first group is written by the batch ingest; the **Runtime & derived relationships** group at the end is authored at runtime or by a derived join (see §3.3 for who owns them).
@@ -1226,7 +1253,7 @@ Authored at runtime (by the events sink or the agent runtime) or by a derived jo
 | `HAS_TASK` | Signal → Task | Follow-up work derived from a signal (reuses the `HAS_TASK` name used for `Incident → Task`) |
 | `COVERED_BY` | Asset → Control | Asset falls under a control, derived through the shared `ComplianceArea`. Carries `origin: 'inferred'`, `confidence: 0.6`, `derivedAt` (2026-09-22, `cli/scripts/backfill-asset-control.ts`) — a taxonomy-only inference, not a validated per-asset review |
 | `ABOUT` | Decision → * | An agent recommendation about some entity (polymorphic target — whatever the decision concerns); for `contract-proposal` this points at the `Vendor` (new contract) or prior `Contract` (amendment) |
-| `RESULTED_IN` | Decision → Control/Finding/Risk/Audit/Contract | The reverse of `ABOUT` — points from an *approved* Decision to the real node its approval created. Written only on approval (never reject, since nothing is created); `assurance-package-proposal` links to `Audit` only, not the full chain, since the rest is already reachable from it via `PREPARED_FOR`/`DERIVED_FROM`/`BACKED_BY`/`PART_OF`. Added 2026-08-23 to back a per-Decision origin→result timeline in the Intelligence UI — `GET /intelligence/decisions` now also resolves `ABOUT`/`RESULTED_IN` server-side rather than the UI inferring either from `Decision.id`/result-id string conventions. `contract-proposal` (2026-09-22) links to the new `Contract:HumanProposed` node |
+| `RESULTED_IN` | Decision → Control/Finding/Risk/Audit/Contract/CutoverCriterion | The reverse of `ABOUT` — points from an *approved* Decision to the real node its approval created. Written only on approval (never reject, since nothing is created); `assurance-package-proposal` links to `Audit` only, not the full chain, since the rest is already reachable from it via `PREPARED_FOR`/`DERIVED_FROM`/`BACKED_BY`/`PART_OF`. Added 2026-08-23 to back a per-Decision origin→result timeline in the Intelligence UI — `GET /intelligence/decisions` now also resolves `ABOUT`/`RESULTED_IN` server-side rather than the UI inferring either from `Decision.id`/result-id string conventions. `contract-proposal` (2026-09-22) links to the new `Contract:HumanProposed` node. `cutover-criterion-proposal` (2026-09-25) links to the new `CutoverCriterion` node — the one `RESULTED_IN` target whose proposing Decision carries **no** `ABOUT` edge, since no real `Workflow` node exists yet to point at (see Appendix A's `CutoverCriterion` entry) |
 | `REVIEWED_BY` | Decision → Person | Phase 7 — human reviewer attribution on approve/reject, written only when `reviewedBy` resolves to a real seeded `Person.id` |
 | `IMPLEMENTS` | Control:AgentProposed → Obligation | Phase 7 — approved `control-recommendation`; same relationship the catalog pipeline already uses, on a `:AgentProposed`-labeled `Control` |
 | `AGAINST` / `ABOUT` | Finding:AgentProposed → Control / Signal | Phase 7 — approved `deviation-assessment`; `AGAINST` per covered `Control`, or `ABOUT` the `Signal` directly if the asset had no coverage |
@@ -1410,7 +1437,7 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 
 # Appendix F · Document History
 
-**Version 1.15** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
+**Version 1.16** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
 
 | Date | Change |
 |---|---|
@@ -1432,3 +1459,4 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 | 2026-09-07 | Added `Assignment` and `Actor` as designed-not-active node types (Execution Graph), plus `HAS_ASSIGNMENT` (Task→Assignment) and `ASSIGNED_TO` (Assignment→Actor) relationships — closing the gap flagged in `.design/domain.md`'s Cross-cutting subdomain: `foundation.md` §2's "the autonomy level is a property of the assignment, not of the platform" had zero graph footprint until now. **No live schema change** — no seed data, no write path. `Decision.autonomyLevel` remains the only live autonomy-level property, and records one proposal's level, not a standing Task/workflow assignment. |
 | 2026-09-09 | Renamed `Requirement` → `Obligation` (node label + `requirementId`/`requirementIds` FK properties → `obligationId`/`obligationIds`), across the ingestion contract, API, agents, and UI. Ubiquitous Language correction, not a modeling change: the source data's own worksheet is `06_Obligations` with an `ObligationID` key, and ISO 37301 calls this concept "compliance obligation" — the graph's node name had simply never caught up to the term the data, the domain, and `domain.md`'s own prose already used. `mandatory`/`obligationType` properties, and the `DEFINED_BY`/`IMPLEMENTS` relationship names, are unchanged. Earlier entries in this table that say "Requirement" describe what was built at the time and are left as written, per this doc's own append-and-supersede convention — see the row above for the same treatment of the `vyra-landscape.md` rename. |
 | 2026-09-22 | Closed 12 of `track.md`'s 17 onboarding-readiness gaps in one batch (excluding #2/#6, already correct-by-design, and #7/#8/#9, scoped for their own dedicated design pass). Schema/relationship changes: `Control.docType` (policy/sop, legacy feed only); `Clause`/`Obligation.sourceDocumentId`/`sourceAnchor`; `Regulation.catalogVersion`/`supersededBy` now exercised (`REG-001`/`REG-001-V2`); new `ESCALATES_TO {order}` (Incident→Role, partial); `HAS_ROLE` now fires for 6 of 7 people (moved out of "designed, not yet active"); `Signal.raisedBy` + new `RAISED_BY` (Signal→Person), required at write time; `COVERED_BY` gained `origin`/`confidence`/`derivedAt`; `Task.status` constrained to a 4-value vocabulary + `statusUpdatedAt`/`lastTriggeredAt`, with the 10 non-Fixed-schedule `:Catalog` Tasks now starting `closed` and reactivating on their real trigger; `Contract.effectiveFrom`/`supersededBy` + new `:HumanProposed` origin label, always created via a `contract-proposal` Decision, never an in-place edit (Contracts, like Regulations, are append-and-supersede); `Decision.origin`/`proposedBy` + `contract-proposal` type. Also: universal `syncedAt`/`sourceRevision` stamping on every batch-synced node/edge; a generic edge-property mechanism in the compiler/projection/runtime pipeline (`GraphEdge.props`/`EdgeDef.propCols`); `control-intelligence` gained bounded multi-turn tool-calling (`reasonWithTools`, one family only) and agreement-rate-aware prompting. New `ui/src/features/knowledge/knowledge.tsx` (previously a TODO stub). No breaking changes to any existing live query. |
+| 2026-09-25 | Gap #8, first real slice — new `## Onboarding Graph (transitional)` section, new `CutoverCriterion` node (live, `:HumanProposed`-style: `POST /onboarding/cutover-criteria` creates only a `pending Decision {type: 'cutover-criterion-proposal'}`; the node itself is created on approval, `api/modules/intelligence/repo.ts`'s matching `resolveDecision` branch). `RESULTED_IN` extended to include `CutoverCriterion` as a target. This is the one Decision-write path in the codebase with **no `ABOUT` edge** — no real `Workflow` node exists yet to reference, so `workflowName` is a plain string, not a relationship; flagged explicitly rather than fabricated. `status` is only ever written as `proving`/`cutover-complete` — `cutover-overdue` is derived live at read time (`dueBy < datetime()`), never stamped, matching Coverage Scoring's existing live-query discipline. `Blueprint`/`ContinuityBaseline` (`domain.md`'s other two Onboarding aggregates) remain target — not built in this slice. New `ui/src/features/onboarding/onboarding.tsx` (previously nonexistent). |

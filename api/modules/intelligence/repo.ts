@@ -297,6 +297,34 @@ const APPROVE_CONTRACT_PROPOSAL = `
     RETURN properties(d) AS decision, properties(ctr) AS contract
 `;
 
+// Creates the real CutoverCriterion on approval — the proposing Decision
+// (onboarding/repo.ts's proposeCutoverCriterion) carries no ABOUT edge (no real
+// Workflow node exists yet), so unlike every other branch here there's nothing to
+// MATCH beyond the Decision itself. status starts 'proving'; 'cutover-overdue' is
+// never stored, only derived at read time (onboarding/repo.ts's listCutoverCriteria).
+const APPROVE_CUTOVER_CRITERION_PROPOSAL = `
+    MATCH (d:Decision {id: $id})
+    MERGE (c:CutoverCriterion {id: $criterionId})
+    ON CREATE SET
+        c.workflowName = d.workflowName,
+        c.criterionDescription = d.criterionDescription,
+        c.systemOfRecord = d.systemOfRecord,
+        c.agreementRateTarget = d.agreementRateTarget,
+        c.dueBy = datetime(d.dueBy),
+        c.status = 'proving',
+        c.enteredProvingAt = datetime(),
+        c.createdAt = datetime()
+    MERGE (d)-[:RESULTED_IN]->(c)
+    SET d.status = 'approved',
+        d.reviewedAt = datetime(),
+        d.reviewedBy = $reviewedBy,
+        d.reviewNote = $reviewNote
+    WITH d, c
+    OPTIONAL MATCH (p:Person {id: $reviewedBy})
+    FOREACH (_ IN CASE WHEN p IS NOT NULL THEN [1] ELSE [] END | MERGE (d)-[:REVIEWED_BY]->(p))
+    RETURN properties(d) AS decision, properties(c) AS criterion
+`;
+
 // YYYY-Qn off an incidentTime-shaped "YYYY-MM-DD HH:mm" string — same derivation
 // cli/scripts/generate-assurance-seed.ts's quarterOf() uses, ported to JS since this is a
 // live API path rather than a batch script.
@@ -342,6 +370,12 @@ export const resolveDecision = async (
             const row = Array.isArray(raw) ? raw[0] : raw;
             if (!row?.decision) throw new Error(`Decision ${id} has no linked Vendor to approve`);
             return { decision: row.decision, contract: row.contract };
+        }
+        if (type === 'cutover-criterion-proposal') {
+            const raw: any = await db().exec(APPROVE_CUTOVER_CRITERION_PROPOSAL, { ...params, criterionId: `CUT-${id}` });
+            const row = Array.isArray(raw) ? raw[0] : raw;
+            if (!row?.decision) throw new Error(`Decision ${id} not found`);
+            return { decision: row.decision, criterion: row.criterion };
         }
         if (type === 'assurance-package-proposal') {
             const incRaw: any = await db().fetch(

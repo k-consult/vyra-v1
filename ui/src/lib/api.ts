@@ -146,3 +146,18 @@ export const enterprise = {
     contracts:     () => get<{ contracts: any[] }>('/enterprise/contracts'),
     proposeContract: (input: ProposeContractInput) => post<{ decision: any }>('/enterprise/contracts', input),
 };
+
+export type ProposeCutoverCriterionInput = {
+    proposedBy: string;
+    workflowName: string;
+    criterionDescription: string;
+    systemOfRecord: 'legacy' | 'vyra';
+    agreementRateTarget: number;
+    dueBy: string;
+};
+
+export const onboarding = {
+    cutoverCriteria: () => get<{ cutoverCriteria: any[] }>('/onboarding/cutover-criteria'),
+    proposeCutoverCriterion: (input: ProposeCutoverCriterionInput) =>
+        post<{ decision: any }>('/onboarding/cutover-criteria', input),
+};
