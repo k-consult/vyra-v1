@@ -2,7 +2,7 @@
 
 **A critical evaluation: the platform is built graph-first, not journey-first.** `foundation.md` specifies seven personas and their JTBDs; `track.md` scores whether each *layer* is fed by live data. Neither document asks the question this one does: **does the platform take a persona through their actual day, end to end, or does it just expose what's stored?** Compiled 2026-09-22, prompted by a product-expert review of the live UI against the intended onboarding journey.
 
-> **Status: proposal / critique, not yet canonical.** This document is not part of the `.design/README.md` reading order. It exists to make one finding legible and durable: the current UI is organized by graph domain, not by JTBD — and that gap has a name (Gap #8 in `track.md`) but no journey attached to it until now.
+> **Status: critique, not a status report.** Doc 7 in the `.design/README.md` reading order — read alongside `foundation.md` (1) and `track.md` (5), not in place of either. It exists to make one finding legible and durable: the current UI is organized by graph domain, not by JTBD — and that gap has a name (Gap #8 in `track.md`) but no journey attached to it until now.
 
 ---
 

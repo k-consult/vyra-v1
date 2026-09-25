@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { AlertTriangle, RefreshCw, ShieldCheck, Grid3x3, ArrowLeft } from 'lucide-react';
+import { AlertTriangle, RefreshCw, ShieldCheck, Grid3x3, ArrowLeft, Clock, ChevronDown, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { catalog, execution } from '@/lib/api';
 
@@ -67,6 +67,42 @@ const weekStartOf = (week: number): string =>
 
 type Hover = { x: number; y: number; task: CalendarTask; week: number; dates: string[] };
 
+// ── Worklist ───────────────────────────────────────────────────────────────────
+// Ranks tasks by urgency instead of requiring a full 52-week grid scan — derived
+// entirely from data already fetched (occurrences + status), no new API calls.
+
+const DUE_SOON_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
+
+const isOpenStatus = (status?: string): boolean => !['done', 'closed'].includes(status ?? 'open');
+
+const formatDate = (isoDate: string): string =>
+    new Date(`${isoDate}T00:00:00.000Z`).toLocaleDateString('en-US', { month: 'short', day: '2-digit', timeZone: 'UTC' });
+
+type WorklistEntry = { task: CalendarTask; date: string };
+
+function WorklistRow({ task, date, urgent, onStatusChange }: {
+    task: CalendarTask; date: string; urgent: boolean; onStatusChange: (status: string) => void;
+}) {
+    return (
+        <div className="flex items-center justify-between gap-3 px-3 py-2 border-b border-zinc-800/60 last:border-b-0">
+            <div className="min-w-0 flex-1">
+                <p className="text-sm text-zinc-100 truncate">{task.taskName}</p>
+                <p className="text-[11px] text-zinc-500 truncate">{task.controlName}</p>
+            </div>
+            <span className={`text-xs font-medium tabular-nums shrink-0 ${urgent ? 'text-red-400' : 'text-amber-400'}`}>
+                {formatDate(date)}
+            </span>
+            <select
+                value={task.status ?? 'open'}
+                onChange={e => onStatusChange(e.target.value)}
+                className="shrink-0 text-[11px] bg-zinc-900 border border-zinc-700 rounded px-1.5 py-1 text-zinc-400"
+            >
+                {TASK_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+        </div>
+    );
+}
+
 // ── Main view ──────────────────────────────────────────────────────────────────
 
 export function CalendarView() {
@@ -74,6 +110,9 @@ export function CalendarView() {
     const [loading, setLoading] = useState(true);
     const [error, setError]     = useState(false);
     const [hover, setHover]     = useState<Hover | null>(null);
+    const [showGrid, setShowGrid] = useState(false);
+
+    const today = useMemo(() => new Date(), []);
 
     const load = () => {
         setLoading(true);
@@ -106,6 +145,32 @@ export function CalendarView() {
         }
         return map;
     }, [tasks]);
+
+    const { overdue, dueSoon } = useMemo(() => {
+        const overdueList: WorklistEntry[] = [];
+        const dueSoonList: WorklistEntry[] = [];
+        const todayMs = today.getTime();
+
+        for (const task of tasks ?? []) {
+            if (!task.occurrences.length) continue;
+            const sorted = [...task.occurrences].sort();
+            const past = sorted.filter(d => new Date(`${d}T00:00:00.000Z`).getTime() <= todayMs);
+            const future = sorted.filter(d => new Date(`${d}T00:00:00.000Z`).getTime() > todayMs);
+
+            if (past.length && isOpenStatus(task.status)) {
+                overdueList.push({ task, date: past[past.length - 1] });
+                continue;
+            }
+            if (future.length) {
+                const nextMs = new Date(`${future[0]}T00:00:00.000Z`).getTime();
+                if (nextMs - todayMs <= DUE_SOON_WINDOW_MS) dueSoonList.push({ task, date: future[0] });
+            }
+        }
+
+        overdueList.sort((a, b) => a.date.localeCompare(b.date));
+        dueSoonList.sort((a, b) => a.date.localeCompare(b.date));
+        return { overdue: overdueList, dueSoon: dueSoonList };
+    }, [tasks, today]);
 
     if (loading) {
         return (
@@ -159,90 +224,148 @@ export function CalendarView() {
                 </div>
             </header>
 
-            {/* ── Info + legend ── */}
-            <div className="px-6 py-2.5 border-b border-zinc-800/60 shrink-0 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <Grid3x3 size={11} className="text-zinc-600" />
+            {/* ── Worklist ── */}
+            <section className="px-6 py-5 border-b border-zinc-800/60 shrink-0">
+                <div className="flex items-center gap-2 mb-4">
+                    <Clock size={11} className="text-zinc-600" />
                     <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
-                        {tasks.length} scheduled tasks × 52 weeks · hover a cell for details
+                        Week {weekNumberOf(today.toISOString().slice(0, 10))} of 52
+                    </p>
+                    <span className="text-zinc-700">·</span>
+                    <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
+                        {overdue.length} overdue · {dueSoon.length} due in the next 14 days
                     </p>
                 </div>
-                <div className="flex items-center gap-4">
-                    <span className="text-[10px] text-zinc-600 uppercase tracking-wider">Frequency</span>
-                    {LEGEND.map(({ label, color }) => (
-                        <div key={label} className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: color }} />
-                            <span className="text-[10px] text-zinc-500">{label}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
 
-            {/* ── Matrix ── */}
-            <div className="flex-1 min-h-0 overflow-auto px-6 py-4">
-                <table className="border-collapse text-[9px]">
-                    <thead>
-                        <tr>
-                            <th className="sticky left-0 top-0 z-20 bg-zinc-950 text-left px-3 py-1.5 border-b border-r border-zinc-700 min-w-[240px] max-w-[240px]">
-                                Task
-                            </th>
-                            {WEEKS.map(week => (
-                                <th
-                                    key={week}
-                                    title={`Week ${week} · ${weekStartOf(week)}`}
-                                    className={`sticky top-0 z-10 bg-zinc-950 text-zinc-500 font-normal py-1.5 border-b border-zinc-700 ${cellBorder(week)} w-[20px]`}
-                                >
-                                    {week}
-                                </th>
+                {overdue.length === 0 && dueSoon.length === 0 ? (
+                    <div className="flex items-center justify-center gap-2 text-sm text-zinc-500 py-6 border border-dashed border-zinc-800 rounded-lg">
+                        <CheckCircle2 size={15} className="text-emerald-500" />
+                        All caught up — nothing overdue or due in the next 14 days.
+                    </div>
+                ) : (
+                    <div className="grid gap-4 md:grid-cols-2 max-h-[42vh] overflow-y-auto">
+                        {overdue.length > 0 && (
+                            <div className="rounded-lg border border-red-900/50 bg-red-950/10 overflow-hidden self-start">
+                                <div className="px-3 py-2 border-b border-red-900/40 flex items-center gap-1.5">
+                                    <AlertTriangle size={12} className="text-red-400" />
+                                    <p className="text-[11px] font-semibold text-red-300 uppercase tracking-wider">Overdue · {overdue.length}</p>
+                                </div>
+                                {overdue.map(({ task, date }) => (
+                                    <WorklistRow key={task.taskId} task={task} date={date} urgent onStatusChange={s => updateStatus(task.taskId, s)} />
+                                ))}
+                            </div>
+                        )}
+                        {dueSoon.length > 0 && (
+                            <div className="rounded-lg border border-amber-900/40 bg-amber-950/10 overflow-hidden self-start">
+                                <div className="px-3 py-2 border-b border-amber-900/30 flex items-center gap-1.5">
+                                    <Clock size={12} className="text-amber-400" />
+                                    <p className="text-[11px] font-semibold text-amber-300 uppercase tracking-wider">Due soon · {dueSoon.length}</p>
+                                </div>
+                                {dueSoon.map(({ task, date }) => (
+                                    <WorklistRow key={task.taskId} task={task} date={date} urgent={false} onStatusChange={s => updateStatus(task.taskId, s)} />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                <button
+                    onClick={() => setShowGrid(v => !v)}
+                    className="mt-4 flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-100 transition-colors"
+                >
+                    <ChevronDown size={13} className={`transition-transform ${showGrid ? 'rotate-180' : ''}`} />
+                    {showGrid ? 'Hide full 52-week grid' : 'View full 52-week grid'}
+                </button>
+            </section>
+
+            {showGrid && (
+                <>
+                    {/* ── Info + legend ── */}
+                    <div className="px-6 py-2.5 border-b border-zinc-800/60 shrink-0 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Grid3x3 size={11} className="text-zinc-600" />
+                            <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
+                                {tasks.length} scheduled tasks × 52 weeks · hover a cell for details
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <span className="text-[10px] text-zinc-600 uppercase tracking-wider">Frequency</span>
+                            {LEGEND.map(({ label, color }) => (
+                                <div key={label} className="flex items-center gap-1.5">
+                                    <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: color }} />
+                                    <span className="text-[10px] text-zinc-500">{label}</span>
+                                </div>
                             ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {tasks.map((task, ti) => {
-                            const weekMap = presence.get(task.taskId) ?? new Map<number, string[]>();
-                            const rowShade = ti % 2 === 0 ? 'bg-zinc-950' : 'bg-zinc-900/30';
-                            return (
-                                <tr key={task.taskId} className="group">
-                                    <td
-                                        title={`${task.controlName} · ${task.frequency}`}
-                                        className={`sticky left-0 z-10 ${rowShade} group-hover:bg-zinc-800 text-zinc-300 px-3 py-1 border-r border-b border-zinc-700 whitespace-nowrap overflow-hidden text-ellipsis max-w-[240px]`}
-                                    >
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="overflow-hidden text-ellipsis">{task.taskName}</span>
-                                            <select
-                                                value={task.status ?? 'open'}
-                                                onChange={e => updateStatus(task.taskId, e.target.value)}
-                                                onClick={e => e.stopPropagation()}
-                                                className="shrink-0 text-[9px] bg-zinc-900 border border-zinc-700 rounded px-1 py-0.5 text-zinc-400"
-                                            >
-                                                {TASK_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                                            </select>
-                                        </div>
-                                    </td>
-                                    {WEEKS.map(week => {
-                                        const dates = weekMap.get(week);
-                                        return (
-                                            <td
-                                                key={week}
-                                                className={`${rowShade} group-hover:bg-zinc-800/60 border-b border-zinc-800/50 ${cellBorder(week)} p-0 w-[20px] h-[20px]`}
-                                                onMouseEnter={e => dates && setHover({ x: e.clientX, y: e.clientY, task, week, dates })}
-                                                onMouseLeave={() => setHover(null)}
-                                            >
-                                                {dates && (
-                                                    <div
-                                                        className="w-full h-full rounded-[2px] m-[2px]"
-                                                        style={{ backgroundColor: FREQUENCY_COLOR[task.frequency] ?? '#71717a', width: 'calc(100% - 4px)', height: 'calc(100% - 4px)' }}
-                                                    />
-                                                )}
-                                            </td>
-                                        );
-                                    })}
+                        </div>
+                    </div>
+
+                    {/* ── Matrix ── */}
+                    <div className="flex-1 min-h-0 overflow-auto px-6 py-4">
+                        <table className="border-collapse text-[9px]">
+                            <thead>
+                                <tr>
+                                    <th className="sticky left-0 top-0 z-20 bg-zinc-950 text-left px-3 py-1.5 border-b border-r border-zinc-700 min-w-[240px] max-w-[240px]">
+                                        Task
+                                    </th>
+                                    {WEEKS.map(week => (
+                                        <th
+                                            key={week}
+                                            title={`Week ${week} · ${weekStartOf(week)}`}
+                                            className={`sticky top-0 z-10 bg-zinc-950 text-zinc-500 font-normal py-1.5 border-b border-zinc-700 ${cellBorder(week)} w-[20px]`}
+                                        >
+                                            {week}
+                                        </th>
+                                    ))}
                                 </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
+                            </thead>
+                            <tbody>
+                                {tasks.map((task, ti) => {
+                                    const weekMap = presence.get(task.taskId) ?? new Map<number, string[]>();
+                                    const rowShade = ti % 2 === 0 ? 'bg-zinc-950' : 'bg-zinc-900/30';
+                                    return (
+                                        <tr key={task.taskId} className="group">
+                                            <td
+                                                title={`${task.controlName} · ${task.frequency}`}
+                                                className={`sticky left-0 z-10 ${rowShade} group-hover:bg-zinc-800 text-zinc-300 px-3 py-1 border-r border-b border-zinc-700 whitespace-nowrap overflow-hidden text-ellipsis max-w-[240px]`}
+                                            >
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="overflow-hidden text-ellipsis">{task.taskName}</span>
+                                                    <select
+                                                        value={task.status ?? 'open'}
+                                                        onChange={e => updateStatus(task.taskId, e.target.value)}
+                                                        onClick={e => e.stopPropagation()}
+                                                        className="shrink-0 text-[9px] bg-zinc-900 border border-zinc-700 rounded px-1 py-0.5 text-zinc-400"
+                                                    >
+                                                        {TASK_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                                                    </select>
+                                                </div>
+                                            </td>
+                                            {WEEKS.map(week => {
+                                                const dates = weekMap.get(week);
+                                                return (
+                                                    <td
+                                                        key={week}
+                                                        className={`${rowShade} group-hover:bg-zinc-800/60 border-b border-zinc-800/50 ${cellBorder(week)} p-0 w-[20px] h-[20px]`}
+                                                        onMouseEnter={e => dates && setHover({ x: e.clientX, y: e.clientY, task, week, dates })}
+                                                        onMouseLeave={() => setHover(null)}
+                                                    >
+                                                        {dates && (
+                                                            <div
+                                                                className="w-full h-full rounded-[2px] m-[2px]"
+                                                                style={{ backgroundColor: FREQUENCY_COLOR[task.frequency] ?? '#71717a', width: 'calc(100% - 4px)', height: 'calc(100% - 4px)' }}
+                                                            />
+                                                        )}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
+            )}
 
             {/* ── Footer ── */}
             <footer className="border-t border-zinc-800/60 px-6 py-2.5 flex items-center justify-between shrink-0">

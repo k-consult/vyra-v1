@@ -16,7 +16,7 @@ class API {
     }
 
     async register(modules: types.Module[]) {
-        await this.fastify.register(cors, { origin: true, methods: ['GET', 'POST', 'OPTIONS'] });
+        await this.fastify.register(cors, { origin: true, methods: ['GET', 'POST', 'PATCH', 'OPTIONS'] });
         log.info(`registering ${modules.length} modules...`);
         for (const module of modules) {
             try {
