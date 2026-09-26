@@ -60,7 +60,9 @@ export const listIncidents = async () => {
 
 export const listAssets = async () => {
     const cypher = `MATCH (a:Asset) RETURN properties(a) AS asset ORDER BY a.name LIMIT 200`;
-    return db().fetch(cypher, {});
+    const raw: any = await db().fetch(cypher, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.asset).filter(Boolean);
 };
 
 export const listSignals = async (assetId?: string) => {

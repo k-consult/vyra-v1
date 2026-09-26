@@ -165,17 +165,18 @@ This is the reasoning core, and where aggregate size matters most — every root
 
 **Aggregates**
 - **`CutoverCriterion`** (root, standalone) — **live since 2026-09-25**, `track.md` Gap #8's first real slice. Refs nothing by id — no real `Workflow` node exists yet, so `workflowName` is a plain string property, not a relationship (see `graph.md`'s entry for the full reasoning). Human-proposed only, via the same Decision-gate discipline as `Contract`: `api/modules/onboarding/repo.ts`'s `proposeCutoverCriterion` writes only a `pending Decision`; the node itself is constructed on approval by `api/modules/intelligence/repo.ts`.
-- **`Blueprint`**, **`ContinuityBaseline`** — still standalone roots, no owned children yet defined. **Target** — `architecture.md` states they are "pending `graph.md` ratification." Neither exists as a graph entity today.
+- **`Blueprint`** (root, standalone) — **live since 2026-09-26**, `track.md` Gap #8's second real slice. Unlike `CutoverCriterion`, refs real live nodes by id — `Facility` (the one facility it's scoped to, via a real `ABOUT` edge), `Role[]`/`Asset[]` (via `COVERS` edges) — because those entities already exist, unlike `Workflow`. Human-proposed only, same discipline: `api/modules/onboarding/repo.ts`'s `proposeBlueprint` writes only a `pending Decision`, validated referentially at proposal time (`spec.ts`'s `isValidBlueprintProposal`); the node itself is constructed on approval by `api/modules/intelligence/repo.ts`. No agent-driven inference yet — deferred to Phase 11's onboarding agent family, same as `CutoverCriterion`.
+- **`ContinuityBaseline`** — still a standalone root, no owned children yet defined. **Target** — `architecture.md` states it is "pending `graph.md` ratification." Does not exist as a graph entity today.
 
 **Value Objects**: ContinuityMetric (baseline metric name, value, capturedAt — target, backs `ContinuityBaseline`), ProvingRunWindow (target date + agreement-rate criterion — **live**, as `CutoverCriterion.dueBy`/`agreementRateTarget`)
 
 **Domain Events**: `WorkflowCutoverCriterionMet` (target — nothing computes this yet, `effectiveStatus` is a read-time derivation, not a raised event), `WorkflowCutoverOverdue` (target, same reason — the `dueBy`-elapsed alarm state `foundation.md` §0 requires is currently a live query, `GET /onboarding/cutover-criteria`'s `effectiveStatus`, not yet a Domain Event with a consumer)
 
-**Factories**: none — `CutoverCriterion`'s construction on Decision approval is a `repo.ts` branch, the same shape as `Contract`'s (`ContractFactory` doesn't exist either; see Knowledge subdomain's own note that catalog/enterprise construction here is direct authoring, not Factory-mediated). Onboarding-agent-driven construction remains deferred until Phase 11's onboarding agent family is scoped (`plan.md`).
+**Factories**: none — `CutoverCriterion`'s and `Blueprint`'s construction on Decision approval are both `repo.ts` branches, the same shape as `Contract`'s (`ContractFactory` doesn't exist either; see Knowledge subdomain's own note that catalog/enterprise construction here is direct authoring, not Factory-mediated). Onboarding-agent-driven construction remains deferred until Phase 11's onboarding agent family is scoped (`plan.md`).
 
-**Repositories**: CutoverCriterionRepository (live — `api/modules/onboarding/repo.ts`), BlueprintRepository, ContinuityBaselineRepository (target)
+**Repositories**: CutoverCriterionRepository, BlueprintRepository (both live — `api/modules/onboarding/repo.ts`), ContinuityBaselineRepository (target)
 
-**Specifications**: WorkflowIsCutoverOverdueSpecification (**live**, but as a Cypher `CASE` in `repo.ts`'s `listCutoverCriteria`, not a named reusable predicate function yet — matches Coverage Scoring's own precedent of computing gaps as query shape rather than an extracted Specification object), CutoverExitCriterionMetSpecification, BlueprintIsRatifiedSpecification (target)
+**Specifications**: WorkflowIsCutoverOverdueSpecification (**live**, but as a Cypher `CASE` in `repo.ts`'s `listCutoverCriteria`, not a named reusable predicate function yet — matches Coverage Scoring's own precedent of computing gaps as query shape rather than an extracted Specification object), CutoverExitCriterionMetSpecification (target), BlueprintIsRatifiedSpecification (**live but trivial** — a `Blueprint` node only ever exists post-approval, so "is it ratified" has no false case to check against; same no-draft-state discipline as `CutoverCriterion`)
 
 ---
 

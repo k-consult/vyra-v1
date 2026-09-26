@@ -61,7 +61,7 @@ export type CreateSignalInput = {
 };
 
 export const operational = {
-    assets:    () => get('/operational/assets'),
+    assets:    () => get<{ assets: any[] }>('/operational/assets'),
     signals:   (assetId?: string) => get(`/operational/signals${assetId ? `?assetId=${assetId}` : ''}`),
     incidents: () => get<{ incidents: any[] }>('/operational/incidents'),
     facilities:() => get<{ facilities: any[] }>('/operational/facilities'),
@@ -156,8 +156,19 @@ export type ProposeCutoverCriterionInput = {
     dueBy: string;
 };
 
+export type ProposeBlueprintInput = {
+    proposedBy: string;
+    facilityId: string;
+    scopeDescription: string;
+    roleIds: string[];
+    assetIds: string[];
+};
+
 export const onboarding = {
     cutoverCriteria: () => get<{ cutoverCriteria: any[] }>('/onboarding/cutover-criteria'),
     proposeCutoverCriterion: (input: ProposeCutoverCriterionInput) =>
         post<{ decision: any }>('/onboarding/cutover-criteria', input),
+    blueprints: () => get<{ blueprints: any[] }>('/onboarding/blueprints'),
+    proposeBlueprint: (input: ProposeBlueprintInput) =>
+        post<{ decision: any }>('/onboarding/blueprints', input),
 };

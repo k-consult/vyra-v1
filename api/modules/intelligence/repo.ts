@@ -325,6 +325,43 @@ const APPROVE_CUTOVER_CRITERION_PROPOSAL = `
     RETURN properties(d) AS decision, properties(c) AS criterion
 `;
 
+// Blueprint, unlike CutoverCriterion, references real live nodes (Facility/Role/
+// Asset) — spec.ts already validated every id exists at proposal time, so this
+// resolves them with OPTIONAL MATCH + a CASE-guarded FOREACH purely to follow the
+// same UNWIND-can't-live-in-FOREACH shape as APPROVE_DEVIATION_ASSESSMENT's
+// controlIds handling, not because these ids might be missing. WITH DISTINCT
+// collapses each UNWIND fan-out back to one (d, bp) row before the next pass, so
+// the roleIds and assetIds UNWINDs don't cross-multiply against each other.
+const APPROVE_BLUEPRINT_PROPOSAL = `
+    MATCH (d:Decision {id: $id})-[:ABOUT]->(f:Facility)
+    MERGE (bp:Blueprint {id: $blueprintId})
+    ON CREATE SET
+        bp.facilityId = f.id,
+        bp.scopeDescription = d.scopeDescription,
+        bp.status = 'ratified',
+        bp.ratifiedAt = datetime(),
+        bp.createdAt = datetime()
+    MERGE (bp)-[:ABOUT]->(f)
+    WITH d, bp
+    UNWIND coalesce(d.roleIds, [null]) AS roleId
+    OPTIONAL MATCH (r:Role {id: roleId})
+    FOREACH (_ IN CASE WHEN r IS NOT NULL THEN [1] ELSE [] END | MERGE (bp)-[:COVERS]->(r))
+    WITH DISTINCT d, bp
+    UNWIND coalesce(d.assetIds, [null]) AS assetId
+    OPTIONAL MATCH (a:Asset {id: assetId})
+    FOREACH (_ IN CASE WHEN a IS NOT NULL THEN [1] ELSE [] END | MERGE (bp)-[:COVERS]->(a))
+    WITH DISTINCT d, bp
+    MERGE (d)-[:RESULTED_IN]->(bp)
+    SET d.status = 'approved',
+        d.reviewedAt = datetime(),
+        d.reviewedBy = $reviewedBy,
+        d.reviewNote = $reviewNote
+    WITH d, bp
+    OPTIONAL MATCH (p:Person {id: $reviewedBy})
+    FOREACH (_ IN CASE WHEN p IS NOT NULL THEN [1] ELSE [] END | MERGE (d)-[:REVIEWED_BY]->(p))
+    RETURN properties(d) AS decision, properties(bp) AS blueprint
+`;
+
 // YYYY-Qn off an incidentTime-shaped "YYYY-MM-DD HH:mm" string — same derivation
 // cli/scripts/generate-assurance-seed.ts's quarterOf() uses, ported to JS since this is a
 // live API path rather than a batch script.
@@ -376,6 +413,12 @@ export const resolveDecision = async (
             const row = Array.isArray(raw) ? raw[0] : raw;
             if (!row?.decision) throw new Error(`Decision ${id} not found`);
             return { decision: row.decision, criterion: row.criterion };
+        }
+        if (type === 'blueprint-proposal') {
+            const raw: any = await db().exec(APPROVE_BLUEPRINT_PROPOSAL, { ...params, blueprintId: `BP-${id}` });
+            const row = Array.isArray(raw) ? raw[0] : raw;
+            if (!row?.decision) throw new Error(`Decision ${id} has no linked Facility to approve`);
+            return { decision: row.decision, blueprint: row.blueprint };
         }
         if (type === 'assurance-package-proposal') {
             const incRaw: any = await db().fetch(

@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, RefreshCw, GitPullRequestArrow, Plus, CheckCircle2, Clock } from 'lucide-react';
-import { onboarding, operational, ProposeCutoverCriterionInput } from '@/lib/api';
+import { AlertTriangle, RefreshCw, GitPullRequestArrow, Plus, CheckCircle2, Clock, Layers } from 'lucide-react';
+import { onboarding, operational, enterprise, ProposeCutoverCriterionInput, ProposeBlueprintInput } from '@/lib/api';
 import { PropRow } from '@/features/landscape/landscape';
 import { PageHeader } from '@/components/page-header';
 
@@ -132,20 +132,155 @@ function CutoverCriterionCard({ criterion }: { criterion: any }) {
     );
 }
 
+// Never writes a Blueprint directly — every submission is a Decision proposal,
+// reviewed the same way an agent's proposal is (see /intelligence). foundation.md
+// §2: "The blueprint is inferred and proposed, never self-asserted... ratified
+// through the same Decision gate as any other agent action."
+function ProposeBlueprintForm({ people, facilities, roles, assets, onSubmitted }: { people: any[]; facilities: any[]; roles: any[]; assets: any[]; onSubmitted: () => void }) {
+    const [proposedBy, setProposedBy] = useState('');
+    const [facilityId, setFacilityId] = useState('');
+    const [scopeDescription, setScopeDescription] = useState('');
+    const [roleIds, setRoleIds] = useState<string[]>([]);
+    const [assetIds, setAssetIds] = useState<string[]>([]);
+    const [submitting, setSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+    const [submitted, setSubmitted] = useState(false);
+
+    const toggle = (list: string[], setList: (v: string[]) => void, id: string) => {
+        setList(list.includes(id) ? list.filter(x => x !== id) : [...list, id]);
+    };
+
+    const submit = async () => {
+        setSubmitting(true);
+        setSubmitError(null);
+        const input: ProposeBlueprintInput = { proposedBy, facilityId, scopeDescription, roleIds, assetIds };
+        try {
+            await onboarding.proposeBlueprint(input);
+            setSubmitted(true);
+            onSubmitted();
+        } catch (err: any) {
+            setSubmitError(err.message || 'Proposal was rejected by the API');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    if (submitted) {
+        return (
+            <div className="rounded-lg border border-emerald-800 bg-emerald-950/30 px-4 py-3 flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-400" />
+                <p className="text-sm text-emerald-200">
+                    Proposal submitted — check <Link href="/intelligence" className="underline">Intelligence</Link> to approve.
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4 flex flex-col gap-3">
+            <p className="text-sm font-medium text-zinc-200">Propose an enterprise blueprint</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className="flex flex-col gap-1">
+                    <span className="text-[11px] text-zinc-500 uppercase tracking-wider">Proposed by</span>
+                    <select value={proposedBy} onChange={e => setProposedBy(e.target.value)} className="rounded-md border border-zinc-700 bg-zinc-950 text-zinc-200 text-sm px-3 py-2">
+                        <option value="">Select person…</option>
+                        {people.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                </label>
+                <label className="flex flex-col gap-1">
+                    <span className="text-[11px] text-zinc-500 uppercase tracking-wider">Facility</span>
+                    <select value={facilityId} onChange={e => setFacilityId(e.target.value)} className="rounded-md border border-zinc-700 bg-zinc-950 text-zinc-200 text-sm px-3 py-2">
+                        <option value="">Select facility…</option>
+                        {facilities.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                    </select>
+                </label>
+                <label className="flex flex-col gap-1 sm:col-span-2">
+                    <span className="text-[11px] text-zinc-500 uppercase tracking-wider">Scope description</span>
+                    <input value={scopeDescription} onChange={e => setScopeDescription(e.target.value)} placeholder="e.g. Roles and assets ratified for Facility Alpha's operating blueprint" className="rounded-md border border-zinc-700 bg-zinc-950 text-zinc-200 text-sm px-3 py-2" />
+                </label>
+                <div className="flex flex-col gap-1">
+                    <span className="text-[11px] text-zinc-500 uppercase tracking-wider">Covered roles</span>
+                    <div className="flex flex-col gap-1 max-h-40 overflow-auto rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2">
+                        {roles.map(r => (
+                            <label key={r.id} className="flex items-center gap-2 text-sm text-zinc-300">
+                                <input type="checkbox" checked={roleIds.includes(r.id)} onChange={() => toggle(roleIds, setRoleIds, r.id)} />
+                                {r.name}
+                            </label>
+                        ))}
+                    </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                    <span className="text-[11px] text-zinc-500 uppercase tracking-wider">Covered assets</span>
+                    <div className="flex flex-col gap-1 max-h-40 overflow-auto rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2">
+                        {assets.map(a => (
+                            <label key={a.id} className="flex items-center gap-2 text-sm text-zinc-300">
+                                <input type="checkbox" checked={assetIds.includes(a.id)} onChange={() => toggle(assetIds, setAssetIds, a.id)} />
+                                {a.name}
+                            </label>
+                        ))}
+                    </div>
+                </div>
+            </div>
+            {submitError && <p className="text-xs text-red-400">{submitError}</p>}
+            <div>
+                <button
+                    onClick={submit}
+                    disabled={submitting || !proposedBy || !facilityId || !scopeDescription || roleIds.length === 0 || assetIds.length === 0}
+                    className="text-xs px-4 py-2 rounded-md bg-sky-500 text-zinc-950 font-medium hover:bg-sky-400 transition-colors disabled:opacity-50"
+                >
+                    {submitting ? 'Submitting…' : 'Submit proposal'}
+                </button>
+            </div>
+        </div>
+    );
+}
+
+function BlueprintCard({ blueprint }: { blueprint: any }) {
+    return (
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 flex flex-col gap-1">
+            <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-mono text-zinc-500">{blueprint.id}</p>
+                <span className="inline-flex rounded border px-1.5 py-0.5 text-[11px] font-medium bg-emerald-900 text-emerald-300 border-emerald-700">ratified</span>
+            </div>
+            <p className="text-sm text-zinc-200 font-medium">{blueprint.facilityName ?? blueprint.facilityId}</p>
+            <p className="text-xs text-zinc-400">{blueprint.scopeDescription}</p>
+            <PropRow label="roles covered" value={blueprint.roleIds?.length ?? 0} />
+            <PropRow label="assets covered" value={blueprint.assetIds?.length ?? 0} />
+            <PropRow label="ratifiedAt" value={blueprint.ratifiedAt} />
+        </div>
+    );
+}
+
 export function OnboardingView() {
     const [criteria, setCriteria] = useState<any[]>([]);
+    const [blueprints, setBlueprints] = useState<any[]>([]);
     const [people, setPeople] = useState<any[]>([]);
+    const [facilities, setFacilities] = useState<any[]>([]);
+    const [roles, setRoles] = useState<any[]>([]);
+    const [assets, setAssets] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [showForm, setShowForm] = useState(false);
+    const [showBlueprintForm, setShowBlueprintForm] = useState(false);
 
     const load = () => {
         setLoading(true);
         setError(false);
-        Promise.all([onboarding.cutoverCriteria(), operational.people()])
-            .then(([c, p]) => {
+        Promise.all([
+            onboarding.cutoverCriteria(),
+            onboarding.blueprints(),
+            operational.people(),
+            operational.facilities(),
+            enterprise.roles(),
+            operational.assets(),
+        ])
+            .then(([c, b, p, f, r, a]) => {
                 setCriteria(c.cutoverCriteria ?? []);
+                setBlueprints(b.blueprints ?? []);
                 setPeople(p.people ?? []);
+                setFacilities(f.facilities ?? []);
+                setRoles(r.roles ?? []);
+                setAssets(a.assets ?? []);
             })
             .catch(() => setError(true))
             .finally(() => setLoading(false));
@@ -188,6 +323,12 @@ export function OnboardingView() {
                 >
                     <Plus size={13} /> Propose criterion
                 </button>
+                <button
+                    onClick={() => setShowBlueprintForm(s => !s)}
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-zinc-800 text-zinc-200 font-medium hover:bg-zinc-700 transition-colors"
+                >
+                    <Plus size={13} /> Propose blueprint
+                </button>
                 <button onClick={load} className="p-2 rounded-md hover:bg-zinc-800 transition-colors" title="Refresh">
                     <RefreshCw size={14} className="text-zinc-500" />
                 </button>
@@ -211,6 +352,25 @@ export function OnboardingView() {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {criteria.map(c => <CutoverCriterionCard key={c.id} criterion={c} />)}
+                    </div>
+                )}
+
+                {showBlueprintForm && <ProposeBlueprintForm people={people} facilities={facilities} roles={roles} assets={assets} onSubmitted={load} />}
+
+                <div className="flex items-center gap-2 mt-2">
+                    <Layers size={11} className="text-zinc-600" />
+                    <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
+                        {blueprints.length} ratified {blueprints.length === 1 ? 'blueprint' : 'blueprints'}
+                    </p>
+                </div>
+
+                {blueprints.length === 0 ? (
+                    <p className="text-sm text-zinc-500 italic">
+                        No enterprise blueprint has been ratified yet — foundation.md §2's org/role/asset mapping is proposed and ratified through this same Decision gate.
+                    </p>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {blueprints.map(b => <BlueprintCard key={b.id} blueprint={b} />)}
                     </div>
                 )}
             </div>
