@@ -32,21 +32,12 @@ const patch = async <T>(path: string, body?: any): Promise<T> => {
     return res.json();
 };
 
-export const knowledge = {
-    regulations: () => get<{ regulations: any[] }>('/knowledge/regulations'),
-    controls:    () => get<{ controls: any[] }>('/knowledge/controls'),
-    agentProposedControls: () => get<{ controls: any[] }>('/knowledge/controls/agent-proposed'),
-    traceForward: (id: string) => get<{ regulationId: string; chain: any[] }>(`/knowledge/trace/${id}`),
-    traceReverse: (id: string) => get(`/knowledge/reverse/${id}`),
-    regulationHistory: (id: string) => get<{ regulationId: string; history: any[] }>(`/knowledge/regulations/${id}/history`),
-    syncStatus: () => get<{ lastSyncedAt: any }>('/knowledge/sync-status'),
-};
-
 export const execution = {
     programs:      () => get('/execution/programs'),
     tasks:         (workflowId?: string) => get(`/execution/tasks${workflowId ? `?workflowId=${workflowId}` : ''}`),
     capas:         () => get<{ capas: any[] }>('/execution/capas'),
     verifications: () => get<{ verifications: any[] }>('/execution/verifications'),
+    calendar:      (horizonWeeks?: number) => get<{ calendar: any[] }>(`/execution/calendar${horizonWeeks ? `?horizonWeeks=${horizonWeeks}` : ''}`),
     updateTaskStatus: (id: string, status: string) => patch<{ task: any }>(`/execution/tasks/${id}`, { status }),
 };
 
@@ -119,12 +110,27 @@ export const dashboard = {
     landscape: () => get<any>('/dashboard/landscape'),
 };
 
+export type ProposeObligationInput = {
+    proposedBy: string;
+    clauseId: string;
+    proposedName: string;
+    proposedObligationType?: string;
+    proposedMandatory?: string;
+};
+
 export const catalog = {
-    regulations:      () => get<{ regulations: any[] }>('/catalog/regulations'),
-    authorities:      () => get<{ authorities: any[] }>('/catalog/authorities'),
-    complianceAreas:  () => get<{ complianceAreas: any[] }>('/catalog/complianceAreas'),
-    traceObligations: (id: string) => get(`/catalog/trace/${id}`),
-    calendar:         (horizonWeeks?: number) => get<{ calendar: any[] }>(`/catalog/calendar${horizonWeeks ? `?horizonWeeks=${horizonWeeks}` : ''}`),
+    syncStatus:      () => get<{ lastSyncedAt: any }>('/catalog/sync-status'),
+    regulations:     (currentOnly?: boolean) => get<{ regulations: any[] }>(`/catalog/regulations${currentOnly ? '?current=true' : ''}`),
+    regulationHistory: (id: string) => get<{ regulationId: string; history: any[] }>(`/catalog/regulations/${id}/history`),
+    trace:           (id: string) => get<{ regulationId: string; chain: any[] }>(`/catalog/regulations/${id}/trace`),
+    clauses:         () => get<{ clauses: any[] }>('/catalog/clauses'),
+    obligations:     () => get<{ obligations: any[] }>('/catalog/obligations'),
+    uncontrolledObligations: () => get<{ obligations: any[] }>('/catalog/obligations/uncontrolled'),
+    proposeObligation: (input: ProposeObligationInput) => post<{ decision: any }>('/catalog/obligations', input),
+    controls:        () => get<{ controls: any[] }>('/catalog/controls'),
+    agentProposedControls: () => get<{ controls: any[] }>('/catalog/controls/agent-proposed'),
+    authorities:     () => get<{ authorities: any[] }>('/catalog/authorities'),
+    complianceAreas: () => get<{ complianceAreas: any[] }>('/catalog/compliance-areas'),
 };
 
 export type ProposeContractInput = {

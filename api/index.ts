@@ -5,7 +5,6 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 import API from './API';
 import log from '../lib/log';
 
-import knowledge from './modules/knowledge';
 import execution from './modules/execution';
 import operational from './modules/operational';
 import intelligence from './modules/intelligence';
@@ -15,7 +14,7 @@ import catalog from './modules/catalog';
 import enterprise from './modules/enterprise';
 import onboarding from './modules/onboarding';
 
-const modules = [knowledge, execution, operational, intelligence, assurance, dashboard, catalog, enterprise, onboarding];
+const modules = [execution, operational, intelligence, assurance, dashboard, catalog, enterprise, onboarding];
 
 async function start() {
     try {

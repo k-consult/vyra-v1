@@ -297,6 +297,35 @@ const APPROVE_CONTRACT_PROPOSAL = `
     RETURN properties(d) AS decision, properties(ctr) AS contract
 `;
 
+// Obligation:HumanProposed — same fourth-origin idiom as Contract:HumanProposed, for
+// the Manual Entry catalog-ingestion channel (foundation.md §1's channel-uniformity
+// requirement). The proposing Decision carries an ABOUT edge to the Clause it's
+// proposed under (catalog/repo.ts's proposeObligation), so unlike CutoverCriterion
+// there's a real node to MATCH here.
+const APPROVE_CATALOG_OBLIGATION_PROPOSAL = `
+    MATCH (d:Decision {id: $id})-[:ABOUT]->(cls:Clause)
+    MERGE (obl:Obligation:HumanProposed {id: $obligationId})
+    ON CREATE SET
+        obl.name = d.proposedName,
+        obl.obligationType = d.proposedObligationType,
+        obl.clauseId = cls.id,
+        obl.mandatory = d.proposedMandatory,
+        obl.catalogVersion = '1.0',
+        obl.sourceDocumentId = coalesce(cls.sourceDocumentId, ''),
+        obl.sourceAnchor = coalesce(cls.sourceAnchor, ''),
+        obl.createdAt = datetime()
+    MERGE (obl)-[:DEFINED_BY]->(cls)
+    MERGE (d)-[:RESULTED_IN]->(obl)
+    SET d.status = 'approved',
+        d.reviewedAt = datetime(),
+        d.reviewedBy = $reviewedBy,
+        d.reviewNote = $reviewNote
+    WITH d, obl
+    OPTIONAL MATCH (p:Person {id: $reviewedBy})
+    FOREACH (_ IN CASE WHEN p IS NOT NULL THEN [1] ELSE [] END | MERGE (d)-[:REVIEWED_BY]->(p))
+    RETURN properties(d) AS decision, properties(obl) AS obligation
+`;
+
 // Creates the real CutoverCriterion on approval — the proposing Decision
 // (onboarding/repo.ts's proposeCutoverCriterion) carries no ABOUT edge (no real
 // Workflow node exists yet), so unlike every other branch here there's nothing to
@@ -407,6 +436,12 @@ export const resolveDecision = async (
             const row = Array.isArray(raw) ? raw[0] : raw;
             if (!row?.decision) throw new Error(`Decision ${id} has no linked Vendor to approve`);
             return { decision: row.decision, contract: row.contract };
+        }
+        if (type === 'catalog-obligation-proposal') {
+            const raw: any = await db().exec(APPROVE_CATALOG_OBLIGATION_PROPOSAL, { ...params, obligationId: `OBL-${id}` });
+            const row = Array.isArray(raw) ? raw[0] : raw;
+            if (!row?.decision) throw new Error(`Decision ${id} has no linked Clause to approve`);
+            return { decision: row.decision, obligation: row.obligation };
         }
         if (type === 'cutover-criterion-proposal') {
             const raw: any = await db().exec(APPROVE_CUTOVER_CRITERION_PROPOSAL, { ...params, criterionId: `CUT-${id}` });

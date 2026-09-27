@@ -1,39 +1,80 @@
 import { FastifyInstance } from 'fastify';
-import { Module } from '../../types';
-import { listRegulations, listAuthorities, listComplianceAreas, traceObligations, computeWindow, fetchTaskCalendar, Cadence } from './repo';
+import {
+    listRegulations,
+    getRegulationHistory,
+    traceForward,
+    listClauses,
+    listObligations,
+    listObligationsWithoutControl,
+    proposeObligation,
+    listControls,
+    listAgentProposedControls,
+    listAuthorities,
+    listComplianceAreas,
+    getLastSyncedAt,
+} from './repo';
+import * as spec from './spec';
 
 const catalog: any = async (fastify: FastifyInstance) => {
-    fastify.get('/regulations', async (_req, reply) => {
-        reply.send({ regulations: await listRegulations() });
+    fastify.get('/sync-status', async (_req, reply) => {
+        reply.send({ lastSyncedAt: await getLastSyncedAt() });
+    });
+
+    fastify.get('/regulations', async (req: any, reply) => {
+        const currentOnly = req.query?.current === 'true';
+        reply.send({ regulations: await listRegulations(currentOnly) });
+    });
+
+    fastify.get('/regulations/:id/history', async (req: any, reply) => {
+        const { id } = req.params;
+        reply.send({ regulationId: id, history: await getRegulationHistory(id) });
+    });
+
+    fastify.get('/regulations/:id/trace', async (req: any, reply) => {
+        const { id } = req.params;
+        reply.send({ regulationId: id, chain: await traceForward(id) });
+    });
+
+    fastify.get('/clauses', async (_req, reply) => {
+        reply.send({ clauses: await listClauses() });
+    });
+
+    fastify.get('/obligations', async (_req, reply) => {
+        reply.send({ obligations: await listObligations() });
+    });
+
+    // "Documented absence" (foundation.md §2) — an Obligation with no implementing
+    // Control, surfaced as a queryable gap rather than silently missing.
+    fastify.get('/obligations/uncontrolled', async (_req, reply) => {
+        reply.send({ obligations: await listObligationsWithoutControl() });
+    });
+
+    // Manual Entry channel only — see repo.ts's proposeObligation for why this never
+    // writes an Obligation directly.
+    fastify.post('/obligations', async (req: any, reply) => {
+        try {
+            await spec.isValid(req.body ?? {});
+        } catch (err: any) {
+            return reply.code(400).send({ error: err.message });
+        }
+        const result = await proposeObligation(req.body);
+        reply.code(201).send(result);
+    });
+
+    fastify.get('/controls', async (_req, reply) => {
+        reply.send({ controls: await listControls() });
+    });
+
+    fastify.get('/controls/agent-proposed', async (_req, reply) => {
+        reply.send({ controls: await listAgentProposedControls() });
     });
 
     fastify.get('/authorities', async (_req, reply) => {
         reply.send({ authorities: await listAuthorities() });
     });
 
-    fastify.get('/complianceAreas', async (_req, reply) => {
+    fastify.get('/compliance-areas', async (_req, reply) => {
         reply.send({ complianceAreas: await listComplianceAreas() });
-    });
-
-    fastify.get('/trace/:id', async (req: any, reply) => {
-        const { id } = req.params;
-        const rows = await traceObligations(id);
-        reply.send({ regulationId: id, chain: rows });
-    });
-
-    fastify.get('/window', async (req: any, reply) => {
-        const { unit, interval, anchor, horizonWeeks } = req.query;
-        const cadence: Cadence = {
-            cadenceUnit: unit,
-            cadenceInterval: Number(interval),
-            anchorDate: anchor,
-        };
-        reply.send({ occurrences: computeWindow(cadence, Number(horizonWeeks) || 52) });
-    });
-
-    fastify.get('/calendar', async (req: any, reply) => {
-        const { horizonWeeks } = req.query;
-        reply.send({ calendar: await fetchTaskCalendar(Number(horizonWeeks) || 52) });
     });
 };
 

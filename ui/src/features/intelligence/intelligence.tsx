@@ -7,7 +7,7 @@ import {
     Sparkles, TrendingUp, Search, Users, ShieldCheck,
     Radio, FileText, ClipboardCheck, Eye, Gavel, Flag, GitPullRequestArrow,
 } from 'lucide-react';
-import { intelligence, operational, knowledge } from '@/lib/api';
+import { intelligence, operational, catalog } from '@/lib/api';
 import { Badge, PropRow } from '@/features/landscape/landscape';
 import { formatValue } from '@/features/validation/display';
 import { PageHeader } from '@/components/page-header';
@@ -391,7 +391,7 @@ export function IntelligenceView() {
         setLoading(true);
         setError(false);
         Promise.all([
-            intelligence.decisions(), operational.people(), knowledge.agentProposedControls(),
+            intelligence.decisions(), operational.people(), catalog.agentProposedControls(),
             intelligence.agreementRates(),
         ])
             .then(([dec, ppl, ctl, rates]: any[]) => {

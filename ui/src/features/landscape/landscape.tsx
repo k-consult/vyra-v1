@@ -8,7 +8,7 @@ import {
     RefreshCw, ShieldCheck, Activity, Scale, X, ChevronRight,
     Radio, Layers, Users, UserCog,
 } from 'lucide-react';
-import { dashboard, knowledge, operational, assurance, intelligence, execution, catalog, enterprise } from '@/lib/api';
+import { dashboard, operational, assurance, intelligence, execution, catalog, enterprise } from '@/lib/api';
 import { formatValue } from '@/features/validation/display';
 import { PageHeader } from '@/components/page-header';
 
@@ -58,11 +58,11 @@ const extractList = (wrapper: any, outerKey: string, innerKey?: string): any[] =
 
 const DRILL_FETCHERS: Record<DrillKey, () => Promise<any[]>> = {
     incidents:     () => operational.incidents().then(r => extractList(r, 'incidents')),
-    regulations:   () => knowledge.regulations().then(r => extractList(r, 'regulations')),
+    regulations:   () => catalog.regulations().then((r: any) => extractList(r, 'regulations')),
     facilities:    () => operational.facilities().then(r => extractList(r, 'facilities')),
     assets:        () => operational.assets().then(r => extractList(r, 'assets', 'asset')),
     vendors:       () => operational.vendors().then(r => extractList(r, 'vendors')),
-    controls:      () => knowledge.controls().then(r => extractList(r, 'controls')),
+    controls:      () => catalog.controls().then((r: any) => extractList(r, 'controls')),
     tasks:         () => execution.tasks().then(r => extractList(r, 'tasks', 'task')),
     evidence:      () => assurance.evidence().then(r => extractList(r, 'evidence')),
     risks:         () => intelligence.risks().then(r => extractList(r, 'risks', 'risk')),

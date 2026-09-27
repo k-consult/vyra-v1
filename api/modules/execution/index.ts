@@ -1,10 +1,21 @@
 import { FastifyInstance } from 'fastify';
-import { listPrograms, listTasks, listCapas, listVerifications, updateTaskStatus } from './repo';
+import { listPrograms, listTasks, listCapas, listVerifications, updateTaskStatus, computeWindow, fetchTaskCalendar, Cadence } from './repo';
 import * as spec from './spec';
 
 const execution: any = async (fastify: FastifyInstance) => {
     fastify.get('/programs', async (_req, reply) => {
         reply.send({ programs: await listPrograms() });
+    });
+
+    fastify.get('/calendar', async (req: any, reply) => {
+        const { horizonWeeks } = req.query;
+        reply.send({ calendar: await fetchTaskCalendar(Number(horizonWeeks) || 52) });
+    });
+
+    fastify.get('/window', async (req: any, reply) => {
+        const { unit, interval, anchor, horizonWeeks } = req.query;
+        const cadence: Cadence = { cadenceUnit: unit, cadenceInterval: Number(interval), anchorDate: anchor };
+        reply.send({ occurrences: computeWindow(cadence, Number(horizonWeeks) || 52) });
     });
 
     fastify.get('/tasks', async (req: any, reply) => {

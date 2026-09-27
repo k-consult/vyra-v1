@@ -16,7 +16,7 @@ type NavGroup = { layer: string; persona: string; items: NavRow[] };
 
 const GROUPS: NavGroup[] = [
     { layer: 'L1', persona: 'Catalog Admin', items: [
-        { kind: 'link', label: 'Regulations & Standards', href: '/knowledge' },
+        { kind: 'link', label: 'Regulations & Standards', href: '/catalog' },
         { kind: 'link', label: 'Contracts & SOPs', href: '/enterprise/contracts' },
     ] },
     { layer: 'L2', persona: 'Ops Admin', items: [

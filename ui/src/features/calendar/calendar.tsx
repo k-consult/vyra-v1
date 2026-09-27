@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { AlertTriangle, RefreshCw, ShieldCheck, Grid3x3, Clock, ChevronDown, CheckCircle2 } from 'lucide-react';
-import { catalog, execution } from '@/lib/api';
+import { execution } from '@/lib/api';
 import { PageHeader } from '@/components/page-header';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -117,8 +117,8 @@ export function CalendarView() {
     const load = () => {
         setLoading(true);
         setError(false);
-        catalog.calendar(TOTAL_WEEKS)
-            .then(r => setTasks(r.calendar))
+        execution.calendar(TOTAL_WEEKS)
+            .then((r: any) => setTasks(r.calendar))
             .catch(() => setError(true))
             .finally(() => setLoading(false));
     };
