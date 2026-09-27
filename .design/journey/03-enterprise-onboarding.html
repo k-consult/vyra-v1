@@ -1,0 +1,509 @@
+<title>Vyra — Enterprise Onboarding (Journey Mockup 3/4)</title>
+<style>
+    :root {
+        --bg: #09090b; --surface: #18181b; --border: #27272a; --border-soft: #27272a99;
+        --text: #f4f4f5; --text-dim: #a1a1aa; --text-dimmer: #71717a; --text-faint: #52525b;
+        --accent: #38bdf8; --accent-soft: #38bdf81a;
+        --brand: #10b981; --brand-soft: #10b9811a;
+        --warn: #f59e0b; --warn-soft: #f59e0b1a;
+        --danger: #f87171; --danger-soft: #f871711a;
+        --violet: #a78bfa; --violet-soft: #a78bfa1a;
+        --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    button, input, select { font-family: inherit; }
+    ::selection { background: var(--accent-soft); }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+    a { color: inherit; text-decoration: none; }
+    a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+    .mock-banner { background: var(--warn-soft); border-bottom: 1px solid #f59e0b40; color: var(--warn); font-size: 11px; font-weight: 600; letter-spacing: .02em; padding: 6px 24px; display: flex; align-items: center; gap: 8px; }
+    .mock-banner .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); flex-shrink: 0; }
+
+    .shell { display: flex; height: calc(100vh - 27px); }
+
+    .sidebar { width: 256px; flex-shrink: 0; border-right: 1px solid var(--border-soft); display: flex; flex-direction: column; overflow-y: auto; }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 16px; border-bottom: 1px solid var(--border-soft); }
+    .brand-mark { width: 28px; height: 28px; border-radius: 6px; background: var(--brand); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--bg); }
+    .brand-name { font-size: 13px; font-weight: 700; line-height: 1.2; }
+    .brand-tag { font-size: 10px; color: var(--text-faint); line-height: 1.2; }
+    .nav { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 16px; }
+    .nav-group { display: flex; flex-direction: column; gap: 4px; }
+    .nav-group-label { display: flex; align-items: center; gap: 6px; padding: 0 10px; margin-bottom: 2px; }
+    .nav-group-layer { font-size: 9px; font-family: var(--font-mono); color: var(--text-faint); }
+    .nav-group-persona { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dimmer); }
+    .nav-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; font-size: 12px; border: 1px solid transparent; }
+    .nav-row .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .nav-row.active { background: var(--accent-soft); color: #7dd3fc; border-color: #38bdf84d; }
+    .nav-row.active .dot { background: var(--accent); }
+    .nav-row.live { color: var(--text-dim); }
+    .nav-row.live .dot { background: #059669; }
+    .nav-row.gap { color: var(--text-faint); }
+    .nav-row.gap .dot { background: #3f3f46; }
+    .nav-row .reviewed-pill { margin-left: auto; font-size: 9px; font-weight: 600; color: #6ee7b7; background: #10b9811a; border: 1px solid #10b98140; padding: 1px 6px; border-radius: 100px; }
+    .nav-section { padding-top: 8px; border-top: 1px solid var(--border-soft); display: flex; flex-direction: column; gap: 4px; }
+    .nav-section-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dimmer); padding: 0 10px; margin-bottom: 2px; }
+
+    .main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+    .page-header { border-bottom: 1px solid var(--border-soft); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; gap: 16px; flex-wrap: wrap; }
+    .page-header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .page-title { font-size: 14px; font-weight: 600; line-height: 1.2; }
+    .page-subtitle { font-size: 11px; color: var(--text-dimmer); line-height: 1.2; }
+    .icon { width: 16px; height: 16px; stroke-width: 2; }
+
+    .btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; padding: 7px 14px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; transition: background-color .12s ease, border-color .12s ease; white-space: nowrap; }
+    .btn-ghost { background: transparent; color: var(--text-dim); border-color: var(--border); }
+    .btn-ghost:hover { background: var(--surface); color: var(--text); }
+    .btn-primary { background: var(--accent); color: #082f49; }
+    .btn-primary:hover { background: #7dd3fc; }
+    .btn-approve { background: var(--brand-soft); color: #6ee7b7; border-color: #10b98140; }
+    .btn-approve:hover { background: #10b98133; }
+    .btn-reject { background: var(--danger-soft); color: #fca5a5; border-color: #ef444440; }
+    .btn-reject:hover { background: #ef444433; }
+
+    .pill { font-size: 9.5px; font-weight: 600; letter-spacing: .02em; padding: 2px 7px; border-radius: 100px; border: 1px solid transparent; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+    .pill-emerald { background: var(--brand-soft); color: #6ee7b7; border-color: #10b98140; }
+    .pill-amber { background: var(--warn-soft); color: #fbbf24; border-color: #f59e0b40; }
+    .pill-zinc { background: #3f3f4640; color: var(--text-dimmer); border-color: #3f3f4680; }
+    .pill-sky { background: var(--accent-soft); color: #7dd3fc; border-color: #38bdf840; }
+    .pill-outline { background: transparent; color: var(--text-dimmer); border-color: var(--border); }
+    .pill-violet { background: var(--violet-soft); color: #c4b5fd; border-color: #a78bfa40; }
+    .pill-red { background: var(--danger-soft); color: #fca5a5; border-color: #ef444440; }
+
+    /* ── Phase rail ── */
+    .content { flex: 1; min-height: 0; display: flex; overflow: hidden; }
+    .phase-rail { width: 260px; flex-shrink: 0; border-right: 1px solid var(--border-soft); overflow-y: auto; padding: 18px 16px; display: flex; flex-direction: column; gap: 4px; }
+    .phase-rail-title { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dimmer); margin-bottom: 8px; }
+    .phase-item { display: flex; gap: 10px; padding: 10px 8px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; }
+    .phase-item:hover { background: #ffffff05; }
+    .phase-item.on { background: var(--accent-soft); border-color: #38bdf840; }
+    .phase-dot-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; padding-top: 2px; }
+    .phase-dot { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+    .phase-dot.done { background: var(--brand); color: var(--bg); }
+    .phase-dot.doing { background: var(--accent); color: #082f49; }
+    .phase-dot.todo { background: #27272a; color: var(--text-faint); border: 1px solid #3f3f46; }
+    .phase-line { width: 2px; flex: 1; background: #27272a; margin-top: 2px; min-height: 18px; }
+    .phase-body .name { font-size: 12.5px; font-weight: 500; color: var(--text); }
+    .phase-body .status { font-size: 10.5px; color: var(--text-faint); margin-top: 2px; }
+    .phase-item.on .phase-body .name { color: #7dd3fc; }
+
+    .enterprise-card { margin-top: 14px; border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 12px 14px; }
+    .enterprise-card .eid { font-size: 10px; font-family: var(--font-mono); color: var(--text-faint); }
+    .enterprise-card .ename { font-size: 13px; color: var(--text); margin: 3px 0 8px; font-weight: 500; }
+    .enterprise-card .erow { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-faint); margin-top: 3px; }
+    .enterprise-card .erow b { color: var(--text-dim); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+    /* ── Tab content ── */
+    .tabpage { flex: 1; min-width: 0; overflow-y: auto; padding: 20px 26px; display: flex; flex-direction: column; gap: 16px; }
+    [data-tab] { display: none; }
+    [data-tab].on { display: flex; flex-direction: column; gap: 16px; }
+    .section-label { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dimmer); display: flex; align-items: center; gap: 6px; }
+    .helper-text { font-size: 12px; color: var(--text-faint); max-width: 72ch; line-height: 1.6; }
+
+    /* Applicability */
+    .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .stat-card { border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 12px 14px; }
+    .stat-value { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .stat-label { font-size: 10px; color: var(--text-dimmer); text-transform: uppercase; letter-spacing: .05em; margin-top: 3px; }
+
+    .app-row { display: flex; align-items: center; gap: 12px; border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 11px 14px; }
+    .app-row input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; }
+    .app-row-main { flex: 1; min-width: 0; }
+    .app-row-name { font-size: 12.5px; color: var(--text); }
+    .app-row-meta { font-size: 10.5px; color: var(--text-faint); margin-top: 2px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .conf-bar-wrap { width: 90px; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+    .conf-bar-track { width: 100%; height: 4px; border-radius: 2px; background: #27272a; overflow: hidden; }
+    .conf-bar-fill { height: 100%; border-radius: 2px; }
+    .conf-label { font-size: 9.5px; font-family: var(--font-mono); color: var(--text-faint); }
+
+    /* Structure tree */
+    .structure-tree { border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 6px 14px; }
+    .structure-tree details { border-bottom: 1px solid var(--border-soft); }
+    .structure-tree details:last-child { border-bottom: none; }
+    .structure-tree summary { list-style: none; display: flex; align-items: center; gap: 8px; padding: 9px 4px; cursor: pointer; border-radius: 6px; }
+    .structure-tree summary::-webkit-details-marker { display: none; }
+    .structure-tree summary::before { content: ''; flex: 0 0 6px; width: 6px; height: 6px; border-right: 1.5px solid var(--text-faint); border-bottom: 1.5px solid var(--text-faint); transform: rotate(-45deg); transition: transform .12s; margin-right: 2px; }
+    .structure-tree details[open] > summary::before { transform: rotate(45deg); }
+    .structure-tree summary:hover { background: #ffffff05; }
+    .node-icon { color: var(--text-faint); flex-shrink: 0; }
+    .node-label { font-size: 12.5px; color: var(--text); flex: 1; }
+    .node-id { font-size: 10px; font-family: var(--font-mono); color: var(--text-faint); }
+    .node-children { padding-left: 22px; border-left: 1px solid var(--border-soft); margin: 0 0 6px 12px; }
+    .leaf-row { display: flex; align-items: center; gap: 8px; padding: 7px 4px 7px 8px; border-radius: 6px; }
+    .leaf-row:hover { background: #ffffff05; }
+    .leaf-row .leaf-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--text-faint); flex-shrink: 0; }
+    .leaf-main { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .leaf-name { font-size: 12px; color: var(--text-dim); }
+    .leaf-tags { display: flex; gap: 4px; flex-shrink: 0; margin-left: auto; }
+
+    /* Import panel */
+    .import-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .import-card { border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 14px; cursor: pointer; text-align: left; }
+    .import-card.selected { border-color: #059669; }
+    .import-card .icon { color: var(--text-dim); margin-bottom: 8px; }
+    .import-card.selected .icon { color: #34d399; }
+    .import-card h4 { margin: 0 0 4px; font-size: 12.5px; color: var(--text); font-weight: 600; }
+    .import-card p { margin: 0; font-size: 11px; color: var(--text-faint); line-height: 1.5; }
+
+    /* Blueprint ratification */
+    .bp-card { border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .bp-card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .bp-card-title { font-size: 13px; color: var(--text); font-weight: 500; }
+    .bp-card-meta { font-size: 11px; color: var(--text-faint); }
+    .bp-card-actions { display: flex; gap: 8px; align-items: center; }
+    .bp-resolved { font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+    .bp-resolved.approved { color: #6ee7b7; }
+    .bp-resolved.rejected { color: #fca5a5; }
+
+    /* Cutover preview table */
+    .cutover-panel { border: 1px solid var(--border); background: var(--surface); border-radius: 10px; overflow: hidden; }
+    .cutover-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .cutover-table th { text-align: left; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; font-size: 9.5px; color: var(--text-faint); padding: 8px 14px; border-bottom: 1px solid var(--border-soft); background: #ffffff05; }
+    .cutover-table td { padding: 10px 14px; border-bottom: 1px solid var(--border-soft); color: var(--text-dim); }
+    .cutover-table tr:last-child td { border-bottom: none; }
+    .cutover-table .mono { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); }
+    .live-note { font-size: 11px; color: var(--text-faint); background: #ffffff03; border: 1px solid var(--border-soft); border-radius: 8px; padding: 10px 12px; display: flex; gap: 8px; align-items: flex-start; }
+    .live-note b { color: var(--text-dim); }
+
+    footer { border-top: 1px solid var(--border-soft); padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .footer-brand { display: flex; align-items: center; gap: 8px; }
+    .footer-mark { width: 16px; height: 16px; border-radius: 4px; background: var(--brand); display: flex; align-items: center; justify-content: center; }
+    .footer-text { font-size: 10px; color: var(--text-faint); }
+</style>
+
+<div class="mock-banner">
+    <span class="dot"></span>
+    DESIGN MOCKUP — Journey 3 of 4 · Enterprise Onboarding — not implemented; applicability/structure/ratification run on static sample data only
+</div>
+
+<div class="shell">
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-mark"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5z"/></svg></div>
+            <div><p class="brand-name">VYRA</p><p class="brand-tag">Compliance. Handled.</p></div>
+        </div>
+        <nav class="nav">
+            <div class="nav-group">
+                <div class="nav-group-label"><span class="nav-group-layer">JR</span><span class="nav-group-persona">Journey Mockups</span></div>
+                <span class="nav-row live"><span class="dot"></span>1 · Catalog Ingestion<span class="reviewed-pill">reviewed</span></span>
+                <span class="nav-row live"><span class="dot"></span>2 · Catalog Browsing<span class="reviewed-pill">reviewed</span></span>
+                <span class="nav-row active"><span class="dot"></span>3 · Enterprise Onboarding</span>
+                <span class="nav-row gap"><span class="dot"></span>4 · Obligation View</span>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-label"><span class="nav-group-layer">L2</span><span class="nav-group-persona">Ops Admin</span></div>
+                <span class="nav-row live"><span class="dot"></span>Applicability Scoping</span>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">Cross-cutting</div>
+                <span class="nav-row live"><span class="dot"></span>Decision Gate · L4 Review</span>
+                <span class="nav-row live"><span class="dot"></span>Onboarding — Cutover Tracking</span>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <header class="page-header">
+            <div class="page-header-left">
+                <svg class="icon" style="color:#34d399" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1m3 0h1m-5 4h1m3 0h1m-5 4h1m3 0h1"/></svg>
+                <div>
+                    <p class="page-title">Enterprise Onboarding</p>
+                    <p class="page-subtitle">Applicability → Structure → Blueprint Ratification → Cutover — inferred and proposed, never self-asserted</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="content">
+            <aside class="phase-rail">
+                <p class="phase-rail-title">Onboarding Phases</p>
+                <div class="phase-item on" data-phasebtn="applicability">
+                    <div class="phase-dot-col"><span class="phase-dot done">✓</span><span class="phase-line"></span></div>
+                    <div class="phase-body"><p class="name">1 · Applicability</p><p class="status">9 of 10 catalog entries in scope</p></div>
+                </div>
+                <div class="phase-item" data-phasebtn="structure">
+                    <div class="phase-dot-col"><span class="phase-dot doing">2</span><span class="phase-line"></span></div>
+                    <div class="phase-body"><p class="name">2 · Structure Mapping</p><p class="status">In progress — 2 of 20 facilities detailed</p></div>
+                </div>
+                <div class="phase-item" data-phasebtn="ratify">
+                    <div class="phase-dot-col"><span class="phase-dot todo">3</span><span class="phase-line"></span></div>
+                    <div class="phase-body"><p class="name">3 · Blueprint Ratification</p><p class="status">Pending — awaiting Decision-gate review</p></div>
+                </div>
+                <div class="phase-item" data-phasebtn="cutover">
+                    <div class="phase-dot-col"><span class="phase-dot todo">4</span></div>
+                    <div class="phase-body"><p class="name">4 · Cutover Tracking</p><p class="status">Not started — needs ratified blueprint first</p></div>
+                </div>
+
+                <div class="enterprise-card">
+                    <p class="eid">ORG-001</p>
+                    <p class="ename">Vantage Industrial Parks &amp; Logistics REIT</p>
+                    <div class="erow"><span>Industry</span><b>Warehousing &amp; Logistics</b></div>
+                    <div class="erow"><span>Jurisdictions</span><b>India, UK</b></div>
+                    <div class="erow"><span>Facilities</span><b>20</b></div>
+                    <div class="erow"><span>Source</span><b>Template + Upload</b></div>
+                </div>
+            </aside>
+
+            <!-- ══ Tab 1: Applicability ══ -->
+            <div class="tabpage" data-tab="applicability" style="display:flex">
+                <p class="helper-text">The agent scopes the Catalog to this enterprise's jurisdictions and industry, and proposes which regulations/standards apply — each proposal carries a confidence and rationale (<code>foundation.md</code> §2: "applicability is inferred and proposed, never self-asserted"). Nothing here is final until confirmed.</p>
+
+                <div class="stat-row">
+                    <div class="stat-card"><div class="stat-value" id="appCount">9</div><div class="stat-label">In scope</div></div>
+                    <div class="stat-card"><div class="stat-value">10</div><div class="stat-label">Catalog entries reviewed</div></div>
+                    <div class="stat-card"><div class="stat-value">2</div><div class="stat-label">Jurisdictions</div></div>
+                    <div class="stat-card"><div class="stat-value">1</div><div class="stat-label">Needs human call</div></div>
+                </div>
+
+                <p class="section-label">Proposed scope</p>
+                <div id="appList" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+                <div>
+                    <button class="btn btn-primary">Confirm applicability scope</button>
+                </div>
+            </div>
+
+            <!-- ══ Tab 2: Structure ══ -->
+            <div class="tabpage" data-tab="structure">
+                <p class="helper-text">Org, facilities, assets, roles, and commercial instruments are proposed from an uploaded artifact, an industry template, or both — never hand-typed from scratch, never written straight into the system of record. Every leaf below carries its origin.</p>
+
+                <p class="section-label">Import source</p>
+                <div class="import-row">
+                    <button class="import-card"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><h4>Upload artifact</h4><p>Org chart, asset register, or facility list — parsed and matched.</p></button>
+                    <button class="import-card selected"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><h4>Start from template</h4><p>Warehousing &amp; Logistics (India/UK) — pre-built role/asset/control baseline.</p></button>
+                    <button class="import-card"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><h4>Hybrid</h4><p>Template baseline, overridden by uploaded facility-specific detail.</p></button>
+                </div>
+
+                <p class="section-label">Proposed structure — <span class="pill pill-violet">agent-inferred</span> unless marked otherwise</p>
+                <div class="structure-tree" id="structureTree"></div>
+            </div>
+
+            <!-- ══ Tab 3: Blueprint Ratification ══ -->
+            <div class="tabpage" data-tab="ratify">
+                <p class="helper-text">The full proposed blueprint — every facility, asset, role, and commercial instrument above — is ratified through the same Decision gate as any other agent action, never written straight into the graph. This is the richer, whole-enterprise version of the <code>Blueprint</code> concept already live at <code>/onboarding</code> today (currently scoped to one facility per proposal).</p>
+
+                <div class="stat-row">
+                    <div class="stat-card"><div class="stat-value">247</div><div class="stat-label">Elements proposed</div></div>
+                    <div class="stat-card"><div class="stat-value">20</div><div class="stat-label">Facilities</div></div>
+                    <div class="stat-card"><div class="stat-value">31</div><div class="stat-label">Assets</div></div>
+                    <div class="stat-card"><div class="stat-value">16</div><div class="stat-label">Roles</div></div>
+                </div>
+
+                <p class="section-label">Review by facility bundle</p>
+                <div style="display:flex;flex-direction:column;gap:10px;" id="bpList"></div>
+
+                <div>
+                    <button class="btn btn-primary" id="ratifyAllBtn">Ratify full blueprint</button>
+                </div>
+            </div>
+
+            <!-- ══ Tab 4: Cutover Tracking ══ -->
+            <div class="tabpage" data-tab="cutover">
+                <p class="helper-text">Once the blueprint is ratified, each workflow entering a proving run gets a cutover criterion — target agreement rate, a window, and which system is authoritative right now (<code>foundation.md</code> §0). This is real and live today.</p>
+
+                <div class="live-note">
+                    <svg class="icon" style="width:14px;height:14px;color:#7dd3fc;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                    <span><b>Already live, not a mockup</b> — shown here for journey continuity. The real screen is at <code>/onboarding</code>, driven by the <code>CutoverCriterion</code> node ratified 2026-09-25.</span>
+                </div>
+
+                <p class="section-label">Workflows in transition</p>
+                <div class="cutover-panel">
+                    <table class="cutover-table">
+                        <thead><tr><th>Workflow</th><th>System of record</th><th>Agreement target</th><th>Due by</th><th>Status</th></tr></thead>
+                        <tbody>
+                            <tr><td>52-Week Calendar task completion</td><td class="mono">legacy</td><td class="mono">90%</td><td class="mono">2026-12-01</td><td><span class="pill pill-sky">proving</span></td></tr>
+                            <tr><td>Facility EHS inspection sign-off</td><td class="mono">legacy</td><td class="mono">85%</td><td class="mono">2026-10-15</td><td><span class="pill pill-red">cutover-overdue</span></td></tr>
+                            <tr><td>Contract / Permit renewal tracking</td><td class="mono">vyra</td><td class="mono">95%</td><td class="mono">2027-01-31</td><td><span class="pill pill-sky">proving</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <div class="footer-brand"><div class="footer-mark"><svg style="width:9px;height:9px;color:var(--bg)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14"/></svg></div><span class="footer-text">Vyra Platform v1 · Journey Mockup</span></div>
+            <p class="footer-text">Compliance. Handled.</p>
+        </footer>
+    </main>
+</div>
+
+<script>
+(function () {
+    var APPLICABILITY = [
+        { id: 'REG-101', name: 'Factories Act 1948 (India)', jurisdiction: 'India', checked: true, confidence: 0.98, reason: 'Jurisdiction + Industry match' },
+        { id: 'REG-105', name: 'Factories (Amendment) Rules 2024 (India)', jurisdiction: 'India', checked: true, confidence: 0.98, reason: 'Supersedes REG-101 §21, same scope' },
+        { id: 'REG-102', name: 'Environment (Protection) Act 1986 (India)', jurisdiction: 'India', checked: true, confidence: 0.95, reason: 'Jurisdiction + Industry match' },
+        { id: 'REG-106', name: 'Noise Pollution Rules 2000 (India)', jurisdiction: 'India', checked: true, confidence: 0.90, reason: 'Industry match — logistics sites generate ambient noise' },
+        { id: 'REG-103', name: 'Health & Safety at Work etc. Act 1974 (UK)', jurisdiction: 'UK', checked: true, confidence: 0.97, reason: 'Jurisdiction + Industry match' },
+        { id: 'REG-104', name: 'Environmental Protection Act 1990 (UK)', jurisdiction: 'UK', checked: true, confidence: 0.95, reason: 'Jurisdiction + Industry match' },
+        { id: 'STD-201', name: 'ISO 45001:2018 — Occupational Health & Safety', jurisdiction: 'Global', checked: true, confidence: 0.92, reason: 'Sector-standard adoption, both sites' },
+        { id: 'STD-202', name: 'ISO 14001:2015 — Environmental Management', jurisdiction: 'Global', checked: true, confidence: 0.88, reason: 'Sector-standard adoption, both sites' },
+        { id: 'STD-203', name: 'ISO 27001:2013 — Information Security', jurisdiction: 'Global', checked: true, confidence: 0.81, reason: 'Lower confidence — 2 Security-area assets still unmapped to a control (documented gap, not hidden)' },
+        { id: 'STD-204', name: 'ISO 9001:2015 — Quality Management', jurisdiction: 'Global', checked: false, confidence: 0.62, reason: 'Voluntary; low relevance for a space-leasing REIT — human call needed' }
+    ];
+
+    function renderApplicability() {
+        var list = document.getElementById('appList');
+        list.innerHTML = APPLICABILITY.map(function (a, i) {
+            var pct = Math.round(a.confidence * 100);
+            var barColor = a.confidence >= 0.9 ? '#34d399' : a.confidence >= 0.75 ? '#fbbf24' : '#f87171';
+            return '<label class="app-row">' +
+                '<input type="checkbox" data-idx="' + i + '" ' + (a.checked ? 'checked' : '') + '>' +
+                '<div class="app-row-main">' +
+                '<p class="app-row-name">' + a.id + ' — ' + a.name + '</p>' +
+                '<p class="app-row-meta"><span class="pill pill-sky">' + a.jurisdiction + '</span>' + a.reason + '</p>' +
+                '</div>' +
+                '<div class="conf-bar-wrap"><div class="conf-bar-track"><div class="conf-bar-fill" style="width:' + pct + '%;background:' + barColor + '"></div></div><span class="conf-label">' + pct + '% confidence</span></div>' +
+                '</label>';
+        }).join('');
+        list.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+            cb.addEventListener('change', function () {
+                APPLICABILITY[+cb.getAttribute('data-idx')].checked = cb.checked;
+                document.getElementById('appCount').textContent = APPLICABILITY.filter(function (a) { return a.checked; }).length;
+            });
+        });
+    }
+
+    // Structure tree — grounded in the real seed enterprise (Vantage Industrial Parks &
+    // Logistics REIT, LOC-001/LOC-013, AST-0xx ids) so this reads as the same enterprise
+    // across every journey stage, not a disconnected example.
+    function originPill(origin, conf) {
+        if (origin === 'declared') return '<span class="pill pill-zinc">declared</span>';
+        return '<span class="pill pill-violet">agent-inferred · ' + conf + '%</span>';
+    }
+
+    var STRUCTURE = {
+        org: { id: 'ORG-001', name: 'Vantage Industrial Parks & Logistics REIT' },
+        facilities: [
+            {
+                id: 'LOC-001', name: 'Bengaluru Industrial & Logistics Park', jurisdiction: 'India', origin: 'declared',
+                zones: [{ id: 'ZN-004', room: 'RM-004' }],
+                assets: [
+                    { id: 'AST-029', name: 'Access Control System', assetType: 'System', origin: 'agent-inferred', conf: 91 },
+                    { id: 'AST-016', name: 'Assembly Point Signage & Muster Station', assetType: 'Equipment', origin: 'agent-inferred', conf: 88 },
+                    { id: 'AST-021', name: 'Battery Charging Station (MHE)', assetType: 'Equipment', origin: 'agent-inferred', conf: 85 },
+                    { id: 'AST-028', name: 'CCTV Surveillance Camera', assetType: 'Device', origin: 'agent-inferred', conf: 90 },
+                    { id: 'IOT-CHN-992', name: 'Cisco Industrial IoT Gateway', assetType: 'Instrument', origin: 'agent-inferred', conf: 79 }
+                ],
+                roles: [
+                    { id: 'ROLE-004', name: 'EHS Manager (Regional)', responsibility: 'Site EHS compliance oversight', competency: 'NEBOSH certified', origin: 'declared' },
+                    { id: 'ROLE-008', name: 'Facilities Manager', responsibility: 'Facility upkeep & vendor coordination', competency: '10+ yrs FM experience', origin: 'agent-inferred', conf: 84 }
+                ],
+                instruments: [
+                    { kind: 'Contract', id: 'AMC-FS-IND-2026-01', name: 'Fire Suppression AMC (Hydrant/Sprinkler/Pump)', origin: 'declared' },
+                    { kind: 'Permit', id: 'PER-CTO-KA-2026', name: 'Consent to Operate — Karnataka SPCB', origin: 'agent-inferred', conf: 82 },
+                    { kind: 'Warranty', id: 'WAR-AST029-2026', name: 'Access Control System — 3yr manufacturer warranty', origin: 'agent-inferred', conf: 77 }
+                ]
+            },
+            {
+                id: 'LOC-013', name: 'Birmingham Industrial & Logistics Park', jurisdiction: 'UK', origin: 'declared',
+                zones: [{ id: 'ZN-101', room: 'RM-101' }],
+                assets: [
+                    { id: 'AST-108', name: 'Fire Alarm Control Panel', assetType: 'System', origin: 'agent-inferred', conf: 87 }
+                ],
+                roles: [
+                    { id: 'ROLE-021', name: 'UK Site H&S Coordinator', responsibility: 'HSWA 1974 duty holder liaison', competency: 'IOSH Managing Safely', origin: 'agent-inferred', conf: 80 }
+                ],
+                instruments: [
+                    { kind: 'License', id: 'LIC-EA-UK-2026', name: 'Environmental Permit — waste transfer (EA)', origin: 'agent-inferred', conf: 74 }
+                ]
+            }
+        ]
+    };
+
+    var ASSET_ICON = '<svg class="icon node-icon" style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/></svg>';
+    var ROLE_ICON = '<svg class="icon node-icon" style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg>';
+    var DOC_ICON = '<svg class="icon node-icon" style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>';
+    var FAC_ICON = '<svg class="icon node-icon" style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14"/></svg>';
+    var ORG_ICON = '<svg class="icon node-icon" style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>';
+
+    function leafRow(icon, name, id, tagsHtml) {
+        return '<div class="leaf-row">' + icon +
+            '<div class="leaf-main"><span class="leaf-name">' + name + '</span><span class="node-id">' + id + '</span></div>' +
+            '<div class="leaf-tags">' + tagsHtml + '</div></div>';
+    }
+
+    function renderStructure() {
+        var html = '<details open><summary>' + ORG_ICON + '<span class="node-label">' + STRUCTURE.org.name + '</span><span class="node-id">' + STRUCTURE.org.id + '</span></summary><div class="node-children">';
+        STRUCTURE.facilities.forEach(function (f) {
+            html += '<details><summary>' + FAC_ICON + '<span class="node-label">' + f.name + '</span><span class="node-id">' + f.id + '</span>' +
+                '<span class="pill pill-sky" style="margin-left:auto">' + f.jurisdiction + '</span>' + originPill(f.origin) + '</summary>';
+            html += '<div class="node-children">';
+
+            html += '<details><summary style="font-size:11.5px;color:var(--text-faint)">Assets · ' + f.assets.length + '</summary><div class="node-children">';
+            f.assets.forEach(function (a) {
+                html += leafRow(ASSET_ICON, a.name, a.id, '<span class="pill pill-outline">' + a.assetType + '</span>' + originPill(a.origin, a.conf));
+            });
+            html += '</div></details>';
+
+            html += '<details><summary style="font-size:11.5px;color:var(--text-faint)">Roles · ' + f.roles.length + '</summary><div class="node-children">';
+            f.roles.forEach(function (r) {
+                html += leafRow(ROLE_ICON, r.name, r.id,
+                    '<span class="pill pill-outline" title="Responsibility">' + r.responsibility + '</span>' +
+                    '<span class="pill pill-outline" title="Competency">' + r.competency + '</span>' + originPill(r.origin, r.conf));
+            });
+            html += '</div></details>';
+
+            html += '<details><summary style="font-size:11.5px;color:var(--text-faint)">Commercial instruments · ' + f.instruments.length + '</summary><div class="node-children">';
+            f.instruments.forEach(function (ins) {
+                html += leafRow(DOC_ICON, ins.name, ins.id, '<span class="pill pill-outline">' + ins.kind + '</span>' + originPill(ins.origin, ins.conf));
+            });
+            html += '</div></details>';
+
+            html += '</div></details>';
+        });
+        html += '</div></details>';
+        document.getElementById('structureTree').innerHTML = html;
+    }
+
+    var BLUEPRINTS = STRUCTURE.facilities.map(function (f) {
+        return { id: f.id, name: f.name, count: f.assets.length + f.roles.length + f.instruments.length + 1, state: null };
+    });
+
+    function renderBlueprints() {
+        var list = document.getElementById('bpList');
+        list.innerHTML = BLUEPRINTS.map(function (b, i) {
+            var actions = b.state
+                ? '<span class="bp-resolved ' + b.state + '">' + (b.state === 'approved' ? '✓ Approved' : '✕ Rejected') + '</span>'
+                : '<div class="bp-card-actions"><button class="btn btn-approve" data-bp="' + i + '" data-act="approved">Approve</button><button class="btn btn-reject" data-bp="' + i + '" data-act="rejected">Reject</button></div>';
+            return '<div class="bp-card">' +
+                '<div class="bp-card-top"><div><p class="bp-card-title">' + b.id + ' — ' + b.name + '</p><p class="bp-card-meta">' + b.count + ' structure elements bundled</p></div>' + actions + '</div>' +
+                '</div>';
+        }).join('');
+        list.querySelectorAll('[data-bp]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                BLUEPRINTS[+btn.getAttribute('data-bp')].state = btn.getAttribute('data-act');
+                renderBlueprints();
+            });
+        });
+    }
+
+    document.getElementById('ratifyAllBtn').addEventListener('click', function () {
+        BLUEPRINTS.forEach(function (b) { if (!b.state) b.state = 'approved'; });
+        renderBlueprints();
+    });
+
+    document.querySelectorAll('.import-card').forEach(function (card) {
+        card.addEventListener('click', function () {
+            document.querySelectorAll('.import-card').forEach(function (c) { c.classList.remove('selected'); });
+            card.classList.add('selected');
+        });
+    });
+
+    document.querySelectorAll('[data-phasebtn]').forEach(function (item) {
+        item.addEventListener('click', function () {
+            var target = item.getAttribute('data-phasebtn');
+            document.querySelectorAll('[data-phasebtn]').forEach(function (i) { i.classList.toggle('on', i === item); });
+            document.querySelectorAll('[data-tab]').forEach(function (t) { t.classList.toggle('on', t.getAttribute('data-tab') === target); t.style.display = t.getAttribute('data-tab') === target ? 'flex' : 'none'; });
+        });
+    });
+
+    renderApplicability();
+    renderStructure();
+    renderBlueprints();
+})();
+</script>

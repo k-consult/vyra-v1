@@ -59,6 +59,8 @@ Status tags used below: 🟡 **partial** = real but incomplete · 🔴 **gap** =
 **Open**
 1. [Scenario Simulation](#gap-7)
 2. [Domain model is anemic vs. `domain.md`](#gap-9)
+3. [WINAIM concept-tree content gaps](#gap-18)
+4. [Obligation Cockpit foundations](#gap-19)
 
 **Closed**
 1. [SOPs](#gap-1)
@@ -269,9 +271,50 @@ Status tags used below: 🟡 **partial** = real but incomplete · 🔴 **gap** =
 
 ---
 
+<a id="gap-18"></a>
+
+### 18. WINAIM concept-tree content gaps (Enterprise graph) — 🔴 gap, code-only
+
+**Requirement:** WINAIM white-labels Vyra; its 535-concept domain/industry vocabulary (FM/EHS/Food Safety) is a specification of general content the Catalog and Enterprise graph must be able to represent for any vertical run on the platform, not an optional nice-to-have (`foundation.md` §4's "ecosystem extends without forking" — a white-label brand is exactly this kind of extension).
+
+**Implementation:** A concept-by-concept comparison (`.design/domain-extension.md` §7) found Knowledge and Intelligence already cover the equivalent WINAIM groups (`Control.controlType` already matches Preventive/Detective/Corrective; `CAPA` already matches Corrective-and-Preventive-Action). The real gaps cluster entirely in the Operational (Enterprise) graph.
+
+**Gap:** Five decided-but-unbuilt items, all in `.design/domain-extension.md` §7.4:
+- (a) `Facility` has no relationship to `Jurisdiction` (Country/State/City ungrounded).
+- (b) `Asset` has no structured subtype (`assetType`) — only a free-text `category`.
+- (c) No `Permit`/`License` nodes — WINAIM's Authorization cluster has no Vyra home.
+- (d) No `Warranty` node.
+- (f) `Role` has no `Responsibility`/`Competency`, and its `approvalAuthority` flag is a cruder version of WINAIM's Role-scoped `Authority` concept, with an unresolved homonym risk against the existing `Authority` (regulatory body) node.
+
+(§7.4(e), `InsurancePolicy`/`Coverage`/`Exclusion`/`Claim`, is excluded from this gap — already has a decided home in the Assurance graph per `graph.md`'s 2026-08-22 entry, just not yet built; track under a future Assurance-graph gap, not here.)
+
+**Feed Datum Missing:** N/A — these are schema/code gaps, not data-completeness issues; each would need its own seed/backfill once built.
+
+**Resolution:** Each of (a)/(b)/(c)/(d)/(f) is independently decided in `.design/domain-extension.md` §7.4 (exact node/property/relationship shape, what to reuse vs. add) but none is implemented. Not a batch fix — (a) and (b) are one-property additions; (c) and (d) are new node types reusing the existing `Contract`/Decision-gate pattern; (f) needs a short design pass first (see `domain-extension.md` §7.5) before it's even fully specified. Take independently, cheapest first: (a) → (b) → (d) → (c) → (f).
+
+---
+
+<a id="gap-19"></a>
+
+### 19. Obligation Cockpit foundations — 🔴 gap, code-only
+
+**Requirement:** `.design/journey/`'s four mockups (Catalog Ingestion → Catalog Browsing → Enterprise Onboarding → Obligation Cockpit) and `.design/journey/concept-notes.md`'s design work name a real target: obligations superimposed on the ratified Blueprint, drillable by WHO/WHERE/WHEN/Demography, with each task's rendering driven by where it sits in the agent lifecycle (dormant/pending-decision/reasoning/informed). None of this is buildable yet — the schema it depends on doesn't exist.
+
+**Implementation:** Nothing. The Obligation Cockpit mockup runs entirely on static sample data (25 hand-authored workflow classes); no `Task`-delegation edges, per-class Autonomy Level, or Loop-stage state exist in the real graph today. Separately, two smaller catalog-side concepts invented for the earlier mockups (Demography/`workerCategory`, Industry/Asset-Category controlled vocabularies) also have no home in `graph.md`/`domain.md` — they were never put through a `domain-extension.md`-style decision, unlike gap #18's items.
+
+**Gap:** Two distinct clusters, detailed in `.design/journey/v1-plan.md`:
+- **Cockpit foundations** (Phase J5 of that plan) — the delegation-tree relationship (`Obligation`/`Task` → sub-task) that everything else depends on; Autonomy Level as a per-workflow-class aggregate (today `Decision.autonomyLevel` exists only per-Decision instance); Loop-stage as a real state model (today `Decision.status` is only pending/approved/rejected).
+- **Undecided catalog concepts** (Phase J3 of that plan) — Demography and Industry/Asset-Category need a decision pass before either is built, the same discipline gap #18 already went through for WINAIM's concepts.
+
+**Feed Datum Missing:** N/A — pure schema/design gap, not a data-completeness issue.
+
+**Resolution:** Not started. `.design/journey/v1-plan.md` sequences this as Phase J3 (decide the undecided catalog concepts) then Phase J5 (design and build the delegation tree, Autonomy Level aggregate, and Loop-stage state model, in that order — nothing in Phase J5 is buildable out of sequence). Signal/Event flow (how a floor signal or Schedule firing actually resolves to a Task under this tree) is explicitly deferred again — it needs its own design pass once this gap's foundations are real, not before.
+
+---
+
 **Net**: rows 1–7 are the existing JTBD partial/gap set, restated in Requirement/Implementation/Gap/Feed-Datum/Resolution form. Rows 8–17 are net-new, from a requirement-by-requirement audit of every `foundation.md` §0–§4 table row against the codebase. **Two rows were reclassified on this pass**: #2 (Applicability Scoping) and #6 (Audit-Ready Export) are **not gaps** — both are `foundation.md` requirements already correctly implemented (documented absence, honest provenance tagging respectively) and are listed for traceability only.
 
-**2026-09-22: 12 of the remaining 15 gaps closed in one batch** — #1, #3, #4, #5, #10, #11, #12, #13, #14, #15, #16, #17 (the last two scoped to `control-intelligence` only; #5, #10, #16 closed partially/scoped by design, documented above; every other one fully closed). **#8 (Onboarding-as-a-phase), #9 (anemic domain model), and #7 (Scenario Simulation)** remained open, excluded from this batch by explicit decision — each is Phase-11-class work needing its own dedicated design pass, not a batch fix. **2026-09-25: #8 gets its first real slice** (`CutoverCriterion`, above) — partial, not closed. **2026-09-26: #8 gets a second slice** (`Blueprint`, above) — still partial; `ContinuityBaseline`/shadow-mode/decommissioning still need their own passes. **#9 (anemic domain model) and #7 (Scenario Simulation)** remain fully open. Of those two, **#7 Scenario Simulation is the one true ground-zero JTBD gap** (see the JTBD Layer Status table above); #9 is an architecture/subsystem decision.
+**2026-09-22: 12 of the remaining 15 gaps closed in one batch** — #1, #3, #4, #5, #10, #11, #12, #13, #14, #15, #16, #17 (the last two scoped to `control-intelligence` only; #5, #10, #16 closed partially/scoped by design, documented above; every other one fully closed). **#8 (Onboarding-as-a-phase), #9 (anemic domain model), and #7 (Scenario Simulation)** remained open, excluded from this batch by explicit decision — each is Phase-11-class work needing its own dedicated design pass, not a batch fix. **2026-09-25: #8 gets its first real slice** (`CutoverCriterion`, above) — partial, not closed. **2026-09-26: #8 gets a second slice** (`Blueprint`, above) — still partial; `ContinuityBaseline`/shadow-mode/decommissioning still need their own passes. **2026-09-26: new #18** (WINAIM concept-tree content gaps) added from `.design/domain-extension.md`'s comparison — five decided-but-unbuilt Enterprise-graph items. **2026-09-27: new #19** (Obligation Cockpit foundations) added from the `.design/journey/` mockup exercise, with `.design/journey/v1-plan.md` as its build sequence. **#9 (anemic domain model), #7 (Scenario Simulation), #18 (WINAIM content gaps), and #19 (Obligation Cockpit foundations)** remain fully open. Of these, **#7 Scenario Simulation is the one true ground-zero JTBD gap** (see the JTBD Layer Status table above); #9 is an architecture/subsystem decision; #18 is schema-extension work with its design already decided, just not built; #19 is the largest — its own foundational schema doesn't exist yet, and part of it (Demography/vocab) isn't even decided.
 
 ---
 

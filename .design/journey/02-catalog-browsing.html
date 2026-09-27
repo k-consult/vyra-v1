@@ -1,0 +1,1494 @@
+<title>Vyra — Catalog Browsing (Journey Mockup 2/4)</title>
+<style>
+    :root {
+        --bg: #09090b;
+        --surface: #18181b;
+        --border: #27272a;
+        --border-soft: #27272a99;
+        --text: #f4f4f5;
+        --text-dim: #a1a1aa;
+        --text-dimmer: #71717a;
+        --text-faint: #52525b;
+        --accent: #38bdf8;
+        --accent-soft: #38bdf81a;
+        --brand: #10b981;
+        --brand-soft: #10b9811a;
+        --warn: #f59e0b;
+        --warn-soft: #f59e0b1a;
+        --danger: #f87171;
+        --danger-soft: #f871711a;
+        --violet: #a78bfa;
+        --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+        --font-doc: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+        margin: 0; padding: 0;
+        background: var(--bg); color: var(--text);
+        font-family: var(--font-ui); font-size: 14px; line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+    }
+    button, input { font-family: inherit; }
+    ::selection { background: var(--accent-soft); }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+    a { color: inherit; text-decoration: none; }
+    a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+    mark { background: #f59e0b33; color: #fde68a; border-radius: 2px; padding: 0 2px; }
+
+    .mock-banner {
+        background: var(--warn-soft); border-bottom: 1px solid #f59e0b40; color: var(--warn);
+        font-size: 11px; font-weight: 600; letter-spacing: .02em;
+        padding: 6px 24px; display: flex; align-items: center; gap: 8px;
+    }
+    .mock-banner .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); flex-shrink: 0; }
+
+    .shell { display: flex; height: calc(100vh - 27px); }
+
+    /* ── Sidebar ── */
+    .sidebar { width: 256px; flex-shrink: 0; border-right: 1px solid var(--border-soft); display: flex; flex-direction: column; overflow-y: auto; }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 16px; border-bottom: 1px solid var(--border-soft); }
+    .brand-mark { width: 28px; height: 28px; border-radius: 6px; background: var(--brand); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--bg); }
+    .brand-name { font-size: 13px; font-weight: 700; line-height: 1.2; }
+    .brand-tag { font-size: 10px; color: var(--text-faint); line-height: 1.2; }
+    .nav { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 16px; }
+    .nav-group { display: flex; flex-direction: column; gap: 4px; }
+    .nav-group-label { display: flex; align-items: center; gap: 6px; padding: 0 10px; margin-bottom: 2px; }
+    .nav-group-layer { font-size: 9px; font-family: var(--font-mono); color: var(--text-faint); }
+    .nav-group-persona { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dimmer); }
+    .nav-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; font-size: 12px; border: 1px solid transparent; }
+    .nav-row .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .nav-row.active { background: var(--accent-soft); color: #7dd3fc; border-color: #38bdf84d; }
+    .nav-row.active .dot { background: var(--accent); }
+    .nav-row.live { color: var(--text-dim); }
+    .nav-row.live .dot { background: #059669; }
+    .nav-row.gap { color: var(--text-faint); }
+    .nav-row.gap .dot { background: #3f3f46; }
+    .nav-row .reviewed-pill { margin-left: auto; font-size: 9px; font-weight: 600; color: #6ee7b7; background: #10b9811a; border: 1px solid #10b98140; padding: 1px 6px; border-radius: 100px; }
+    .nav-section { padding-top: 8px; border-top: 1px solid var(--border-soft); display: flex; flex-direction: column; gap: 4px; }
+    .nav-section-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dimmer); padding: 0 10px; margin-bottom: 2px; }
+
+    /* ── Main column ── */
+    .main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+    .page-header { border-bottom: 1px solid var(--border-soft); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; gap: 16px; flex-wrap: wrap; }
+    .page-header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .page-title { font-size: 14px; font-weight: 600; line-height: 1.2; }
+    .page-subtitle { font-size: 11px; color: var(--text-dimmer); line-height: 1.2; }
+    .page-header-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .icon { width: 16px; height: 16px; stroke-width: 2; }
+
+    .seg-control { display: flex; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
+    .seg-btn { font-size: 11.5px; font-weight: 500; padding: 6px 12px; background: transparent; color: var(--text-dimmer); border: none; cursor: pointer; border-right: 1px solid var(--border); display: flex; align-items: center; gap: 5px; }
+    .seg-btn:last-child { border-right: none; }
+    .seg-btn.on { background: var(--accent-soft); color: #7dd3fc; }
+    .seg-btn:hover:not(.on) { background: var(--surface); color: var(--text-dim); }
+
+    .btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; padding: 7px 14px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; transition: background-color .12s ease, border-color .12s ease; white-space: nowrap; }
+    .btn-ghost { background: transparent; color: var(--text-dim); border-color: var(--border); }
+    .btn-ghost:hover { background: var(--surface); color: var(--text); }
+
+    /* ── Search toolbar ── */
+    .search-toolbar { border-bottom: 1px solid var(--border-soft); padding: 12px 24px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; background: #ffffff02; }
+    .search-row { display: flex; align-items: center; gap: 10px; }
+    .search-box { flex: 1; position: relative; display: flex; align-items: center; }
+    .search-box .icon { position: absolute; left: 11px; color: var(--text-faint); pointer-events: none; }
+    .search-box input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; padding: 9px 12px 9px 34px; }
+    .search-box input:focus { border-color: var(--accent); outline: none; }
+    .search-box input::placeholder { color: var(--text-faint); }
+    .mode-toggle { display: flex; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; flex-shrink: 0; }
+    .mode-btn { font-size: 11.5px; font-weight: 500; padding: 8px 13px; background: transparent; color: var(--text-dimmer); border: none; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+    .mode-btn.on { background: #a78bfa1a; color: #c4b5fd; }
+    .mode-btn:hover:not(.on) { background: var(--surface); color: var(--text-dim); }
+
+    .ask-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .ask-label { font-size: 10.5px; color: var(--text-faint); text-transform: uppercase; letter-spacing: .05em; margin-right: 2px; }
+    .ask-chip { font-size: 11px; padding: 4px 10px; border-radius: 100px; background: #a78bfa14; color: #c4b5fd; border: 1px solid #a78bfa33; cursor: pointer; }
+    .ask-chip:hover { background: #a78bfa26; }
+
+    .ai-answer { border: 1px solid #a78bfa40; background: #a78bfa0d; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+    .ai-answer-head { display: flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #c4b5fd; }
+    .ai-answer-body { font-size: 12.5px; color: var(--text-dim); line-height: 1.6; }
+    .ai-cite { display: inline-flex; align-items: center; font-size: 10.5px; font-family: var(--font-mono); color: #c4b5fd; background: #a78bfa1a; border: 1px solid #a78bfa40; border-radius: 5px; padding: 1px 6px; cursor: pointer; margin: 0 1px; }
+    .ai-cite:hover { background: #a78bfa33; }
+    .ai-disclaimer { font-size: 10.5px; color: var(--text-faint); border-top: 1px solid #a78bfa26; padding-top: 7px; }
+
+    /* ── Content: three-pane ── */
+    .content { flex: 1; min-height: 0; display: flex; overflow: hidden; }
+
+    /* Facet rail */
+    .facets { width: 250px; flex-shrink: 0; border-right: 1px solid var(--border-soft); overflow-y: auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 4px; }
+    .facet-group { display: flex; flex-direction: column; border-bottom: 1px solid var(--border-soft); padding-bottom: 10px; margin-bottom: 6px; }
+    .facet-group:last-of-type { border-bottom: none; }
+    .facet-head { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 2px 2px 6px; }
+    .facet-title { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dimmer); }
+    .facet-head .chev { color: var(--text-faint); transition: transform .12s ease; flex-shrink: 0; }
+    .facet-group.collapsed .chev { transform: rotate(-90deg); }
+    .facet-group.collapsed .facet-items { display: none; }
+    .facet-items { display: flex; flex-direction: column; gap: 2px; }
+    .facet-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-dim); cursor: pointer; padding: 3px 2px; border-radius: 5px; }
+    .facet-item:hover { background: #ffffff05; }
+    .facet-item input { accent-color: var(--accent); width: 13px; height: 13px; flex-shrink: 0; cursor: pointer; }
+    .facet-item .fname { flex: 1; }
+    .facet-item .fcount { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+    .facet-clear { font-size: 11px; color: var(--accent); background: none; border: none; cursor: pointer; padding: 6px 2px 2px; text-align: left; }
+    .facet-clear:hover { text-decoration: underline; }
+
+    /* Shared list-column chrome (used by both Regulations and Obligations views) */
+    .list-col { width: 340px; flex-shrink: 0; border-right: 1px solid var(--border-soft); overflow-y: auto; display: flex; flex-direction: column; }
+    .list-toolbar { padding: 12px 14px 8px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+    .result-count { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-dimmer); }
+    .result-count b { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 6px; min-height: 1px; }
+    .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; padding: 3px 8px; border-radius: 100px; background: var(--accent-soft); color: #7dd3fc; border: 1px solid #38bdf840; }
+    .chip button { background: none; border: none; color: inherit; cursor: pointer; padding: 0; display: flex; opacity: .7; }
+    .chip button:hover { opacity: 1; }
+    .item-list { padding: 6px 10px 14px; display: flex; flex-direction: column; gap: 6px; }
+
+    .list-card { width: 100%; text-align: left; border: 1px solid var(--border); background: #18181b80; border-radius: 8px; padding: 10px 12px; cursor: pointer; }
+    .list-card:hover { border-color: #3f3f46; }
+    .list-card.selected { border-color: #059669; background: var(--surface); }
+    .list-card .rid { font-size: 10.5px; font-family: var(--font-mono); color: var(--text-faint); }
+    .list-card .rname { font-size: 12.5px; color: var(--text); line-height: 1.35; margin-top: 2px; }
+    .list-card .rtags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .empty-state { padding: 30px 16px; text-align: center; color: var(--text-faint); font-size: 12px; }
+
+    .pill { font-size: 9.5px; font-weight: 600; letter-spacing: .02em; padding: 2px 7px; border-radius: 100px; border: 1px solid transparent; white-space: nowrap; }
+    .pill-emerald { background: var(--brand-soft); color: #6ee7b7; border-color: #10b98140; }
+    .pill-amber { background: var(--warn-soft); color: #fbbf24; border-color: #f59e0b40; }
+    .pill-zinc { background: #3f3f4640; color: var(--text-dimmer); border-color: #3f3f4680; }
+    .pill-sky { background: var(--accent-soft); color: #7dd3fc; border-color: #38bdf840; }
+    .pill-outline { background: transparent; color: var(--text-dimmer); border-color: var(--border); }
+    .pill-violet { background: #a78bfa1a; color: #c4b5fd; border-color: #a78bfa40; }
+
+    /* Detail pane (shared) */
+    .detail { flex: 1; min-width: 0; overflow-y: auto; padding: 18px 24px; display: flex; flex-direction: column; gap: 14px; }
+    .detail-header { border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 14px 16px; }
+    .detail-header .rid { font-size: 11px; font-family: var(--font-mono); color: var(--text-faint); }
+    .detail-header .rname { font-size: 15px; font-weight: 600; margin: 3px 0 8px; }
+    .detail-header .rtags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+    .kv-row { display: flex; align-items: baseline; gap: 6px; font-size: 11.5px; color: var(--text-faint); }
+    .kv-row + .kv-row { margin-top: 2px; }
+    .kv-row .k { color: var(--text-faint); }
+    .kv-row .v { color: var(--text-dim); font-family: var(--font-mono); }
+    .super-note { margin-top: 8px; font-size: 11.5px; color: #fbbf24; display: flex; align-items: flex-start; gap: 6px; }
+
+    .detail-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border-soft); }
+    .detail-tab { font-size: 12px; font-weight: 500; color: var(--text-dimmer); background: none; border: none; border-bottom: 2px solid transparent; padding: 8px 4px; cursor: pointer; margin-bottom: -1px; }
+    .detail-tab.on { color: var(--text); border-bottom-color: var(--accent); }
+    .detail-tab:hover:not(.on) { color: var(--text-dim); }
+
+    .section-label { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dimmer); display: flex; align-items: center; gap: 6px; }
+
+    .chain-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+    .chain-card { border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 5px; }
+    .chain-card.wide { grid-column: 1 / -1; }
+    .chain-clause-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-dimmer); }
+    .chain-clause-name { font-size: 13px; color: var(--text); }
+    .chain-source { font-size: 10.5px; color: var(--text-faint); margin-top: 1px; }
+    .prop-row { display: flex; gap: 6px; font-size: 11.5px; margin-top: 4px; }
+    .prop-row .pk { color: var(--text-faint); flex-shrink: 0; }
+    .prop-row .pv { color: var(--text-dim); }
+    .gap-note { font-size: 10.5px; color: #fbbf24; background: var(--warn-soft); border: 1px solid #f59e0b40; border-radius: 6px; padding: 6px 8px; margin-top: 4px; }
+    .demog-note { font-size: 10.5px; color: #7dd3fc; margin-top: 2px; }
+
+    /* Source document reader */
+    .doc-reader { display: flex; gap: 16px; align-items: flex-start; }
+    .doc-outline { width: 190px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; position: sticky; top: 0; }
+    .doc-outline-item { font-size: 11.5px; color: var(--text-dimmer); text-align: left; background: none; border: none; border-left: 2px solid var(--border); padding: 5px 0 5px 10px; cursor: pointer; }
+    .doc-outline-item:hover { color: var(--text-dim); border-left-color: #3f3f46; }
+    .doc-page { flex: 1; min-width: 0; border: 1px solid var(--border); background: #ffffff03; border-radius: 10px; padding: 20px 26px; font-family: var(--font-doc); }
+    .doc-page-meta { font-family: var(--font-ui); font-size: 10.5px; color: var(--text-faint); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border-soft); }
+    .doc-clause { padding: 10px 0; scroll-margin-top: 12px; transition: background-color .5s ease; border-radius: 6px; }
+    .doc-clause.flash { background: #38bdf81f; }
+    .doc-clause-ref { font-family: var(--font-ui); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #6ee7b7; margin-bottom: 3px; }
+    .doc-clause-text { font-size: 14.5px; color: #e4e4e7; line-height: 1.75; }
+    .doc-clause-page { font-family: var(--font-ui); font-size: 10.5px; color: var(--text-faint); margin-top: 5px; }
+    .doc-excerpt { border: 1px solid var(--border); background: #ffffff03; border-radius: 10px; padding: 16px 20px; font-family: var(--font-doc); }
+
+    footer { border-top: 1px solid var(--border-soft); padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .footer-brand { display: flex; align-items: center; gap: 8px; }
+    .footer-mark { width: 16px; height: 16px; border-radius: 4px; background: var(--brand); display: flex; align-items: center; justify-content: center; }
+    .footer-text { font-size: 10px; color: var(--text-faint); }
+
+    [data-view] { display: none; }
+    [data-view].on { display: flex; }
+    [data-tab] { display: none; }
+    [data-tab].on { display: block; }
+
+    /* ── Graph / mindmap view ── */
+    .graph-wrap { flex: 1; min-width: 0; position: relative; overflow: hidden; background:
+        radial-gradient(ellipse at 50% 0%, #ffffff08 0%, transparent 60%); }
+    .graph-toolbar { position: absolute; top: 12px; left: 14px; z-index: 3; display: flex; align-items: center; gap: 8px; }
+    .graph-legend { position: absolute; bottom: 14px; left: 14px; z-index: 3; border: 1px solid var(--border); background: #18181bd9; backdrop-filter: blur(4px); border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 5px; }
+    .graph-legend-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--text-dim); }
+    .graph-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .graph-stats { position: absolute; top: 12px; right: 14px; z-index: 3; font-size: 10.5px; color: var(--text-faint); font-family: var(--font-mono); background: #18181bd9; border: 1px solid var(--border); border-radius: 100px; padding: 5px 12px; }
+    .graph-tooltip { position: absolute; z-index: 5; max-width: 280px; border: 1px solid var(--border); background: #18181bf2; border-radius: 8px; padding: 10px 12px; font-size: 11.5px; color: var(--text-dim); pointer-events: none; box-shadow: 0 8px 24px #00000066; }
+    .graph-tooltip .gt-kind { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
+    .graph-tooltip .gt-name { color: var(--text); font-size: 12.5px; margin-bottom: 2px; }
+    .graph-tooltip .gt-hint { color: var(--text-faint); font-size: 10px; margin-top: 5px; }
+    .graph-canvas-svg { width: 100%; height: 100%; cursor: grab; }
+    .graph-canvas-svg.panning { cursor: grabbing; }
+    .gnode circle { cursor: pointer; }
+    .gnode text { pointer-events: none; fill: var(--text-dim); font-size: 9.5px; font-family: var(--font-ui); }
+    .gnode.dim { opacity: .18; }
+    .glink { stroke: #52525b; stroke-width: 1; opacity: .55; }
+    .glink.dim { opacity: .08; }
+
+    /* Cadence pills (shared: chain-card, obligation list/detail, calendar) */
+    .pill-cyan { background: #22d3ee1a; color: #67e8f9; border-color: #22d3ee40; }
+    .pill-slate { background: #64748b1a; color: #94a3b8; border-color: #64748b40; }
+    .pill-teal { background: #2dd4bf1a; color: #5eead4; border-color: #2dd4bf40; }
+    .pill-indigo { background: #818cf81a; color: #a5b4fc; border-color: #818cf840; }
+
+    /* ── 52-Week Compliance Calendar view ── */
+    .cal-toolbar { display: flex; align-items: center; gap: 10px; padding: 12px 20px; border-bottom: 1px solid var(--border-soft); flex-shrink: 0; }
+    .cal-worklist-note { font-size: 11px; color: var(--text-faint); background: #ffffff03; border-bottom: 1px solid var(--border-soft); padding: 10px 20px; flex-shrink: 0; line-height: 1.5; }
+    .cal-worklist-note b { color: var(--text-dim); font-weight: 600; }
+    .cal-worklist-note em { color: var(--text-dim); font-style: italic; }
+    .cal-body { flex: 1; min-height: 0; overflow: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; }
+    .cal-section { display: flex; flex-direction: column; gap: 8px; }
+    .cal-section-title { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+    .cal-section-title .n { font-family: var(--font-mono); font-weight: 400; }
+    .cal-section-title.overdue { color: #fca5a5; }
+    .cal-section-title.soon { color: #fbbf24; }
+    .cal-section-title.later { color: var(--text-dimmer); }
+    .cal-section-title.trigger { color: #94a3b8; }
+    .cal-row { border: 1px solid var(--border); background: var(--surface); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
+    .cal-row:hover { border-color: #3f3f46; }
+    .cal-row-left { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .cal-row-title { font-size: 12.5px; color: var(--text); }
+    .cal-row-meta { font-size: 10.5px; color: var(--text-faint); display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+    .cal-row-due { font-size: 11px; font-family: var(--font-mono); text-align: right; flex-shrink: 0; white-space: nowrap; }
+    .cal-row-due.overdue { color: #fca5a5; }
+    .cal-row-due.soon { color: #fbbf24; }
+    .cal-row-due.later { color: var(--text-dimmer); }
+    .cal-grid-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+    .cal-grid { border-collapse: collapse; font-size: 10px; }
+    .cal-grid .row-label { padding: 5px 12px; font-size: 11px; color: var(--text-dim); white-space: nowrap; position: sticky; left: 0; background: var(--surface); border-right: 1px solid var(--border-soft); text-align: left; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+    .cal-grid .month-head { font-size: 9px; color: var(--text-faint); text-transform: uppercase; letter-spacing: .04em; text-align: center; padding: 5px 0; border-bottom: 1px solid var(--border-soft); background: #ffffff05; }
+    .cal-week-cell { width: 13px; height: 24px; border-right: 1px solid #ffffff05; position: relative; text-align: center; vertical-align: middle; }
+    .cal-week-cell.today-col { background: #38bdf81a; }
+    .cal-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .cal-legend { display: flex; gap: 16px; flex-wrap: wrap; }
+    .cal-legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-dim); }
+    .cal-today-flag { font-size: 9.5px; color: #7dd3fc; text-align: center; padding-top: 3px; }
+</style>
+
+<div class="mock-banner">
+    <span class="dot"></span>
+    DESIGN MOCKUP — Journey 2 of 4 · Catalog Browsing — not implemented; search, facets, graph, calendar and "Ask" answers run on static sample data only
+</div>
+
+<div class="shell">
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-mark">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5z"/></svg>
+            </div>
+            <div>
+                <p class="brand-name">VYRA</p>
+                <p class="brand-tag">Compliance. Handled.</p>
+            </div>
+        </div>
+
+        <nav class="nav">
+            <div class="nav-group">
+                <div class="nav-group-label">
+                    <span class="nav-group-layer">JR</span>
+                    <span class="nav-group-persona">Journey Mockups</span>
+                </div>
+                <span class="nav-row live"><span class="dot"></span>1 · Catalog Ingestion<span class="reviewed-pill">reviewed</span></span>
+                <span class="nav-row active"><span class="dot"></span>2 · Catalog Browsing</span>
+                <span class="nav-row gap"><span class="dot"></span>3 · Enterprise Onboarding</span>
+                <span class="nav-row gap"><span class="dot"></span>4 · Obligation View</span>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-group-label">
+                    <span class="nav-group-layer">L1</span>
+                    <span class="nav-group-persona">Catalog Admin</span>
+                </div>
+                <span class="nav-row live"><span class="dot"></span>Regulations &amp; Standards</span>
+                <span class="nav-row live"><span class="dot"></span>Contracts &amp; SOPs</span>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Cross-cutting</div>
+                <span class="nav-row live"><span class="dot"></span>Landscape</span>
+                <span class="nav-row live"><span class="dot"></span>Decision Gate · L4 Review</span>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- ── Main ── -->
+    <main class="main">
+        <header class="page-header">
+            <div class="page-header-left">
+                <svg class="icon" style="color:#34d399" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                <div>
+                    <p class="page-title">Catalog</p>
+                    <p class="page-subtitle">Every regulation, standard, obligation &amp; control — full-text indexed, sliceable on any axis</p>
+                </div>
+            </div>
+            <div class="page-header-actions">
+                <div class="seg-control" id="viewToggle">
+                    <button class="seg-btn on" data-target="regulations">Regulations</button>
+                    <button class="seg-btn" data-target="obligations">Obligations</button>
+                    <button class="seg-btn" data-target="graph">
+                        <svg class="icon" style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8.2 7.2 10.5 16M15.8 7.2 13.5 16M8.5 6h7"/></svg>
+                        Graph
+                    </button>
+                    <button class="seg-btn" data-target="calendar">
+                        <svg class="icon" style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                        Calendar
+                    </button>
+                </div>
+                <button class="btn btn-ghost">
+                    <svg class="icon" style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14.5-4.6M20 12a8 8 0 0 1-14.5 4.6"/><path d="M18.5 3v4.5H14M5.5 21v-4.5H10"/></svg>
+                    Refresh
+                </button>
+            </div>
+        </header>
+
+        <!-- Search / NLP toolbar -->
+        <div class="search-toolbar">
+            <div class="search-row">
+                <div class="search-box">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                    <input id="searchInput" type="text" placeholder="Search regulations, clauses, obligations, controls, source text…">
+                </div>
+                <div class="mode-toggle" id="modeToggle">
+                    <button class="mode-btn on" data-mode="keyword">
+                        <svg class="icon" style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                        Keyword
+                    </button>
+                    <button class="mode-btn" data-mode="ask">
+                        <svg class="icon" style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M2 14h2M20 14h2M9 13v2M15 13v2"/></svg>
+                        Ask
+                    </button>
+                </div>
+            </div>
+
+            <div id="askExamples" class="ask-row" style="display:none">
+                <span class="ask-label">Try asking</span>
+                <button class="ask-chip" data-q="q1">What fire &amp; safety rules apply to our UK sites?</button>
+                <button class="ask-chip" data-q="q2">Which mandatory obligations touch young or new workers?</button>
+                <button class="ask-chip" data-q="q3">What changed in 2024?</button>
+            </div>
+
+            <div id="aiAnswer" style="display:none"></div>
+        </div>
+
+        <div class="content">
+            <!-- Facets (shared across all three views) -->
+            <aside class="facets" id="facetRail"></aside>
+
+            <!-- Regulations view: list + detail -->
+            <div data-view="regulations" class="on" style="flex:1; min-width:0; overflow:hidden;">
+                <div class="list-col">
+                    <div class="list-toolbar">
+                        <p class="result-count"><b id="resultCount">9</b> of <b id="totalCount">9</b> catalog entries</p>
+                        <div class="chip-row" id="chipRow"></div>
+                    </div>
+                    <div class="item-list" id="regList"></div>
+                </div>
+                <div class="detail" id="detailPane"></div>
+            </div>
+
+            <!-- Obligations view: same list + detail chrome, obligation-level content -->
+            <div data-view="obligations" style="flex:1; min-width:0; overflow:hidden;">
+                <div class="list-col">
+                    <div class="list-toolbar">
+                        <p class="result-count"><b id="oblResultCount">0</b> obligations · <span id="oblRegCount">0</span> regulations</p>
+                        <div class="chip-row" id="oblChipRow"></div>
+                    </div>
+                    <div class="item-list" id="oblList"></div>
+                </div>
+                <div class="detail" id="oblDetailPane"></div>
+            </div>
+
+            <!-- Graph / mindmap view -->
+            <div data-view="graph" style="flex:1; min-width:0; overflow:hidden; position:relative;">
+                <div class="graph-wrap" id="graphWrap">
+                    <div class="graph-toolbar">
+                        <button class="btn btn-ghost" id="graphReset" style="padding:6px 10px">
+                            <svg class="icon" style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 3 6.7"/><path d="M3 17v-5h5"/></svg>
+                            Reset view
+                        </button>
+                    </div>
+                    <div class="graph-stats" id="graphStats">— nodes · — links</div>
+                    <svg class="graph-canvas-svg" id="graphSvg"></svg>
+                    <div class="graph-legend">
+                        <div class="graph-legend-item"><span class="graph-legend-dot" style="background:#38bdf8"></span>Regulation / Standard</div>
+                        <div class="graph-legend-item"><span class="graph-legend-dot" style="background:#c4b5fd"></span>Clause</div>
+                        <div class="graph-legend-item"><span class="graph-legend-dot" style="background:#6ee7b7"></span>Obligation</div>
+                        <div class="graph-legend-item"><span class="graph-legend-dot" style="background:#fbbf24"></span>Control</div>
+                    </div>
+                    <div class="graph-tooltip" id="graphTooltip" style="display:none"></div>
+                </div>
+            </div>
+
+            <!-- 52-Week Compliance Calendar view -->
+            <div data-view="calendar" style="flex:1; min-width:0; overflow:hidden; flex-direction:column;">
+                <div class="cal-toolbar">
+                    <div class="seg-control" id="calSubToggle">
+                        <button class="seg-btn on" data-target="worklist">Worklist (preview)</button>
+                        <button class="seg-btn" data-target="grid">52-Week Grid (template)</button>
+                    </div>
+                    <p class="result-count" id="calSummary" style="margin-left:auto"></p>
+                </div>
+                <div class="cal-worklist-note" id="calWorklistNote">
+                    Preview only — a ranked worklist (overdue / due-soon) means <em>someone, somewhere, owes this by a date</em>, which only exists once this catalog is mapped to an enterprise. Cadence and next-due here reflect each regulation's own recurrence template, not a live per-site assignment. The real worklist lives in <b>Obligation View</b> (Stage 4), where this same 52-week template is superimposed with actual facility/role assignments and live status.
+                </div>
+                <div class="cal-body" id="calWorklist"></div>
+                <div class="cal-body" id="calGridBody" style="display:none"></div>
+            </div>
+        </div>
+
+        <footer>
+            <div class="footer-brand">
+                <div class="footer-mark">
+                    <svg style="width:9px;height:9px;color:var(--bg)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                </div>
+                <span class="footer-text">Vyra Platform v1 · Journey Mockup</span>
+            </div>
+            <p class="footer-text">Compliance. Handled.</p>
+        </footer>
+    </main>
+</div>
+
+<script>
+(function () {
+    var REGULATIONS = [
+        {
+            id: 'REG-101', name: 'Factories Act 1948 (India)', kind: 'Regulation',
+            jurisdiction: 'India', authority: 'DGFASLI', area: 'EHS', type: 'mandatory', docType: 'Act',
+            industry: ['Manufacturing', 'Warehousing & Logistics'], assetCategory: ['Machinery', 'Sanitation & Welfare Facilities'],
+            version: '2.0', effectiveFrom: '2024-01-01', supersededNote: '§21 (fencing of machinery) superseded by REG-105 §4',
+            chain: [
+                { clauseRef: '7A', clauseName: 'General duty of occupier', source: 'Factories_Act_1948_India.pdf, p.14', page: 14,
+                    sourceText: 'It shall be the general duty of every occupier to ensure, so far as is reasonably practicable, the health, safety and welfare of all workers while they are at work in the factory, and in particular, in respect of matters specified under sub-section (2).',
+                    obligation: 'Ensure worker health, safety & welfare', mandatory: true, control: 'Site EHS Policy & Induction Program', docType: 'policy',
+                    mechanism: 'Preventive', cadence: 'Quarterly', nextDue: '2026-10-05' },
+                { clauseRef: '21', clauseName: 'Fencing of machinery', source: 'Factories_Act_1948_India.pdf, p.22', page: 22,
+                    sourceText: 'Every dangerous part of any machinery shall be securely fenced by safeguards of substantial construction which shall be constantly maintained and kept in position while the parts of machinery they are fencing are in motion or in use.',
+                    obligation: 'Fence all dangerous moving parts', mandatory: true, control: 'Machine Guarding Inspection SOP', docType: 'sop', superseded: true,
+                    mechanism: 'Preventive', cadence: 'Superseded' },
+                { clauseRef: '45', clauseName: 'Washing facilities', source: 'Factories_Act_1948_India.pdf, p.31', page: 31,
+                    sourceText: 'In every factory adequate and suitable facilities for washing shall be provided and maintained for the use of workers therein, and separate and adequately screened facilities shall be provided for the use of male and female workers.',
+                    obligation: 'Provide adequate washing facilities', mandatory: true, control: 'Facility Sanitation Checklist', docType: 'sop',
+                    mechanism: 'Detective', cadence: 'Annual', nextDue: '2027-02-01' },
+                { clauseRef: '87', clauseName: 'Instruction of young persons at machines', source: 'Factories_Act_1948_India.pdf, p.58', page: 58,
+                    sourceText: 'No young person shall be allowed to work at any machine unless he has been fully instructed as to the dangers arising in connection with the machine and the precautions to be observed, and has received sufficient training in work at the machine.',
+                    obligation: 'Restrict & train young workers (<18) on hazardous machinery', mandatory: true, control: 'Young Worker Machine Authorization SOP', docType: 'sop', workerCategory: ['Young workers (<18)'],
+                    mechanism: 'Preventive', cadence: 'Event-triggered', trigger: 'On hire of a worker under 18' }
+            ]
+        },
+        {
+            id: 'REG-105', name: 'Factories (Amendment) Rules 2024 (India)', kind: 'Regulation',
+            jurisdiction: 'India', authority: 'DGFASLI', area: 'EHS', type: 'mandatory', docType: 'Rule',
+            industry: ['Manufacturing', 'Warehousing & Logistics'], assetCategory: ['Machinery'],
+            version: '1.0', effectiveFrom: '2024-04-01', supersedesNote: 'Supersedes REG-101 §21',
+            chain: [
+                { clauseRef: '4', clauseName: 'Machine guarding standard (revised)', source: 'Factories_Amendment_Rules_2024.pdf, p.3', page: 3,
+                    sourceText: 'Fencing provided under section 21 of the Act shall additionally conform to the guarding standard specified in IS 12469, and shall be inspected at intervals not exceeding three months.',
+                    obligation: 'Fence dangerous parts to IS 12469 standard', mandatory: true, control: 'Machine Guarding Inspection SOP (v2)', docType: 'sop',
+                    mechanism: 'Preventive', cadence: 'Quarterly', nextDue: '2026-09-20' }
+            ]
+        },
+        {
+            id: 'REG-102', name: 'Environment (Protection) Act 1986 (India)', kind: 'Regulation',
+            jurisdiction: 'India', authority: 'MoEFCC', area: 'Environmental', type: 'mandatory', docType: 'Act',
+            industry: ['Manufacturing', 'Chemicals & Process'], assetCategory: ['Effluent & Waste Systems'],
+            version: '1.0', effectiveFrom: '1986-11-19',
+            chain: [
+                { clauseRef: '7', clauseName: 'Persons handling hazardous substances', source: 'EPA_1986_India.pdf, p.5', page: 5,
+                    sourceText: 'No person carrying on any industry, operation or process shall handle or cause to be handled any hazardous substance except in accordance with such procedure and after complying with such safeguards as may be prescribed.',
+                    obligation: 'Handle hazardous substances per prescribed procedure', mandatory: true, control: 'Hazardous Waste Handling SOP', docType: 'sop',
+                    mechanism: 'Preventive', cadence: 'Monthly', nextDue: '2026-10-01' },
+                { clauseRef: '9', clauseName: 'Furnishing of information', source: 'EPA_1986_India.pdf, p.6', page: 6,
+                    sourceText: 'Where the discharge of any environmental pollutant in excess of the prescribed standards occurs, the person in charge shall be bound to prevent or mitigate the pollution and shall intimate the fact to the prescribed authorities within twenty-four hours.',
+                    obligation: 'Report discharge exceeding standards within 24h', mandatory: true, control: 'Environmental Incident Reporting Procedure', docType: 'sop',
+                    mechanism: 'Corrective', cadence: 'Event-triggered', trigger: 'Within 24h of a discharge exceedance' }
+            ]
+        },
+        {
+            id: 'REG-103', name: 'Health & Safety at Work etc. Act 1974 (UK)', kind: 'Regulation',
+            jurisdiction: 'UK', authority: 'HSE', area: 'EHS', type: 'mandatory', docType: 'Act',
+            industry: ['All industries'], assetCategory: ['General EHS'],
+            version: '1.0', effectiveFrom: '1974-07-31',
+            chain: [
+                { clauseRef: '2(1)', clauseName: 'General duties of employers', source: 'HSWA_1974_UK.docx, p.2', page: 2,
+                    sourceText: 'It shall be the duty of every employer to ensure, so far as is reasonably practicable, the health, safety and welfare at work of all his employees.',
+                    obligation: 'Ensure health, safety & welfare of employees', mandatory: true, control: 'UK Site H&S Policy', docType: 'policy',
+                    mechanism: 'Preventive', cadence: 'Annual', nextDue: '2027-01-15' },
+                { clauseRef: '2(2)(c)', clauseName: 'Information, instruction, training', source: 'HSWA_1974_UK.docx, p.2', page: 2,
+                    sourceText: 'The provision of such information, instruction, training and supervision as is necessary to ensure, so far as is reasonably practicable, the health and safety at work of employees, with particular regard to young persons and those new to the role.',
+                    obligation: 'Provide H&S training & supervision', mandatory: true, control: 'H&S Induction & Training Program', docType: 'policy', workerCategory: ['Young workers (<18)', 'New / inexperienced workers'],
+                    mechanism: 'Preventive', cadence: 'Annual', nextDue: '2026-11-01' }
+            ]
+        },
+        {
+            id: 'REG-104', name: 'Environmental Protection Act 1990 (UK)', kind: 'Regulation',
+            jurisdiction: 'UK', authority: 'Environment Agency', area: 'Environmental', type: 'mandatory', docType: 'Act',
+            industry: ['Manufacturing', 'Chemicals & Process'], assetCategory: ['Effluent & Waste Systems'],
+            version: '1.0', effectiveFrom: '1990-11-01',
+            chain: [
+                { clauseRef: '34', clauseName: 'Duty of care re waste', source: 'EPA_1990_UK.pdf, p.9', page: 9,
+                    sourceText: 'It shall be the duty of any person who imports, produces, carries, keeps, treats or disposes of controlled waste to take all reasonable measures to secure that the waste is only transferred to an authorised person.',
+                    obligation: 'Ensure waste transferred only to authorized persons', mandatory: true, control: 'Waste Transfer Note Register', docType: 'sop',
+                    mechanism: 'Detective', cadence: 'Quarterly', nextDue: '2026-10-10' }
+            ]
+        },
+        {
+            id: 'STD-201', name: 'ISO 45001:2018 — Occupational Health & Safety', kind: 'Standard',
+            jurisdiction: 'Global', authority: 'ISO', area: 'EHS', type: 'mandatory', docType: 'Standard',
+            industry: ['All industries'], assetCategory: ['General EHS'],
+            version: '1.0', effectiveFrom: '2018-03-12',
+            chain: [
+                { clauseRef: '6.1.3', clauseName: 'Determination of legal & other requirements', source: 'ISO_45001_2018.pdf, p.11', page: 11,
+                    sourceText: 'The organization shall establish, implement and maintain a process(es) to determine and have access to the legal requirements and other requirements that are applicable to its hazards, OH&S risks and OH&S management system, and to keep this information up to date.',
+                    obligation: 'Maintain legal & other OH&S requirements register', mandatory: true, control: 'Legal Register Maintenance Process', docType: 'sop',
+                    mechanism: 'Detective', cadence: 'Quarterly', nextDue: '2026-09-28' },
+                { clauseRef: '8.1.2', clauseName: 'Hazard identification', source: 'ISO_45001_2018.pdf, p.19', page: 19,
+                    sourceText: 'The organization shall establish, implement and maintain a process(es) for hazard identification that is ongoing and proactive, and considers, but is not limited to, routine and non-routine activities and situations.',
+                    obligation: 'Run ongoing hazard identification process', mandatory: true, control: 'Hazard Identification & Risk Assessment (HIRA)', docType: 'sop',
+                    mechanism: 'Preventive', cadence: 'Monthly', nextDue: '2026-09-25' }
+            ]
+        },
+        {
+            id: 'STD-202', name: 'ISO 14001:2015 — Environmental Management', kind: 'Standard',
+            jurisdiction: 'Global', authority: 'ISO', area: 'Environmental', type: 'mandatory', docType: 'Standard',
+            industry: ['Manufacturing', 'Chemicals & Process'], assetCategory: ['Effluent & Waste Systems'],
+            version: '1.0', effectiveFrom: '2015-09-15',
+            chain: [
+                { clauseRef: '6.1.2', clauseName: 'Environmental aspects', source: 'ISO_14001_2015.pdf, p.10', page: 10,
+                    sourceText: 'The organization shall determine the environmental aspects of its activities, products and services that it can control and those that it can influence, and their associated environmental impacts, considering a life cycle perspective.',
+                    obligation: 'Identify environmental aspects & impacts', mandatory: true, control: 'Environmental Aspects Register', docType: 'sop',
+                    mechanism: 'Detective', cadence: 'Annual', nextDue: '2027-03-01' }
+            ]
+        },
+        {
+            id: 'STD-203', name: 'ISO 27001:2013 — Information Security', kind: 'Standard',
+            jurisdiction: 'Global', authority: 'ISO', area: 'Security', type: 'mandatory', docType: 'Standard',
+            industry: ['All industries'], assetCategory: ['Access Control', 'Surveillance'],
+            version: '1.0', effectiveFrom: '2013-10-01',
+            chain: [
+                { clauseRef: 'A.11.1', clauseName: 'Physical security perimeter', source: 'ISO_27001_2013.pdf, p.44', page: 44,
+                    sourceText: 'Security perimeters shall be defined and used to protect areas that contain either sensitive or critical information and information processing facilities.',
+                    obligation: 'Maintain secured physical perimeter at facilities', mandatory: true, control: 'Access Control System Policy', docType: 'policy',
+                    mechanism: 'Preventive', cadence: 'Quarterly', nextDue: '2026-12-01',
+                    gapNote: 'Known gap: 2 Security-area enterprise assets remain unmapped to a covering control — documented absence, not a silent omission.' }
+            ]
+        },
+        {
+            id: 'STD-204', name: 'ISO 9001:2015 — Quality Management', kind: 'Standard',
+            jurisdiction: 'Global', authority: 'ISO', area: 'Quality', type: 'voluntary', docType: 'Standard',
+            industry: ['Manufacturing'], assetCategory: ['Production Line Equipment'],
+            version: '1.0', effectiveFrom: '2015-09-15',
+            chain: [
+                { clauseRef: '8.5.1', clauseName: 'Control of production & service provision', source: 'ISO_9001_2015.pdf, p.30', page: 30,
+                    sourceText: 'The organization shall implement production and service provision under controlled conditions, including the availability of documented information that defines the characteristics of the products to be produced.',
+                    obligation: 'Control production under planned conditions', mandatory: false, control: 'Production Control Procedure', docType: 'sop',
+                    mechanism: 'Preventive', cadence: 'Monthly', nextDue: '2026-10-03' }
+            ]
+        },
+        {
+            id: 'REG-106', name: 'Noise Pollution (Regulation & Control) Rules 2000 (India)', kind: 'Regulation',
+            jurisdiction: 'India', authority: 'CPCB', area: 'Environmental', type: 'mandatory', docType: 'Rule',
+            industry: ['Manufacturing', 'Warehousing & Logistics'], assetCategory: ['Noise Monitoring Equipment'],
+            version: '1.0', effectiveFrom: '2000-02-14',
+            chain: [
+                { clauseRef: '5', clauseName: 'Ambient noise standards & monitoring', source: 'Noise_Rules_2000_India.pdf, p.4', page: 4,
+                    sourceText: 'The ambient air quality standards in respect of noise for different areas/zones shall be such as specified, and monitoring reports in the prescribed format shall be submitted quarterly to the State Pollution Control Board.',
+                    obligation: 'Submit quarterly ambient noise compliance report', mandatory: true, control: 'Quarterly Noise Compliance Report', docType: 'sop',
+                    mechanism: 'Detective', cadence: 'Quarterly', nextDue: '2026-10-01' }
+            ]
+        }
+    ];
+
+    REGULATIONS.forEach(function (r) {
+        var set = new Set();
+        r.chain.forEach(function (c) {
+            (c.workerCategory && c.workerCategory.length ? c.workerCategory : ['General workforce']).forEach(function (w) { set.add(w); });
+        });
+        r._workerCategories = Array.from(set);
+        r._year = r.effectiveFrom.slice(0, 4);
+        r._controlMechanisms = Array.from(new Set(r.chain.map(function (c) { return c.mechanism; })));
+    });
+
+    var FACET_DEFS = [
+        { key: 'jurisdiction', title: 'Jurisdiction', multi: false, open: true },
+        { key: 'area', title: 'Domain / Compliance Area', multi: false, open: true },
+        { key: 'industry', title: 'Industry', multi: true, open: true },
+        { key: '_workerCategories', title: 'Demography', multi: true, open: false },
+        { key: 'assetCategory', title: 'Asset Category', multi: true, open: false },
+        { key: 'authority', title: 'Authority', multi: false, open: false },
+        { key: 'docType', title: 'Document Type', multi: false, open: false },
+        { key: '_year', title: 'Effective Year', multi: false, open: false },
+        { key: 'type', title: 'Obligation Type', multi: false, open: false },
+        { key: '_controlMechanisms', title: 'Control Mechanism', multi: true, open: false }
+    ];
+
+    var checked = {};
+    var collapsedState = {};
+    FACET_DEFS.forEach(function (f) { checked[f.key] = new Set(); collapsedState[f.key] = !f.open; });
+    var selectedId = REGULATIONS[0].id;
+    var selectedOblKey = null;
+    var currentView = 'regulations';
+    var searchMode = 'keyword';
+    var searchQuery = '';
+    var detailTab = 'chain';
+    var lastAnswerKey = null;
+
+    var ASK_ANSWERS = {
+        q1: {
+            question: 'What fire & safety rules apply to our UK sites?',
+            html: 'At UK sites, the general employer duty in ' +
+                '<span class="ai-cite" data-id="REG-103">REG-103 §2(1)</span> requires health, safety & welfare to be ensured so far as reasonably practicable, backed by the training duty in ' +
+                '<span class="ai-cite" data-id="REG-103">REG-103 §2(2)(c)</span>. Because the site also runs ISO 45001, ' +
+                '<span class="ai-cite" data-id="STD-201">STD-201 §8.1.2</span> additionally requires an ongoing hazard identification process that would capture fire risk alongside statutory duties.',
+            cites: ['REG-103', 'STD-201']
+        },
+        q2: {
+            question: 'Which mandatory obligations touch young or new workers?',
+            html: 'Two: ' +
+                '<span class="ai-cite" data-id="REG-101">REG-101 §87</span> restricts young workers (under 18) from operating hazardous machinery without full instruction, and ' +
+                '<span class="ai-cite" data-id="REG-103">REG-103 §2(2)(c)</span> requires training & supervision with particular regard to young and new/inexperienced workers.',
+            cites: ['REG-101', 'REG-103']
+        },
+        q3: {
+            question: 'What changed in 2024?',
+            html: '<span class="ai-cite" data-id="REG-105">REG-105</span>, the Factories (Amendment) Rules 2024, revises the machine-guarding standard and supersedes ' +
+                '<span class="ai-cite" data-id="REG-101">REG-101 §21</span> — the old fencing clause is retained for history but is no longer the active requirement.',
+            cites: ['REG-105', 'REG-101']
+        }
+    };
+
+    function labelForType(v) { return v === 'mandatory' ? 'Mandatory' : 'Voluntary / best-practice'; }
+    function labelFor(key, v) { return key === 'type' ? labelForType(v) : v; }
+
+    function facetCounts(key, multi) {
+        var counts = {};
+        REGULATIONS.forEach(function (r) {
+            var vals = multi ? (r[key] || []) : [r[key]];
+            vals.forEach(function (v) { counts[v] = (counts[v] || 0) + 1; });
+        });
+        return counts;
+    }
+
+    function matchesFilters(r) {
+        return FACET_DEFS.every(function (f) {
+            var set = checked[f.key];
+            if (set.size === 0) return true;
+            var vals = f.multi ? (r[f.key] || []) : [r[f.key]];
+            return vals.some(function (v) { return set.has(v); });
+        });
+    }
+
+    function norm(s) { return (s || '').toString().toLowerCase(); }
+
+    function regMatchesQuery(r, q) {
+        if (!q) return true;
+        q = norm(q);
+        if (norm(r.id).indexOf(q) !== -1 || norm(r.name).indexOf(q) !== -1) return true;
+        return r.chain.some(function (c) { return clauseMatchesQuery(c, q); });
+    }
+
+    function clauseMatchesQuery(c, q) {
+        q = norm(q);
+        return [c.clauseRef, c.clauseName, c.obligation, c.control, c.source, c.sourceText].some(function (f) {
+            return norm(f).indexOf(q) !== -1;
+        });
+    }
+
+    function highlight(text, q) {
+        if (!q) return text;
+        var idx = norm(text).indexOf(norm(q));
+        if (idx === -1) return text;
+        return text.slice(0, idx) + '<mark>' + text.slice(idx, idx + q.length) + '</mark>' + text.slice(idx + q.length);
+    }
+
+    function visibleRegulations() {
+        return REGULATIONS.filter(function (r) { return matchesFilters(r) && regMatchesQuery(r, searchQuery); });
+    }
+
+    function renderFacets() {
+        var rail = document.getElementById('facetRail');
+        var html = '';
+        FACET_DEFS.forEach(function (f) {
+            var counts = facetCounts(f.key, f.multi);
+            var collapsed = collapsedState[f.key] ? ' collapsed' : '';
+            html += '<div class="facet-group' + collapsed + '" data-facet="' + f.key + '">' +
+                '<div class="facet-head" data-toggle="' + f.key + '"><span class="facet-title">' + f.title + '</span>' +
+                '<svg class="icon chev" style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>' +
+                '<div class="facet-items">';
+            Object.keys(counts).sort().forEach(function (val) {
+                var id = 'f_' + f.key + '_' + val.replace(/\W+/g, '');
+                var isChecked = checked[f.key].has(val) ? 'checked' : '';
+                html += '<label class="facet-item" for="' + id + '">' +
+                    '<input type="checkbox" id="' + id + '" data-key="' + f.key + '" data-val="' + val + '" ' + isChecked + '>' +
+                    '<span class="fname">' + labelFor(f.key, val) + '</span><span class="fcount">' + counts[val] + '</span></label>';
+            });
+            html += '</div></div>';
+        });
+        html += '<button class="facet-clear" id="clearAll">Clear all filters</button>';
+        rail.innerHTML = html;
+
+        rail.querySelectorAll('.facet-head').forEach(function (head) {
+            head.addEventListener('click', function () {
+                var key = head.getAttribute('data-toggle');
+                collapsedState[key] = !collapsedState[key];
+                head.parentElement.classList.toggle('collapsed', collapsedState[key]);
+            });
+        });
+        rail.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+            cb.addEventListener('change', function () {
+                var key = cb.getAttribute('data-key'), val = cb.getAttribute('data-val');
+                if (cb.checked) checked[key].add(val); else checked[key].delete(val);
+                renderAll();
+            });
+        });
+        document.getElementById('clearAll').addEventListener('click', function () {
+            FACET_DEFS.forEach(function (f) { checked[f.key].clear(); });
+            renderAll();
+        });
+    }
+
+    function chipsHtml() {
+        var chips = [];
+        FACET_DEFS.forEach(function (f) {
+            checked[f.key].forEach(function (val) {
+                chips.push({ key: f.key, val: val, label: labelFor(f.key, val) });
+            });
+        });
+        return chips.map(function (c) {
+            return '<span class="chip" data-key="' + c.key + '" data-val="' + c.val + '">' + c.label +
+                '<button aria-label="Remove filter">' +
+                '<svg class="icon" style="width:10px;height:10px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m18 6-12 12M6 6l12 12"/></svg>' +
+                '</button></span>';
+        }).join('');
+    }
+
+    function wireChipRow(id) {
+        var row = document.getElementById(id);
+        row.innerHTML = chipsHtml();
+        row.querySelectorAll('.chip button').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var chip = btn.parentElement;
+                checked[chip.getAttribute('data-key')].delete(chip.getAttribute('data-val'));
+                renderAll();
+            });
+        });
+    }
+
+    function tagsFor(r) {
+        var t = '<span class="pill pill-sky">' + r.jurisdiction + '</span>' +
+            '<span class="pill pill-outline">' + r.authority + '</span>' +
+            '<span class="pill pill-outline">' + r.area + '</span>' +
+            '<span class="pill pill-zinc">' + r.docType + '</span>';
+        if (r.type === 'voluntary') t += '<span class="pill pill-zinc">voluntary</span>';
+        if (r.supersededNote) t += '<span class="pill pill-amber">has superseded clause</span>';
+        return t;
+    }
+
+    function renderRegList(visible) {
+        var list = document.getElementById('regList');
+        if (!visible.length) {
+            list.innerHTML = '<div class="empty-state">No catalog entries match the selected filters.</div>';
+            return;
+        }
+        list.innerHTML = visible.map(function (r) {
+            return '<button class="list-card' + (r.id === selectedId ? ' selected' : '') + '" data-id="' + r.id + '">' +
+                '<p class="rid">' + r.id + ' · ' + r.kind + '</p>' +
+                '<p class="rname">' + highlight(r.name, searchQuery) + '</p>' +
+                '<div class="rtags">' + tagsFor(r) + '</div>' +
+                '</button>';
+        }).join('');
+        list.querySelectorAll('.list-card').forEach(function (card) {
+            card.addEventListener('click', function () {
+                selectedId = card.getAttribute('data-id');
+                detailTab = 'chain';
+                renderAll();
+            });
+        });
+    }
+
+    function renderDetail(visible) {
+        var pane = document.getElementById('detailPane');
+        var r = visible.find(function (x) { return x.id === selectedId; }) || visible[0];
+        if (!r) { pane.innerHTML = '<div class="empty-state">Select a catalog entry to view its chain.</div>'; return; }
+        if (r.id !== selectedId) selectedId = r.id;
+
+        var html = '<div class="detail-header">' +
+            '<p class="rid">' + r.id + ' · ' + r.kind + '</p>' +
+            '<p class="rname">' + r.name + '</p>' +
+            '<div class="rtags">' + tagsFor(r) + '</div>' +
+            '<div class="kv-row"><span class="k">version</span><span class="v">' + r.version + '</span></div>' +
+            '<div class="kv-row"><span class="k">effectiveFrom</span><span class="v">' + r.effectiveFrom + '</span></div>' +
+            '<div class="kv-row"><span class="k">industry</span><span class="v">' + r.industry.join(', ') + '</span></div>';
+        if (r.supersededNote) html += '<div class="super-note">⚠ ' + r.supersededNote + '</div>';
+        if (r.supersedesNote) html += '<div class="super-note" style="color:#6ee7b7">↳ ' + r.supersedesNote + '</div>';
+        html += '</div>';
+
+        html += '<div class="detail-tabs">' +
+            '<button class="detail-tab' + (detailTab === 'chain' ? ' on' : '') + '" data-tabbtn="chain">Clause → Obligation → Control</button>' +
+            '<button class="detail-tab' + (detailTab === 'source' ? ' on' : '') + '" data-tabbtn="source">Source Document</button>' +
+            '</div>';
+
+        html += '<div data-tab="chain" class="' + (detailTab === 'chain' ? 'on' : '') + '">';
+        html += '<p class="section-label" style="margin-bottom:8px">Chain · ' + r.chain.length + ' clause(s)</p>';
+        html += '<div class="chain-grid">';
+        r.chain.forEach(function (c) {
+            html += '<div class="chain-card">' +
+                '<p class="chain-clause-label">Clause ' + c.clauseRef + (c.superseded ? ' <span class="pill pill-amber" style="margin-left:4px">superseded</span>' : '') + '</p>' +
+                '<p class="chain-clause-name">' + highlight(c.clauseName, searchQuery) + '</p>' +
+                '<p class="chain-source">Source: ' + c.source + '</p>' +
+                '<div class="prop-row"><span class="pk">obligation</span><span class="pv">' + highlight(c.obligation, searchQuery) + '</span></div>' +
+                '<div class="prop-row"><span class="pk">mandatory</span><span class="pv">' + c.mandatory + '</span></div>' +
+                '<div class="prop-row"><span class="pk">control</span><span class="pv">' + highlight(c.control, searchQuery) + '</span></div>' +
+                '<div class="prop-row"><span class="pk">docType</span><span class="pv">' + c.docType + '</span></div>' +
+                '<div class="prop-row"><span class="pk">mechanism</span><span class="pv">' + mechanismPill(c) + '</span></div>' +
+                '<div class="prop-row"><span class="pk">cadence</span><span class="pv">' + cadenceLabel(c) + '</span></div>' +
+                (c.workerCategory ? '<p class="demog-note">demography: ' + c.workerCategory.join(', ') + '</p>' : '') +
+                (c.gapNote ? '<div class="gap-note">' + c.gapNote + '</div>' : '') +
+                '</div>';
+        });
+        html += '</div></div>';
+
+        html += '<div data-tab="source" class="' + (detailTab === 'source' ? 'on' : '') + '">';
+        html += '<div class="doc-reader">';
+        html += '<div class="doc-outline">' + r.chain.map(function (c) {
+            return '<button class="doc-outline-item" data-jump="clause-' + c.clauseRef.replace(/\W+/g, '') + '">§' + c.clauseRef + ' — ' + c.clauseName + '</button>';
+        }).join('') + '</div>';
+        html += '<div class="doc-page"><p class="doc-page-meta">' + r.chain[0].source.split(',')[0] + ' · raw source (addressable, retained verbatim)</p>';
+        r.chain.forEach(function (c) {
+            html += '<div class="doc-clause" id="clause-' + c.clauseRef.replace(/\W+/g, '') + '">' +
+                '<p class="doc-clause-ref">§' + c.clauseRef + ' ' + c.clauseName + (c.superseded ? ' (superseded)' : '') + '</p>' +
+                '<p class="doc-clause-text">' + highlight(c.sourceText, searchQuery) + '</p>' +
+                '<p class="doc-clause-page">p. ' + c.page + '</p>' +
+                '</div>';
+        });
+        html += '</div></div></div>';
+
+        pane.innerHTML = html;
+
+        pane.querySelectorAll('[data-tabbtn]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                detailTab = btn.getAttribute('data-tabbtn');
+                renderDetail(visible);
+            });
+        });
+        pane.querySelectorAll('[data-jump]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var target = document.getElementById(btn.getAttribute('data-jump'));
+                if (!target) return;
+                var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+                target.classList.add('flash');
+                setTimeout(function () { target.classList.remove('flash'); }, 900);
+            });
+        });
+    }
+
+    // ── Obligations view: same list+detail chrome as Regulations, item-level content ──
+    function oblRows(visible) {
+        var rows = [];
+        visible.forEach(function (r) {
+            r.chain.forEach(function (c) {
+                if (searchQuery && !clauseMatchesQuery(c, searchQuery) && norm(r.name).indexOf(norm(searchQuery)) === -1) return;
+                rows.push({ key: r.id + '::' + c.clauseRef, r: r, c: c });
+            });
+        });
+        return rows;
+    }
+
+    function renderOblList(rows) {
+        var list = document.getElementById('oblList');
+        if (!rows.length) {
+            list.innerHTML = '<div class="empty-state">No obligations match the selected filters.</div>';
+            return;
+        }
+        if (!rows.some(function (row) { return row.key === selectedOblKey; })) selectedOblKey = rows[0].key;
+        list.innerHTML = rows.map(function (row) {
+            var demog = row.c.workerCategory ? row.c.workerCategory.join(', ') : 'General workforce';
+            return '<button class="list-card' + (row.key === selectedOblKey ? ' selected' : '') + '" data-key="' + row.key + '">' +
+                '<p class="rid">' + row.r.id + ' §' + row.c.clauseRef + '</p>' +
+                '<p class="rname">' + highlight(row.c.obligation, searchQuery) + '</p>' +
+                '<div class="rtags">' +
+                (row.c.mandatory ? '<span class="pill pill-emerald">mandatory</span>' : '<span class="pill pill-zinc">voluntary</span>') +
+                '<span class="pill pill-sky">' + row.r.jurisdiction + '</span>' +
+                '<span class="pill pill-outline">' + row.r.area + '</span>' +
+                mechanismPill(row.c) +
+                cadencePill(row.c) +
+                (demog !== 'General workforce' ? '<span class="pill pill-violet">' + demog + '</span>' : '') +
+                '</div></button>';
+        }).join('');
+        list.querySelectorAll('.list-card').forEach(function (card) {
+            card.addEventListener('click', function () {
+                selectedOblKey = card.getAttribute('data-key');
+                renderOblDetail(rows);
+            });
+        });
+    }
+
+    function renderOblDetail(rows) {
+        var pane = document.getElementById('oblDetailPane');
+        var row = rows.find(function (x) { return x.key === selectedOblKey; }) || rows[0];
+        if (!row) { pane.innerHTML = '<div class="empty-state">Select an obligation to view its full context.</div>'; return; }
+        var r = row.r, c = row.c;
+        var demog = c.workerCategory ? c.workerCategory.join(', ') : 'General workforce';
+
+        var html = '<div class="detail-header">' +
+            '<p class="rid">from ' + r.id + ' · ' + r.name + '</p>' +
+            '<p class="rname">' + highlight(c.obligation, searchQuery) + '</p>' +
+            '<div class="rtags">' + tagsFor(r) +
+            (c.mandatory ? '<span class="pill pill-emerald">mandatory</span>' : '<span class="pill pill-zinc">voluntary</span>') + '</div>' +
+            '<div class="kv-row"><span class="k">clause</span><span class="v">§' + c.clauseRef + ' — ' + c.clauseName + '</span></div>' +
+            '<div class="kv-row"><span class="k">control</span><span class="v">' + highlight(c.control, searchQuery) + '</span></div>' +
+            '<div class="kv-row"><span class="k">control docType</span><span class="v">' + c.docType + '</span></div>' +
+            '<div class="kv-row"><span class="k">mechanism</span><span class="v">' + mechanismPill(c) + '</span></div>' +
+            '<div class="kv-row"><span class="k">cadence</span><span class="v">' + cadenceLabel(c) + '</span></div>' +
+            '<div class="kv-row"><span class="k">demography</span><span class="v">' + demog + '</span></div>';
+        if (c.superseded) html += '<div class="super-note">⚠ Superseded by ' + r.supersededNote.split('superseded by ')[1] + '</div>';
+        if (c.gapNote) html += '<div class="gap-note" style="margin-top:8px">' + c.gapNote + '</div>';
+        html += '</div>';
+
+        html += '<p class="section-label">Source passage · ' + c.source + '</p>';
+        html += '<div class="doc-excerpt"><p class="doc-clause-text">' + highlight(c.sourceText, searchQuery) + '</p></div>';
+
+        html += '<button class="btn btn-ghost" id="oblViewInReg" style="align-self:flex-start">' +
+            '<svg class="icon" style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>' +
+            'View full regulation chain</button>';
+
+        pane.innerHTML = html;
+        document.getElementById('oblViewInReg').addEventListener('click', function () {
+            selectedId = r.id;
+            detailTab = 'chain';
+            switchView('regulations');
+        });
+    }
+
+    function renderObligations(visible) {
+        var rows = oblRows(visible);
+        document.getElementById('oblResultCount').textContent = rows.length;
+        document.getElementById('oblRegCount').textContent = visible.length;
+        renderOblList(rows);
+        renderOblDetail(rows);
+    }
+
+    // ── Cadence — every obligation ties back to its regulation AND carries a
+    // definitive timeframe (foundation.md L3: "every control's recurring due
+    // dates"). 'Superseded' obligations carry no schedule of their own (it moved
+    // to whatever superseded them); 'Event-triggered' ones are real but fire on
+    // an event, not a calendar date, so they get a trigger description instead
+    // of a nextDue and are excluded from the 52-week grid, not silently dropped.
+    var CADENCE_COLOR = { Quarterly: '#67e8f9', Monthly: '#c4b5fd', Annual: '#fbbf24' };
+    var TODAY = new Date('2026-09-26T00:00:00');
+
+    function cadenceLabel(c) {
+        if (c.cadence === 'Superseded') return 'superseded — recurrence moved to the superseding clause';
+        if (c.cadence === 'Event-triggered') return 'event-triggered — ' + c.trigger;
+        return c.cadence + ' · next due ' + c.nextDue;
+    }
+
+    var CADENCE_PILL_CLASS = { Quarterly: 'pill-cyan', Monthly: 'pill-violet', Annual: 'pill-amber' };
+    function cadencePill(c) {
+        if (c.cadence === 'Superseded') return '<span class="pill pill-zinc">superseded</span>';
+        if (c.cadence === 'Event-triggered') return '<span class="pill pill-slate">event-triggered</span>';
+        return '<span class="pill ' + (CADENCE_PILL_CLASS[c.cadence] || 'pill-cyan') + '">' + c.cadence + '</span>';
+    }
+
+    // Control mechanism (Preventive/Detective/Corrective) — foundation.md §1 names this as a
+    // required independent traversal axis, and Control.controlType already carries it in the
+    // real graph (domain-extension.md §7.3); this mock was missing it entirely until now.
+    var MECHANISM_PILL_CLASS = { Preventive: 'pill-teal', Detective: 'pill-indigo', Corrective: 'pill-amber' };
+    function mechanismPill(c) {
+        return '<span class="pill ' + (MECHANISM_PILL_CLASS[c.mechanism] || 'pill-zinc') + '">' + c.mechanism + '</span>';
+    }
+
+    function daysUntil(dateStr) {
+        return Math.round((new Date(dateStr + 'T00:00:00') - TODAY) / 86400000);
+    }
+
+    function weekOfYear(date) {
+        var start = new Date(date.getFullYear(), 0, 1);
+        var diffDays = Math.floor((date - start) / 86400000);
+        return Math.min(52, Math.max(1, Math.floor(diffDays / 7) + 1));
+    }
+
+    // Projects a cadence onto a generic 52-week annual template — the actual
+    // year of nextDue doesn't matter, only which week(s) of the recurring
+    // year-cycle it lands on (a 52-week compliance calendar is a template that
+    // repeats, not a one-off timeline).
+    function cadenceOccurrenceWeeks(c) {
+        if (!c.nextDue) return [];
+        var base = weekOfYear(new Date(c.nextDue + 'T00:00:00'));
+        if (c.cadence === 'Annual') return [base];
+        if (c.cadence === 'Quarterly') {
+            var q = [];
+            for (var k = 0; k < 4; k++) q.push(((base - 1 + k * 13) % 52) + 1);
+            return q;
+        }
+        if (c.cadence === 'Monthly') {
+            var m = [], seen = {};
+            for (var j = 0; j < 13; j++) {
+                var w = ((base - 1 + j * 4) % 52) + 1;
+                if (!seen[w]) { seen[w] = true; m.push(w); }
+            }
+            return m;
+        }
+        return [];
+    }
+
+    function calRows(visible) {
+        var rows = [];
+        visible.forEach(function (r) {
+            r.chain.forEach(function (c) {
+                if (searchQuery && !clauseMatchesQuery(c, searchQuery) && norm(r.name).indexOf(norm(searchQuery)) === -1) return;
+                rows.push({ r: r, c: c });
+            });
+        });
+        return rows;
+    }
+
+    function calRowMeta(row) {
+        return row.r.id + ' §' + row.c.clauseRef + ' · ' + row.r.area + ' · ' + row.r.jurisdiction;
+    }
+
+    function calRowClickHandler(row) {
+        return function () {
+            selectedId = row.r.id;
+            detailTab = 'chain';
+            switchView('regulations');
+        };
+    }
+
+    function renderCalWorklist(rows) {
+        var body = document.getElementById('calWorklist');
+        var scheduled = rows.filter(function (row) { return row.c.nextDue; });
+        var triggered = rows.filter(function (row) { return row.c.cadence === 'Event-triggered'; });
+        var overdue = scheduled.filter(function (row) { return daysUntil(row.c.nextDue) < 0; }).sort(function (a, b) { return daysUntil(a.c.nextDue) - daysUntil(b.c.nextDue); });
+        var soon = scheduled.filter(function (row) { var d = daysUntil(row.c.nextDue); return d >= 0 && d <= 14; }).sort(function (a, b) { return daysUntil(a.c.nextDue) - daysUntil(b.c.nextDue); });
+        var later = scheduled.filter(function (row) { return daysUntil(row.c.nextDue) > 14; }).sort(function (a, b) { return daysUntil(a.c.nextDue) - daysUntil(b.c.nextDue); });
+
+        function section(title, cls, list, dueCls) {
+            if (!list.length) return '';
+            var html = '<div class="cal-section"><p class="cal-section-title ' + cls + '">' + title + ' <span class="n">(' + list.length + ')</span></p>';
+            list.forEach(function (row) {
+                var d = daysUntil(row.c.nextDue);
+                var dueText = d < 0 ? 'overdue by ' + Math.abs(d) + 'd' : d === 0 ? 'due today' : 'in ' + d + 'd';
+                html += '<div class="cal-row" data-nav="' + row.r.id + '::' + row.c.clauseRef + '">' +
+                    '<div class="cal-row-left"><p class="cal-row-title">' + row.c.obligation + '</p>' +
+                    '<p class="cal-row-meta">' + calRowMeta(row) + cadencePill(row.c) + '</p></div>' +
+                    '<span class="cal-row-due ' + dueCls + '">' + dueText + '<br>' + row.c.nextDue + '</span>' +
+                    '</div>';
+            });
+            html += '</div>';
+            return html;
+        }
+
+        var html = section('Overdue', 'overdue', overdue, 'overdue') +
+            section('Due in 14 days', 'soon', soon, 'soon') +
+            section('Upcoming', 'later', later, 'later');
+
+        if (triggered.length) {
+            html += '<div class="cal-section"><p class="cal-section-title trigger">Event-triggered <span class="n">(' + triggered.length + ')</span></p>';
+            triggered.forEach(function (row) {
+                html += '<div class="cal-row" data-nav="' + row.r.id + '::' + row.c.clauseRef + '">' +
+                    '<div class="cal-row-left"><p class="cal-row-title">' + row.c.obligation + '</p>' +
+                    '<p class="cal-row-meta">' + calRowMeta(row) + cadencePill(row.c) + '</p></div>' +
+                    '<span class="cal-row-due later">' + row.c.trigger + '</span>' +
+                    '</div>';
+            });
+            html += '</div>';
+        }
+
+        body.innerHTML = html || '<div class="empty-state">No compliance events match the selected filters.</div>';
+        body.querySelectorAll('[data-nav]').forEach(function (el) {
+            var key = el.getAttribute('data-nav');
+            var row = rows.find(function (r) { return (r.r.id + '::' + r.c.clauseRef) === key; });
+            if (row) el.addEventListener('click', calRowClickHandler(row));
+        });
+
+        document.getElementById('calSummary').innerHTML =
+            '<b>' + overdue.length + '</b> overdue · <b>' + soon.length + '</b> due in 14d · <b>' + (later.length + triggered.length) + '</b> other';
+    }
+
+    var MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    function renderCalGrid(rows) {
+        var body = document.getElementById('calGridBody');
+        var scheduled = rows.filter(function (row) { return row.c.cadence !== 'Event-triggered' && row.c.cadence !== 'Superseded'; });
+        if (!scheduled.length) {
+            body.innerHTML = '<div class="empty-state">No scheduled obligations match the selected filters.</div>';
+            return;
+        }
+        var todayWeek = weekOfYear(TODAY);
+        var monthWeeks = MONTH_NAMES.map(function (name, i) { return { name: name, week: weekOfYear(new Date(2026, i, 1)) }; });
+
+        var html = '<div class="cal-legend">' +
+            '<div class="cal-legend-item"><span class="cal-dot" style="background:' + CADENCE_COLOR.Quarterly + '"></span>Quarterly</div>' +
+            '<div class="cal-legend-item"><span class="cal-dot" style="background:' + CADENCE_COLOR.Monthly + '"></span>Monthly</div>' +
+            '<div class="cal-legend-item"><span class="cal-dot" style="background:' + CADENCE_COLOR.Annual + '"></span>Annual</div>' +
+            '<div class="cal-legend-item"><span class="cal-dot" style="background:#38bdf8"></span>Current week</div>' +
+            '</div>';
+
+        html += '<div class="cal-grid-wrap"><table class="cal-grid"><thead><tr><th class="row-label" style="background:var(--surface)">Obligation</th>';
+        for (var w = 1; w <= 52; w++) {
+            var m = monthWeeks.find(function (mw) { return mw.week === w; });
+            html += '<th class="month-head' + (w === todayWeek ? ' today-col' : '') + '">' + (m ? m.name : '') + '</th>';
+        }
+        html += '</tr></thead><tbody>';
+
+        scheduled.forEach(function (row) {
+            var weeks = cadenceOccurrenceWeeks(row.c);
+            html += '<tr data-nav="' + row.r.id + '::' + row.c.clauseRef + '">' +
+                '<td class="row-label" title="' + row.c.obligation + '">' + row.r.id + ' — ' + row.c.obligation + '</td>';
+            for (var w2 = 1; w2 <= 52; w2++) {
+                var due = weeks.indexOf(w2) !== -1;
+                html += '<td class="cal-week-cell' + (w2 === todayWeek ? ' today-col' : '') + '">' +
+                    (due ? '<span class="cal-dot" style="background:' + CADENCE_COLOR[row.c.cadence] + '"></span>' : '') + '</td>';
+            }
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+        html += '<p class="cal-today-flag">Today · week ' + todayWeek + ' of 52 (' + TODAY.toDateString() + ')</p>';
+
+        body.innerHTML = html;
+        body.querySelectorAll('tr[data-nav]').forEach(function (tr) {
+            var key = tr.getAttribute('data-nav');
+            var row = rows.find(function (r) { return (r.r.id + '::' + r.c.clauseRef) === key; });
+            if (row) tr.style.cursor = 'pointer';
+            if (row) tr.addEventListener('click', calRowClickHandler(row));
+        });
+    }
+
+    var calSubView = 'worklist';
+    function renderCalendar(visible) {
+        var rows = calRows(visible);
+        renderCalWorklist(rows);
+        renderCalGrid(rows);
+    }
+
+    document.getElementById('calSubToggle').addEventListener('click', function (e) {
+        var btn = e.target.closest('.seg-btn');
+        if (!btn) return;
+        calSubView = btn.getAttribute('data-target');
+        document.querySelectorAll('#calSubToggle .seg-btn').forEach(function (b) { b.classList.toggle('on', b === btn); });
+        document.getElementById('calWorklist').style.display = calSubView === 'worklist' ? 'flex' : 'none';
+        document.getElementById('calGridBody').style.display = calSubView === 'grid' ? 'flex' : 'none';
+        document.getElementById('calWorklistNote').style.display = calSubView === 'worklist' ? 'block' : 'none';
+    });
+
+    // ── Graph / mindmap view ──
+    var graphState = { nodes: [], links: [], nodeById: {}, tx: 0, ty: 0, k: 1, raf: null };
+
+    function buildGraphData(visible) {
+        var nodes = [], links = [], byId = {};
+        function addNode(n) { byId[n.id] = n; nodes.push(n); return n; }
+        visible.forEach(function (r) {
+            var rn = addNode({ id: 'r:' + r.id, type: 'regulation', label: r.id, full: r.name, x: 0, y: 0 });
+            r.chain.forEach(function (c, i) {
+                var clauseId = 'c:' + r.id + ':' + i;
+                var oblId = 'o:' + r.id + ':' + i;
+                var ctlId = 'k:' + r.id + ':' + i;
+                addNode({ id: clauseId, type: 'clause', label: '§' + c.clauseRef, full: c.clauseName, x: 0, y: 0 });
+                addNode({ id: oblId, type: 'obligation', label: 'Obligation', full: c.obligation, x: 0, y: 0 });
+                addNode({ id: ctlId, type: 'control', label: 'Control', full: c.control, x: 0, y: 0 });
+                links.push({ source: rn.id, target: clauseId });
+                links.push({ source: clauseId, target: oblId });
+                links.push({ source: oblId, target: ctlId });
+            });
+        });
+        return { nodes: nodes, links: links, byId: byId };
+    }
+
+    var TYPE_COLOR = { regulation: '#38bdf8', clause: '#c4b5fd', obligation: '#6ee7b7', control: '#fbbf24' };
+    var TYPE_RADIUS = { regulation: 9, clause: 6, obligation: 5, control: 4.5 };
+
+    function layoutGraph(data, width, height) {
+        var nodes = data.nodes, links = data.links;
+        var cx = width / 2, cy = height / 2;
+        nodes.forEach(function (n, i) {
+            var a = (i / nodes.length) * Math.PI * 2;
+            var rad = n.type === 'regulation' ? Math.min(width, height) * 0.12 : Math.min(width, height) * 0.36;
+            n.x = cx + Math.cos(a) * rad + (Math.random() - 0.5) * 20;
+            n.y = cy + Math.sin(a) * rad + (Math.random() - 0.5) * 20;
+        });
+        var linkArr = links.map(function (l) { return { s: data.byId[l.source], t: data.byId[l.target] }; });
+        var iterations = 140;
+        for (var it = 0; it < iterations; it++) {
+            for (var i = 0; i < nodes.length; i++) {
+                for (var j = i + 1; j < nodes.length; j++) {
+                    var a = nodes[i], b = nodes[j];
+                    var dx = a.x - b.x, dy = a.y - b.y;
+                    var dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
+                    if (dist < 140) {
+                        var force = (140 - dist) / dist * 0.55;
+                        var fx = dx * force, fy = dy * force;
+                        a.x += fx; a.y += fy; b.x -= fx; b.y -= fy;
+                    }
+                }
+            }
+            linkArr.forEach(function (l) {
+                var dx = l.t.x - l.s.x, dy = l.t.y - l.s.y;
+                var dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
+                var target = l.t.type === 'regulation' || l.s.type === 'regulation' ? 70 : 46;
+                var force = (dist - target) / dist * 0.12;
+                var fx = dx * force, fy = dy * force;
+                l.s.x += fx; l.s.y += fy; l.t.x -= fx; l.t.y -= fy;
+            });
+            nodes.forEach(function (n) {
+                n.x += (cx - n.x) * 0.004;
+                n.y += (cy - n.y) * 0.004;
+                n.x = Math.max(20, Math.min(width - 20, n.x));
+                n.y = Math.max(20, Math.min(height - 20, n.y));
+            });
+        }
+    }
+
+    var SVGNS = 'http://www.w3.org/2000/svg';
+    function svgEl(tag, attrs) {
+        var el = document.createElementNS(SVGNS, tag);
+        Object.keys(attrs || {}).forEach(function (k) { el.setAttribute(k, attrs[k]); });
+        return el;
+    }
+
+    function renderGraph(visible) {
+        var wrap = document.getElementById('graphWrap');
+        var svg = document.getElementById('graphSvg');
+        var width = wrap.clientWidth || 800, height = wrap.clientHeight || 500;
+        var data = buildGraphData(visible);
+        layoutGraph(data, width, height);
+        graphState.nodes = data.nodes; graphState.links = data.links; graphState.byId = data.byId;
+        graphState.tx = 0; graphState.ty = 0; graphState.k = 1;
+
+        document.getElementById('graphStats').textContent = data.nodes.length + ' nodes · ' + data.links.length + ' links';
+
+        svg.innerHTML = '';
+        var g = svgEl('g', { id: 'graphG' });
+        svg.appendChild(g);
+        var linkG = svgEl('g', { class: 'links' }); g.appendChild(linkG);
+        var nodeG = svgEl('g', { class: 'nodes' }); g.appendChild(nodeG);
+
+        data.links.forEach(function (l) {
+            var s = data.byId[l.source], t = data.byId[l.target];
+            var line = svgEl('line', { class: 'glink', x1: s.x, y1: s.y, x2: t.x, y2: t.y });
+            line.dataset.s = l.source; line.dataset.t = l.target;
+            linkG.appendChild(line);
+        });
+
+        var tooltip = document.getElementById('graphTooltip');
+
+        data.nodes.forEach(function (n) {
+            var gEl = svgEl('g', { class: 'gnode', 'data-id': n.id });
+            var circle = svgEl('circle', { cx: n.x, cy: n.y, r: TYPE_RADIUS[n.type], fill: TYPE_COLOR[n.type] });
+            gEl.appendChild(circle);
+            if (n.type === 'regulation' || n.type === 'clause') {
+                var text = svgEl('text', { x: n.x + TYPE_RADIUS[n.type] + 4, y: n.y + 3 });
+                text.textContent = n.label;
+                gEl.appendChild(text);
+            }
+            nodeG.appendChild(gEl);
+
+            gEl.addEventListener('mouseenter', function () {
+                tooltip.style.display = 'block';
+                tooltip.innerHTML = '<div class="gt-kind" style="color:' + TYPE_COLOR[n.type] + '">' + n.type + '</div>' +
+                    '<div class="gt-name">' + n.full + '</div>' +
+                    (n.type !== 'regulation' ? '<div class="gt-hint">click to open in Regulations view</div>' : '<div class="gt-hint">click to select</div>');
+                highlightNeighborhood(n.id);
+            });
+            gEl.addEventListener('mouseleave', function () {
+                tooltip.style.display = 'none';
+                clearHighlight();
+            });
+            gEl.addEventListener('mousemove', function (e) {
+                var rect = wrap.getBoundingClientRect();
+                tooltip.style.left = Math.min(e.clientX - rect.left + 14, rect.width - 290) + 'px';
+                tooltip.style.top = (e.clientY - rect.top + 14) + 'px';
+            });
+            gEl.addEventListener('click', function () {
+                if (n.type === 'regulation') {
+                    selectedId = n.id.slice(2);
+                } else {
+                    var regId = n.id.split(':')[1];
+                    selectedId = regId;
+                    detailTab = n.type === 'obligation' || n.type === 'control' ? 'chain' : 'source';
+                }
+                switchView('regulations');
+            });
+        });
+
+        function highlightNeighborhood(id) {
+            var connected = new Set([id]);
+            data.links.forEach(function (l) {
+                if (l.source === id) connected.add(l.target);
+                if (l.target === id) connected.add(l.source);
+            });
+            nodeG.querySelectorAll('.gnode').forEach(function (el) {
+                el.classList.toggle('dim', !connected.has(el.getAttribute('data-id')));
+            });
+            linkG.querySelectorAll('.glink').forEach(function (el) {
+                el.classList.toggle('dim', el.dataset.s !== id && el.dataset.t !== id);
+            });
+        }
+        function clearHighlight() {
+            nodeG.querySelectorAll('.gnode').forEach(function (el) { el.classList.remove('dim'); });
+            linkG.querySelectorAll('.glink').forEach(function (el) { el.classList.remove('dim'); });
+        }
+
+        wireGraphPanZoom(svg, g);
+        wireGraphDrag(svg, nodeG, linkG, data);
+    }
+
+    function applyTransform(g) {
+        g.setAttribute('transform', 'translate(' + graphState.tx + ',' + graphState.ty + ') scale(' + graphState.k + ')');
+    }
+
+    function wireGraphPanZoom(svg, g) {
+        var panning = false, lastX = 0, lastY = 0;
+        svg.onwheel = function (e) {
+            e.preventDefault();
+            var delta = e.deltaY > 0 ? 0.92 : 1.08;
+            graphState.k = Math.max(0.4, Math.min(2.5, graphState.k * delta));
+            applyTransform(g);
+        };
+        svg.onmousedown = function (e) {
+            if (e.target.closest('.gnode')) return;
+            panning = true; lastX = e.clientX; lastY = e.clientY;
+            svg.classList.add('panning');
+        };
+        window.addEventListener('mousemove', function (e) {
+            if (!panning) return;
+            graphState.tx += (e.clientX - lastX); graphState.ty += (e.clientY - lastY);
+            lastX = e.clientX; lastY = e.clientY;
+            applyTransform(g);
+        });
+        window.addEventListener('mouseup', function () { panning = false; svg.classList.remove('panning'); });
+    }
+
+    function wireGraphDrag(svg, nodeG, linkG, data) {
+        var dragging = null, draggingEl = null;
+        nodeG.querySelectorAll('.gnode').forEach(function (gEl) {
+            gEl.addEventListener('mousedown', function (e) {
+                e.stopPropagation();
+                dragging = data.byId[gEl.getAttribute('data-id')];
+                draggingEl = gEl;
+            });
+        });
+        window.addEventListener('mousemove', function (e) {
+            if (!dragging) return;
+            var rect = svg.getBoundingClientRect();
+            dragging.x = (e.clientX - rect.left - graphState.tx) / graphState.k;
+            dragging.y = (e.clientY - rect.top - graphState.ty) / graphState.k;
+            draggingEl.querySelector('circle').setAttribute('cx', dragging.x);
+            draggingEl.querySelector('circle').setAttribute('cy', dragging.y);
+            var t = draggingEl.querySelector('text');
+            if (t) { t.setAttribute('x', dragging.x + TYPE_RADIUS[dragging.type] + 4); t.setAttribute('y', dragging.y + 3); }
+            linkG.querySelectorAll('.glink').forEach(function (line) {
+                if (line.dataset.s === dragging.id) { line.setAttribute('x1', dragging.x); line.setAttribute('y1', dragging.y); }
+                if (line.dataset.t === dragging.id) { line.setAttribute('x2', dragging.x); line.setAttribute('y2', dragging.y); }
+            });
+        });
+        window.addEventListener('mouseup', function () { dragging = null; draggingEl = null; });
+    }
+
+    document.getElementById('graphReset').addEventListener('click', function () {
+        renderGraph(visibleRegulations());
+    });
+
+    function renderAskAnswer() {
+        var box = document.getElementById('aiAnswer');
+        if (!lastAnswerKey) { box.style.display = 'none'; return; }
+        var a = ASK_ANSWERS[lastAnswerKey];
+        box.style.display = 'block';
+        box.innerHTML = '<div class="ai-answer">' +
+            '<div class="ai-answer-head"><svg class="icon" style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M2 14h2M20 14h2M9 13v2M15 13v2"/></svg>' + a.question + '</div>' +
+            '<div class="ai-answer-body">' + a.html + '</div>' +
+            '<div class="ai-disclaimer">Illustrative only — every claim resolves to a real clause citation, same grounding discipline required of any agent output. Not a live model.</div>' +
+            '</div>';
+        box.querySelectorAll('.ai-cite').forEach(function (cite) {
+            cite.addEventListener('click', function () {
+                selectedId = cite.getAttribute('data-id');
+                detailTab = 'chain';
+                document.querySelectorAll('#modeToggle .mode-btn').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-mode') === 'keyword'); });
+                searchMode = 'keyword';
+                document.getElementById('askExamples').style.display = 'none';
+                box.style.display = 'none';
+                lastAnswerKey = null;
+                switchView('regulations');
+            });
+        });
+    }
+
+    function renderAll() {
+        var visible = visibleRegulations();
+        renderFacets();
+        wireChipRow('chipRow');
+        wireChipRow('oblChipRow');
+        document.getElementById('resultCount').textContent = visible.length;
+        document.getElementById('totalCount').textContent = REGULATIONS.length;
+        renderRegList(visible);
+        renderDetail(visible);
+        renderObligations(visible);
+        if (currentView === 'graph') renderGraph(visible);
+        if (currentView === 'calendar') renderCalendar(visible);
+    }
+
+    function switchView(target) {
+        currentView = target;
+        document.querySelectorAll('#viewToggle .seg-btn').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-target') === target); });
+        document.querySelectorAll('[data-view]').forEach(function (v) {
+            v.classList.toggle('on', v.getAttribute('data-view') === target);
+        });
+        if (target === 'graph') renderGraph(visibleRegulations());
+        if (target === 'calendar') renderCalendar(visibleRegulations());
+    }
+
+    document.getElementById('viewToggle').addEventListener('click', function (e) {
+        var btn = e.target.closest('.seg-btn');
+        if (!btn) return;
+        switchView(btn.getAttribute('data-target'));
+    });
+
+    document.getElementById('searchInput').addEventListener('input', function (e) {
+        searchQuery = e.target.value;
+        renderAll();
+    });
+
+    document.getElementById('modeToggle').addEventListener('click', function (e) {
+        var btn = e.target.closest('.mode-btn');
+        if (!btn) return;
+        searchMode = btn.getAttribute('data-mode');
+        document.querySelectorAll('#modeToggle .mode-btn').forEach(function (b) { b.classList.toggle('on', b === btn); });
+        var input = document.getElementById('searchInput');
+        var examples = document.getElementById('askExamples');
+        if (searchMode === 'ask') {
+            input.placeholder = 'Ask a question about the catalog…';
+            examples.style.display = 'flex';
+        } else {
+            input.placeholder = 'Search regulations, clauses, obligations, controls, source text…';
+            examples.style.display = 'none';
+            lastAnswerKey = null;
+            renderAskAnswer();
+        }
+    });
+
+    document.getElementById('askExamples').addEventListener('click', function (e) {
+        var chip = e.target.closest('.ask-chip');
+        if (!chip) return;
+        lastAnswerKey = chip.getAttribute('data-q');
+        document.getElementById('searchInput').value = ASK_ANSWERS[lastAnswerKey].question;
+        renderAskAnswer();
+    });
+
+    renderAll();
+})();
+</script>

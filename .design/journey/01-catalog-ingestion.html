@@ -1,0 +1,614 @@
+<title>Vyra — Catalog Ingestion (Journey Mockup 1/4)</title>
+<style>
+    :root {
+        --bg: #09090b;
+        --surface: #18181b;
+        --surface-soft: #18181b99;
+        --border: #27272a;
+        --border-soft: #27272a99;
+        --text: #f4f4f5;
+        --text-dim: #a1a1aa;
+        --text-dimmer: #71717a;
+        --text-faint: #52525b;
+        --accent: #38bdf8;
+        --accent-soft: #38bdf81a;
+        --brand: #10b981;
+        --brand-soft: #10b9811a;
+        --warn: #f59e0b;
+        --warn-soft: #f59e0b1a;
+        --danger: #f87171;
+        --danger-soft: #f871711a;
+        --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-ui);
+        font-size: 14px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+    }
+    button, input { font-family: inherit; }
+    ::selection { background: var(--accent-soft); }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+    a { color: inherit; text-decoration: none; }
+    a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+    .mock-banner {
+        background: var(--warn-soft);
+        border-bottom: 1px solid #f59e0b40;
+        color: var(--warn);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: .02em;
+        padding: 6px 24px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .mock-banner .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); flex-shrink: 0; }
+
+    .shell { display: flex; height: calc(100vh - 27px); }
+
+    /* ── Sidebar (mirrors ui/src/components/nav-shell.tsx) ── */
+    .sidebar {
+        width: 256px;
+        flex-shrink: 0;
+        border-right: 1px solid var(--border-soft);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+    }
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 16px;
+        border-bottom: 1px solid var(--border-soft);
+    }
+    .brand-mark {
+        width: 28px; height: 28px; border-radius: 6px;
+        background: var(--brand);
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        color: var(--bg);
+    }
+    .brand-name { font-size: 13px; font-weight: 700; line-height: 1.2; }
+    .brand-tag { font-size: 10px; color: var(--text-faint); line-height: 1.2; }
+
+    .nav { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 16px; }
+    .nav-group { display: flex; flex-direction: column; gap: 4px; }
+    .nav-group-label { display: flex; align-items: center; gap: 6px; padding: 0 10px; margin-bottom: 2px; }
+    .nav-group-layer { font-size: 9px; font-family: var(--font-mono); color: var(--text-faint); }
+    .nav-group-persona { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dimmer); }
+    .nav-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; font-size: 12px; border: 1px solid transparent; }
+    .nav-row .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .nav-row.active { background: var(--accent-soft); color: #7dd3fc; border-color: #38bdf84d; }
+    .nav-row.active .dot { background: var(--accent); }
+    .nav-row.live { color: var(--text-dim); }
+    .nav-row.live .dot { background: #059669; }
+    .nav-row.gap { color: var(--text-faint); }
+    .nav-row.gap .dot { background: #3f3f46; }
+    .nav-section { padding-top: 8px; border-top: 1px solid var(--border-soft); display: flex; flex-direction: column; gap: 4px; }
+    .nav-section-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dimmer); padding: 0 10px; margin-bottom: 2px; }
+
+    /* ── Main column ── */
+    .main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+    .page-header {
+        border-bottom: 1px solid var(--border-soft);
+        padding: 16px 24px;
+        display: flex; align-items: center; justify-content: space-between;
+        flex-shrink: 0;
+    }
+    .page-header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .page-title { font-size: 14px; font-weight: 600; line-height: 1.2; }
+    .page-subtitle { font-size: 11px; color: var(--text-dimmer); line-height: 1.2; }
+    .page-header-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+    .icon { width: 16px; height: 16px; stroke-width: 2; }
+
+    .btn {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 12px; font-weight: 500;
+        padding: 7px 14px; border-radius: 6px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: background-color .12s ease, border-color .12s ease;
+        white-space: nowrap;
+    }
+    .btn-primary { background: var(--accent); color: #082f49; }
+    .btn-primary:hover { background: #7dd3fc; }
+    .btn-ghost { background: transparent; color: var(--text-dim); border-color: var(--border); }
+    .btn-ghost:hover { background: var(--surface); color: var(--text); }
+    .btn-approve { background: var(--brand-soft); color: #6ee7b7; border-color: #10b98140; }
+    .btn-approve:hover { background: #10b98133; }
+    .btn-reject { background: var(--danger-soft); color: #fca5a5; border-color: #ef444440; }
+    .btn-reject:hover { background: #ef444433; }
+    .icon-btn { padding: 8px; border-radius: 6px; border: none; background: transparent; color: var(--text-faint); cursor: pointer; display: flex; }
+    .icon-btn:hover { background: var(--surface); color: var(--text-dim); }
+
+    /* ── Content ── */
+    .content { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 18px; }
+
+    .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .stat-card { border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 12px 14px; }
+    .stat-value { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .stat-label { font-size: 10.5px; color: var(--text-dimmer); text-transform: uppercase; letter-spacing: .05em; margin-top: 4px; }
+    .stat-card.brand .stat-value { color: #6ee7b7; }
+    .stat-card.warn .stat-value { color: #fbbf24; }
+
+    .split { display: flex; gap: 18px; align-items: flex-start; }
+
+    .section-label {
+        font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
+        color: var(--text-dimmer);
+        display: flex; align-items: center; gap: 6px;
+        margin-bottom: 2px;
+    }
+
+    /* ── Ingestion channel rail ── */
+    .channels { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; }
+    .channel-card { border: 1px solid var(--border); background: #18181b80; border-radius: 10px; padding: 12px 14px; cursor: pointer; }
+    .channel-card.active { border-color: #059669; background: var(--surface); }
+    .channel-head { display: flex; align-items: center; gap: 8px; }
+    .channel-head .icon { color: var(--text-dim); }
+    .channel-card.active .channel-head .icon { color: #34d399; }
+    .channel-name { font-size: 12.5px; font-weight: 600; }
+    .channel-meta { font-size: 11px; color: var(--text-dimmer); margin-top: 3px; }
+    .channel-detail { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-soft); display: flex; flex-direction: column; gap: 8px; }
+
+    .source-row { display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; }
+    .source-row .name { color: var(--text); }
+    .source-row .when { color: var(--text-faint); font-family: var(--font-mono); font-size: 10.5px; }
+
+    .dropzone {
+        border: 1.5px dashed #3f3f46;
+        border-radius: 8px;
+        padding: 16px 10px;
+        text-align: center;
+        color: var(--text-faint);
+        font-size: 11.5px;
+    }
+    .dropzone .icon { color: #52525b; margin-bottom: 6px; }
+
+    .upload-row { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 7px; background: #ffffff05; }
+    .upload-row-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .upload-name { font-size: 11.5px; color: var(--text); font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .upload-meta { font-size: 10.5px; color: var(--text-faint); flex-shrink: 0; }
+    .progress-track { height: 4px; border-radius: 2px; background: #27272a; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; }
+    .progress-fill.done { background: #10b981; width: 100% !important; }
+    .progress-fill.queued { background: #52525b; width: 0% !important; }
+
+    /* ── Extraction queue ── */
+    .queue { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+    .queue-card { border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .queue-card.queued { opacity: .55; }
+    .queue-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .source-tag { font-size: 10.5px; font-family: var(--font-mono); color: var(--text-dimmer); }
+    .source-tag b { color: var(--text-dim); font-weight: 600; }
+    .badge-row { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+    .pill {
+        font-size: 10px; font-weight: 600; letter-spacing: .02em;
+        padding: 2px 8px; border-radius: 100px;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+    .pill-emerald { background: var(--brand-soft); color: #6ee7b7; border-color: #10b98140; }
+    .pill-amber { background: var(--warn-soft); color: #fbbf24; border-color: #f59e0b40; }
+    .pill-red { background: var(--danger-soft); color: #fca5a5; border-color: #ef444440; }
+    .pill-zinc { background: #3f3f4640; color: var(--text-dimmer); border-color: #3f3f4680; }
+    .pill-sky { background: var(--accent-soft); color: #7dd3fc; border-color: #38bdf840; }
+
+    .snippet {
+        font-size: 12.5px; color: var(--text-dim); line-height: 1.55;
+        border-left: 2px solid #3f3f46; padding-left: 10px;
+        font-style: italic;
+    }
+    .snippet mark { background: #f59e0b33; color: #fde68a; font-style: normal; border-radius: 2px; padding: 0 2px; }
+
+    .maps-to { font-size: 11.5px; color: var(--text-faint); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .maps-to b { color: var(--text-dim); font-weight: 500; }
+    .maps-to .arrow { color: var(--text-faint); }
+
+    .queue-card-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 2px; }
+    .actions-left { display: flex; align-items: center; gap: 8px; }
+    .review-note { font-size: 11px; color: #fbbf24; display: flex; align-items: center; gap: 5px; }
+
+    .source-expand {
+        margin-top: 4px;
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        padding: 10px 12px;
+        background: #ffffff03;
+        font-size: 12px;
+        color: var(--text-faint);
+        line-height: 1.6;
+    }
+    .source-expand-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint); margin-bottom: 6px; }
+
+    /* ── Sync status strip ── */
+    .sync-panel { border: 1px solid var(--border); background: var(--surface); border-radius: 10px; overflow: hidden; }
+    .sync-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .sync-table th {
+        text-align: left; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+        font-size: 10px; color: var(--text-faint);
+        padding: 9px 14px; border-bottom: 1px solid var(--border-soft);
+        background: #ffffff05;
+    }
+    .sync-table td { padding: 10px 14px; border-bottom: 1px solid var(--border-soft); color: var(--text-dim); }
+    .sync-table tr:last-child td { border-bottom: none; }
+    .sync-table .mono { font-family: var(--font-mono); font-size: 11px; color: var(--text-dimmer); }
+    .sync-table .src-name { color: var(--text); font-weight: 500; }
+
+    .overflow-x { overflow-x: auto; }
+
+    footer {
+        border-top: 1px solid var(--border-soft);
+        padding: 10px 24px;
+        display: flex; align-items: center; justify-content: space-between;
+        flex-shrink: 0;
+    }
+    .footer-brand { display: flex; align-items: center; gap: 8px; }
+    .footer-mark { width: 16px; height: 16px; border-radius: 4px; background: var(--brand); display: flex; align-items: center; justify-content: center; }
+    .footer-text { font-size: 10px; color: var(--text-faint); }
+</style>
+
+<div class="mock-banner">
+    <span class="dot"></span>
+    DESIGN MOCKUP — Journey 1 of 4 · Catalog Ingestion — not implemented, no live data
+</div>
+
+<div class="shell">
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-mark">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5z"/></svg>
+            </div>
+            <div>
+                <p class="brand-name">VYRA</p>
+                <p class="brand-tag">Compliance. Handled.</p>
+            </div>
+        </div>
+
+        <nav class="nav">
+            <div class="nav-group">
+                <div class="nav-group-label">
+                    <span class="nav-group-layer">JR</span>
+                    <span class="nav-group-persona">Journey Mockups</span>
+                </div>
+                <span class="nav-row active"><span class="dot"></span>1 · Catalog Ingestion</span>
+                <span class="nav-row gap"><span class="dot"></span>2 · Catalog Browsing</span>
+                <span class="nav-row gap"><span class="dot"></span>3 · Enterprise Onboarding</span>
+                <span class="nav-row gap"><span class="dot"></span>4 · Obligation View</span>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-group-label">
+                    <span class="nav-group-layer">L1</span>
+                    <span class="nav-group-persona">Catalog Admin</span>
+                </div>
+                <span class="nav-row live"><span class="dot"></span>Regulations &amp; Standards</span>
+                <span class="nav-row live"><span class="dot"></span>Contracts &amp; SOPs</span>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Cross-cutting</div>
+                <span class="nav-row live"><span class="dot"></span>Landscape</span>
+                <span class="nav-row live"><span class="dot"></span>Decision Gate · L4 Review</span>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- ── Main ── -->
+    <main class="main">
+        <header class="page-header">
+            <div class="page-header-left">
+                <svg class="icon" style="color:#34d399" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+                <div>
+                    <p class="page-title">Catalog Ingestion</p>
+                    <p class="page-subtitle">Authority Feed · Document Upload · Manual Entry → Regulation → Clause → Obligation</p>
+                </div>
+            </div>
+            <div class="page-header-actions">
+                <button class="btn btn-ghost">
+                    <svg class="icon" style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14.5-4.6M20 12a8 8 0 0 1-14.5 4.6"/><path d="M18.5 3v4.5H14M5.5 21v-4.5H10"/></svg>
+                    Sync now
+                </button>
+                <button class="btn btn-primary">
+                    <svg class="icon" style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                    Connect source
+                </button>
+            </div>
+        </header>
+
+        <div class="content">
+            <!-- Stat strip -->
+            <div class="stat-row">
+                <div class="stat-card">
+                    <div class="stat-value">4</div>
+                    <div class="stat-label">Sources connected</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">142</div>
+                    <div class="stat-label">Clauses parsed this run</div>
+                </div>
+                <div class="stat-card brand">
+                    <div class="stat-value">121</div>
+                    <div class="stat-label">Auto-accepted</div>
+                </div>
+                <div class="stat-card warn">
+                    <div class="stat-value">21</div>
+                    <div class="stat-label">Pending interpretation</div>
+                </div>
+            </div>
+
+            <div class="split">
+                <!-- Ingestion channels -->
+                <div class="channels">
+                    <p class="section-label">Ingestion Channels</p>
+
+                    <div class="channel-card">
+                        <div class="channel-head">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+                            <span class="channel-name">Authority API Feed</span>
+                        </div>
+                        <p class="channel-meta">2 sources · UK HSE, India DGFASLI</p>
+                        <div class="source-row" style="margin-top:8px">
+                            <span class="name">UK HSE</span>
+                            <span class="when">synced 2h ago</span>
+                        </div>
+                        <div class="source-row">
+                            <span class="name">India DGFASLI</span>
+                            <span class="when">synced 2h ago</span>
+                        </div>
+                    </div>
+
+                    <div class="channel-card active">
+                        <div class="channel-head">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                            <span class="channel-name">Document Upload</span>
+                        </div>
+                        <p class="channel-meta">PDF · DOCX · HTML circulars</p>
+
+                        <div class="channel-detail">
+                            <div class="dropzone">
+                                <svg class="icon" style="width:18px;height:18px;margin:0 auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+                                <div style="margin-top:4px">Drop a file, or browse</div>
+                            </div>
+
+                            <div class="upload-row">
+                                <div class="upload-row-top">
+                                    <span class="upload-name">ISO_45001_2018.pdf</span>
+                                    <span class="upload-meta">312 pg · done</span>
+                                </div>
+                                <div class="progress-track"><div class="progress-fill done"></div></div>
+                            </div>
+                            <div class="upload-row">
+                                <div class="upload-row-top">
+                                    <span class="upload-name">Factories_Act_1948_India.pdf</span>
+                                    <span class="upload-meta">64%</span>
+                                </div>
+                                <div class="progress-track"><div class="progress-fill" style="width:64%"></div></div>
+                            </div>
+                            <div class="upload-row">
+                                <div class="upload-row-top">
+                                    <span class="upload-name">HSWA_1974_UK.docx</span>
+                                    <span class="upload-meta">queued</span>
+                                </div>
+                                <div class="progress-track"><div class="progress-fill queued"></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="channel-card">
+                        <div class="channel-head">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h12"/></svg>
+                            <span class="channel-name">Manual Entry</span>
+                        </div>
+                        <p class="channel-meta">12 hand-keyed this quarter</p>
+                        <div class="channel-detail">
+                            <button class="btn btn-ghost" style="justify-content:center">
+                                <svg class="icon" style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                                New obligation
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Extraction queue -->
+                <div class="queue">
+                    <p class="section-label">
+                        Extraction Queue
+                        <span class="pill pill-zinc">from ISO_45001_2018.pdf · Factories_Act_1948_India.pdf</span>
+                    </p>
+
+                    <div class="queue-card">
+                        <div class="queue-card-top">
+                            <span class="source-tag"><b>ISO_45001_2018.pdf</b> · §6.1.3</span>
+                            <div class="badge-row">
+                                <span class="pill pill-emerald">0.94 confidence</span>
+                                <span class="pill pill-zinc">auto-accepted</span>
+                            </div>
+                        </div>
+                        <p class="snippet">"The organization shall establish, implement and maintain a process(es) to determine and have access to the legal requirements and other requirements applicable to its hazards, OH&amp;S risks and OH&amp;S management system."</p>
+                        <p class="maps-to"><b>ISO 45001:2018</b><span class="arrow">→</span>Clause 6.1.3<span class="arrow">→</span>Obligation: <b>Maintain legal &amp; other OH&amp;S requirements register</b></p>
+                    </div>
+
+                    <div class="queue-card">
+                        <div class="queue-card-top">
+                            <span class="source-tag"><b>ISO_45001_2018.pdf</b> · §8.1.2</span>
+                            <div class="badge-row">
+                                <span class="pill pill-emerald">0.91 confidence</span>
+                                <span class="pill pill-zinc">auto-accepted</span>
+                            </div>
+                        </div>
+                        <p class="snippet">"The organization shall establish a process(es) for hazard identification that is ongoing and proactive, and considers routine and non-routine activities."</p>
+                        <p class="maps-to"><b>ISO 45001:2018</b><span class="arrow">→</span>Clause 8.1.2<span class="arrow">→</span>Obligation: <b>Run ongoing hazard identification process</b></p>
+                    </div>
+
+                    <div class="queue-card">
+                        <div class="queue-card-top">
+                            <span class="source-tag"><b>Factories_Act_1948_India.pdf</b> · §7A</span>
+                            <div class="badge-row">
+                                <span class="pill pill-amber">0.68 confidence</span>
+                                <span class="pill pill-amber">needs review</span>
+                            </div>
+                        </div>
+                        <p class="snippet">"It shall be the general duty of every occupier to ensure, <mark>so far as is reasonably practicable</mark>, the health, safety and welfare of all workers while they are at work in the factory."</p>
+                        <p class="maps-to"><b>Factories Act 1948 (India)</b><span class="arrow">→</span>Section 7A<span class="arrow">→</span>Obligation (suggested): <b>Ensure worker health, safety &amp; welfare</b></p>
+
+                        <div class="source-expand">
+                            <div class="source-expand-label">Source passage · Factories_Act_1948_India.pdf, p. 14</div>
+                            <div>…Every occupier shall have a written safety policy. It shall be the general duty of every occupier to ensure, <mark>so far as is reasonably practicable</mark>, the health, safety and welfare of all workers while they are at work in the factory, and in particular, in respect of matters specified under sub-section (2)…</div>
+                        </div>
+
+                        <div class="queue-card-actions">
+                            <div class="actions-left">
+                                <button class="btn btn-approve">
+                                    <svg class="icon" style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                                    Accept
+                                </button>
+                                <button class="btn btn-reject">
+                                    <svg class="icon" style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>
+                                    Reject
+                                </button>
+                            </div>
+                            <span class="review-note">
+                                <svg class="icon" style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg>
+                                qualifier "reasonably practicable" — scope needs a human call
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="queue-card">
+                        <div class="queue-card-top">
+                            <span class="source-tag"><b>Factories_Act_1948_India.pdf</b> · §21</span>
+                            <div class="badge-row">
+                                <span class="pill pill-red">0.52 confidence</span>
+                                <span class="pill pill-amber">pending interpretation</span>
+                            </div>
+                        </div>
+                        <p class="snippet">"…every dangerous part of any machinery shall be securely fenced by safeguards of substantial construction which shall be constantly maintained…"</p>
+                        <p class="maps-to">Extraction is ambiguous — this passage appears to split across two candidate obligations (fencing standard vs. maintenance duty). Held for review before either is created.</p>
+
+                        <div class="queue-card-actions">
+                            <div class="actions-left">
+                                <button class="btn btn-approve">
+                                    <svg class="icon" style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                                    Split &amp; accept
+                                </button>
+                                <button class="btn btn-reject">
+                                    <svg class="icon" style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>
+                                    Reject
+                                </button>
+                            </div>
+                            <span class="review-note">
+                                <svg class="icon" style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg>
+                                low confidence — ambiguous clause boundary
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="queue-card queued">
+                        <div class="queue-card-top">
+                            <span class="source-tag"><b>HSWA_1974_UK.docx</b> · §2(1)</span>
+                            <div class="badge-row">
+                                <span class="pill pill-zinc">queued</span>
+                            </div>
+                        </div>
+                        <p class="maps-to">Extraction starts once upload completes — currently queued behind Factories_Act_1948_India.pdf.</p>
+                    </div>
+
+                    <div class="queue-card">
+                        <div class="queue-card-top">
+                            <span class="source-tag"><b>Manual entry</b> · hand-keyed by A. Sharma</span>
+                            <div class="badge-row">
+                                <span class="pill pill-sky">human-authored</span>
+                                <span class="pill pill-zinc">auto-accepted</span>
+                            </div>
+                        </div>
+                        <p class="snippet">"Site-specific evacuation muster point capacity must be re-verified after any facility layout change."</p>
+                        <p class="maps-to">Enterprise SOP<span class="arrow">→</span>Obligation: <b>Re-verify muster point capacity on layout change</b> — no extraction confidence to score; direct authorship skips review.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sync status -->
+            <div>
+                <p class="section-label">Catalog Sync Status</p>
+                <div class="sync-panel overflow-x">
+                    <table class="sync-table">
+                        <thead>
+                            <tr>
+                                <th>Source</th>
+                                <th>Last synced</th>
+                                <th>Catalog version</th>
+                                <th>Nodes ingested</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="src-name">UK HSE API</td>
+                                <td class="mono">2h ago</td>
+                                <td class="mono">2026.3</td>
+                                <td class="mono">340</td>
+                                <td>—</td>
+                            </tr>
+                            <tr>
+                                <td class="src-name">India DGFASLI API</td>
+                                <td class="mono">2h ago</td>
+                                <td class="mono">2026.1</td>
+                                <td class="mono">210</td>
+                                <td>—</td>
+                            </tr>
+                            <tr>
+                                <td class="src-name">ISO 45001:2018 (upload)</td>
+                                <td class="mono">in progress</td>
+                                <td class="mono">v1 (draft)</td>
+                                <td class="mono">86 so far</td>
+                                <td>extraction running</td>
+                            </tr>
+                            <tr>
+                                <td class="src-name">Factories Act 1948 (India)</td>
+                                <td class="mono">3d ago</td>
+                                <td class="mono">v2</td>
+                                <td class="mono">58</td>
+                                <td><span class="pill pill-amber" style="font-size:9.5px">§21 superseded by Amendment Rules 2024</span></td>
+                            </tr>
+                            <tr>
+                                <td class="src-name">Manual entry</td>
+                                <td class="mono">continuous</td>
+                                <td class="mono">—</td>
+                                <td class="mono">12</td>
+                                <td>human-authored, no versioning</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <div class="footer-brand">
+                <div class="footer-mark">
+                    <svg style="width:9px;height:9px;color:var(--bg)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+                </div>
+                <span class="footer-text">Vyra Platform v1 · Journey Mockup</span>
+            </div>
+            <p class="footer-text">Compliance. Handled.</p>
+        </footer>
+    </main>
+</div>
