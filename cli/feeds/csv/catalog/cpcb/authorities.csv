@@ -1,0 +1,6 @@
+id,name,abbreviation,authorityType,jurisdictionId,description
+AUTH-009,Central Pollution Control Board,CPCB,National Regulator,JUR-INDIA,"National apex body for pollution control; administers EPR portals (plastic, e-waste, battery) and sets national policy under HWM/BMW Rules."
+AUTH-010,State Pollution Control Board,SPCB,State Regulator,JUR-INDIA,"State-level operational authority issuing CTE/CTO consents and Rule 6/Rule 10 authorizations, the primary regulator for most CPCB-administered obligations."
+AUTH-011,"Ministry of Environment, Forest and Climate Change",MoEFCC,National Regulator,JUR-INDIA,"Administers the Environment (Protection) Act 1986, the umbrella statute enabling every subordinate CPCB rule."
+AUTH-012,Central Ground Water Authority,CGWA,National Regulator,JUR-INDIA,Issues groundwater extraction No-Objection Certificates and receives periodic bore-well compliance reporting.
+AUTH-013,Urban Local Body,ULB,Local Authority,JUR-INDIA,Municipal authority overseeing Solid Waste Management and Construction & Demolition Waste Management Rules compliance.

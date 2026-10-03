@@ -48,6 +48,7 @@ export const v2: Contract = {
                 catalogVersion: 'catalogVersion',
                 effectiveFrom: 'effectiveFrom',
                 supersededBy: 'supersededBy',
+                tags: { mapTo: 'tags', isArray: true },
             },
             axes: [Axis.Regulatory],
             rels: [
@@ -70,6 +71,7 @@ export const v2: Contract = {
                 supersededBy: 'supersededBy',
                 sourceDocumentId: 'sourceDocumentId',
                 sourceAnchor: 'sourceAnchor',
+                tags: { mapTo: 'tags', isArray: true },
             },
             axes: [Axis.Regulatory],
             rels: [
@@ -91,9 +93,14 @@ export const v2: Contract = {
                 supersededBy: 'supersededBy',
                 sourceDocumentId: 'sourceDocumentId',
                 sourceAnchor: 'sourceAnchor',
+                reportId: 'reportId',
+                tags: { mapTo: 'tags', isArray: true },
             },
             axes: [Axis.Regulatory],
-            rels: [{ type: 'DEFINED_BY', targetLabel: 'Clause', sourceField: 'clauseId' }],
+            rels: [
+                { type: 'DEFINED_BY', targetLabel: 'Clause', sourceField: 'clauseId' },
+                { type: 'REQUIRES_FILING', targetLabel: 'Report', sourceField: 'reportId' },
+            ],
         },
 
         Control: {
@@ -111,6 +118,7 @@ export const v2: Contract = {
                 standardId: 'standardId',
                 regulationId: 'regulationId',
                 authorityId: 'authorityId',
+                tags: { mapTo: 'tags', isArray: true },
             },
             axes: [Axis.Regulatory, Axis.Process],
             rels: [
@@ -124,6 +132,45 @@ export const v2: Contract = {
             graph: Graph.Knowledge,
             props: { ...baseProps },
             axes: [Axis.Regulatory],
+            rels: [],
+        },
+
+        // A recurring statutory filing requirement an Obligation names (e.g. CPCB's
+        // Form V Annual Environmental Statement) — catalog data, same amortized-once
+        // shape as Obligation/Control, not tenant-specific. Distinct from
+        // ReportSubmission (Assurance Graph, below), which is the tenant's actual
+        // per-period filing event against this requirement. Journey v1-plan.md Phase
+        // J0 Sub-phase 1 — schema only this pass; seeded by Sub-phase 1 Step 2's CPCB
+        // catalog ingest, not yet in the live graph.
+        Report: {
+            label: 'Report',
+            graph: Graph.Knowledge,
+            // authorityId is a flat reference (same convention as Control's riskId/
+            // clauseId for :Catalog rows) — the traversable edge to Authority belongs
+            // on ReportSubmission (SUBMITTED_TO, Assurance Graph), the actual filing
+            // event; Report itself is the recurring requirement, not a per-filing fact.
+            //
+            // Cadence is split, not a single free-text field (2026-10-03 correction —
+            // the original single `cadence` string conflated two different things: a
+            // periodic schedule and an event trigger, e.g. "Quarterly / at NOC renewal"
+            // is both). cadenceUnit/cadenceInterval reuse Schedule's exact shape for the
+            // periodic half; triggerCondition names the event half (e.g. "90-120 days
+            // pre-expiry", "at consent renewal") when there is one — a Report can have
+            // either, both (hybrid), or just one. cadenceRaw keeps the original source
+            // text verbatim, same "raw text beside the structured chain" discipline
+            // Incident.escalationPath already uses — convert-cpcb-seed.ts's
+            // parseCadence() derives the structured fields from it, not the other way.
+            props: {
+                ...baseProps,
+                reportType: 'reportType',
+                authorityId: 'authorityId',
+                cadenceUnit: 'cadenceUnit',
+                cadenceInterval: 'cadenceInterval',
+                triggerCondition: 'triggerCondition',
+                cadenceRaw: 'cadenceRaw',
+                tags: { mapTo: 'tags', isArray: true },
+            },
+            axes: [Axis.Regulatory, Axis.Assurance],
             rels: [],
         },
 
@@ -163,18 +210,27 @@ export const v2: Contract = {
         Task: {
             label: 'Task',
             graph: Graph.Execution,
-            props: { ...baseProps, owner: 'owner', frequency: 'frequency', priority: 'priority', dueDate: 'dueDate', workflowId: 'workflowId', evidenceRequired: 'evidenceRequired', controlId: 'controlId' },
+            // vendorId/ASSIGNED_TO: designed, not yet active — populated once Phase J0
+            // Sub-phase 2 wires vendor-executed Task assignment (e.g. AMC-performed
+            // stack monitoring); reuses ASSIGNED_TO, already used for Assignment →
+            // Actor, safe under the same (relType, sourceLabel, targetLabel) grouping.
+            // evidenceMethod: how evidence is captured (Lab/Manual Log/Mobile/IoT/
+            // Document) — schema only this pass, no data yet.
+            props: { ...baseProps, owner: 'owner', frequency: 'frequency', priority: 'priority', dueDate: 'dueDate', workflowId: 'workflowId', evidenceRequired: 'evidenceRequired', controlId: 'controlId', evidenceMethod: 'evidenceMethod', vendorId: 'vendorId' },
             axes: [Axis.Process, Axis.Time],
             rels: [
                 { type: 'PART_OF', targetLabel: 'Workflow', sourceField: 'workflowId' },
                 { type: 'IMPLEMENTS', targetLabel: 'Control', sourceField: 'controlId' },
+                { type: 'ASSIGNED_TO', targetLabel: 'Vendor', sourceField: 'vendorId' },
             ],
         },
 
         CAPA: {
             label: 'CAPA',
             graph: Graph.Execution,
-            props: { ...baseProps, owner: 'owner', dueDate: 'dueDate', findingId: 'findingId' },
+            // triggerCondition/deviationApprovedBy: schema only this pass, no data yet
+            // on the existing 20 CAPAs — same precedent as docType on Control.
+            props: { ...baseProps, owner: 'owner', dueDate: 'dueDate', findingId: 'findingId', triggerCondition: 'triggerCondition', deviationApprovedBy: 'deviationApprovedBy' },
             axes: [Axis.Process, Axis.Risk],
             rels: [{ type: 'ADDRESSES', targetLabel: 'Finding', sourceField: 'findingId' }],
         },
@@ -199,7 +255,10 @@ export const v2: Contract = {
         Facility: {
             label: 'Facility',
             graph: Graph.Operational,
-            props: { ...baseProps, businessUnit: 'businessUnit', region: 'region', company: 'company' },
+            // facilityType: hospital/hospitality/commercial/industrial — drives which
+            // CPCB obligation set applies (e.g. BMW_RULES_2016 for hospital only).
+            // Schema only this pass, no data yet.
+            props: { ...baseProps, businessUnit: 'businessUnit', region: 'region', company: 'company', facilityType: 'facilityType' },
             axes: [Axis.Enterprise],
             rels: [],
         },
@@ -293,6 +352,33 @@ export const v2: Contract = {
             rels: [
                 { type: 'WITH_VENDOR', targetLabel: 'Vendor', sourceField: 'vendorId' },
                 { type: 'COORDINATED_BY', targetLabel: 'Role', sourceField: 'coordinatorRoleId' },
+            ],
+        },
+
+        // Regulatory instrument held by the enterprise (consent/authorization/NOC/
+        // registration/license) — one node type with an instrumentType discriminator,
+        // same pattern as Control.controlType, not six node labels. No CSV feed —
+        // designed, not yet active; the write path (Decision-gated, mirroring
+        // proposeContractChange) lands in journey/v1-plan.md Phase J0 Sub-phase 2.
+        // Asset-level coverage (which Assets this instrument covers, required for
+        // renewal/amendment impact analysis) is the live-only COVERED_BY_CONSENT edge —
+        // not compiler-driven, see graph.md's Operational Graph relationship catalog.
+        Permit: {
+            label: 'Permit',
+            graph: Graph.Operational,
+            props: {
+                ...baseProps,
+                instrumentType: 'instrumentType',
+                authorityId: 'authorityId',
+                facilityId: 'facilityId',
+                issuedDate: 'issuedDate',
+                expiryDate: 'expiryDate',
+                renewalWindowDays: 'renewalWindowDays',
+            },
+            axes: [Axis.Regulatory, Axis.Enterprise],
+            rels: [
+                { type: 'ISSUED_BY', targetLabel: 'Authority', sourceField: 'authorityId' },
+                { type: 'COVERS', targetLabel: 'Facility', sourceField: 'facilityId' },
             ],
         },
 
@@ -421,6 +507,22 @@ export const v2: Contract = {
             props: { ...baseProps, type: 'type', period: 'period', auditor: 'auditor' },
             axes: [Axis.Assurance],
             rels: [],
+        },
+
+        // The tenant's actual per-period filing event against a Report requirement —
+        // distinct from Report itself (Knowledge Graph, above), which is the recurring
+        // catalog-defined requirement. No CSV feed — designed, not yet active; the
+        // write path lands in journey/v1-plan.md Phase J0 Sub-phase 2 (document
+        // extraction from the customer's "Filings" folder).
+        ReportSubmission: {
+            label: 'ReportSubmission',
+            graph: Graph.Assurance,
+            props: { ...baseProps, reportId: 'reportId', authorityId: 'authorityId', periodCovered: 'periodCovered', submittedAt: 'submittedAt', acknowledgedAt: 'acknowledgedAt' },
+            axes: [Axis.Assurance],
+            rels: [
+                { type: 'FILED_AGAINST', targetLabel: 'Report', sourceField: 'reportId' },
+                { type: 'SUBMITTED_TO', targetLabel: 'Authority', sourceField: 'authorityId' },
+            ],
         },
 
         Exception: {

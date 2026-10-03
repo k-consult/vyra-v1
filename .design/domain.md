@@ -47,8 +47,9 @@ Every subdomain is described the same way:
 - **`Control`** (root, standalone) — refs `Obligation`, `ComplianceArea` (by id). Origin (`:Catalog` / `:Enterprise` / `:AgentProposed` / legacy) is a VO field on this one Entity type, not a subtype — this is deliberate: it forecloses a future `if (control.origin === ...)` branch by keeping origin as data, not as a type hierarchy.
 - **`ComplianceArea`** (root, reference data) — no owned children, no refs.
 - **`Authority`** (root, reference data) — no owned children, no refs.
+- **`Report`** (root, standalone, **live** — `graph.md`, 2026-10-03) — refs `Authority` (by id, flat reference). A recurring statutory filing requirement an `Obligation` names (e.g. CPCB's Form V) — catalog data, amortized once across every tenant with that obligation, same shape as `Control`. Kept independent of `Obligation` for the same reason `Obligation` is kept independent of `Regulation`/`Standard`: a filing requirement has its own lifecycle and can be referenced by many Obligations. Distinct from `ReportSubmission` (Assurance subdomain, below), which is the tenant's actual per-period filing instance. Its cadence is a Value Object pair, not a scalar — see Value Objects below.
 
-**Value Objects**: CatalogProvenance (catalogVersion, effectiveFrom, supersededBy, sourceRevision), SourceSpan (document, version, anchor/offset), ConfidenceAssertion (confidence, author, assertedAt — revised by replacing the VO wholesale under the Append-and-Supersede Protocol, never mutated in place)
+**Value Objects**: CatalogProvenance (catalogVersion, effectiveFrom, supersededBy, sourceRevision), SourceSpan (document, version, anchor/offset), ConfidenceAssertion (confidence, author, assertedAt — revised by replacing the VO wholesale under the Append-and-Supersede Protocol, never mutated in place), FilingCadence (**live, `Report` only, 2026-10-03**: cadenceUnit, cadenceInterval, triggerCondition, cadenceRaw — replaces a single free-text `cadence` field that conflated a periodic schedule with an event trigger; see `graph.md`'s `Report` entry)
 
 **Domain Events**
 - `RegulationSuperseded` — raised when a `Regulation` aggregate's `supersededBy` is set; consumed by anything holding a stale reference to flag it for re-check, not to cascade a delete (nothing is deleted, only superseded).
@@ -56,7 +57,7 @@ Every subdomain is described the same way:
 
 **Factories**: none — construction here is direct authoring/ingestion, not derived from another aggregate's event.
 
-**Repositories** (one per Aggregate root): RegulationRepository, StandardRepository, ObligationRepository, ControlRepository, ComplianceAreaRepository, AuthorityRepository
+**Repositories** (one per Aggregate root): RegulationRepository, StandardRepository, ObligationRepository, ControlRepository, ComplianceAreaRepository, AuthorityRepository, ReportRepository
 
 **Specifications**: CatalogFactIsCurrentSpecification, ObligationIsDefinedBySpecification, ControlImplementsObligationSpecification
 
@@ -68,6 +69,7 @@ Every subdomain is described the same way:
 - **`Facility`**, **`Vendor`**, **`Organization`**, **`Role`**, **`Person`** (each root, reference-data aggregates) — cross-reference each other by id (`Person` → `Role`/`Facility`, `Role` → `Organization`) but own no children.
 - **`Asset`** (root) — refs `Facility`, `Vendor`, `ComplianceArea` (by id). No owned children — `Signal`s emitted by an Asset are not loaded into it (see below).
 - **`Contract`** (root) — refs `Vendor`, `Role`, `Facility[]` (COVERS, by id). Invariant: every id in its site-coverage range must resolve to a real Facility at write time.
+- **`Permit`** (root, standalone, **designed, not yet active** — `graph.md`, 2026-10-03) — refs `Authority`, `Facility` (by id). `instrumentType` (consent/authorization/noc/registration/permit/license) is a VO field on this one Entity type, not a subtype — same deliberate choice as `Control.origin`, forecloses an `if (permit.instrumentType === ...)` branch. Decision-gated, mirroring `Contract`'s propose/approve discipline exactly.
 - **`Signal`** (root, standalone) — refs `Asset` (by id). Deliberately not a child of `Asset`: signals arrive independently, at volume, and writing one must never require loading the Asset aggregate.
 
 **Value Objects**: MappingProvenance (origin: ingestion|declared|inferred|observed, confidence, timestamp — attaches to the `COVERED_BY` edge; see the open note below on edge-property VOs), SiteCoverageRange, EscalationPath (**free text by decision, not a VO candidate** — `graph.md`'s Gap Review already closed this: zero title matches to seeded Roles, no hierarchy property to model against; keeping it "candidate" status here was itself stale)
@@ -78,9 +80,9 @@ Every subdomain is described the same way:
 
 **Factories**: `SignalTaskFactory` — consumes `SignalReceived`, resolves the owner via `Asset → Facility ← Person`, and constructs the derived `Task`(s). Formalizes logic that lives ad hoc in the events sink today.
 
-**Repositories**: FacilityRepository, AssetRepository, VendorRepository, ContractRepository, OrganizationRepository, RoleRepository, PersonRepository, SignalRepository
+**Repositories**: FacilityRepository, AssetRepository, VendorRepository, ContractRepository, PermitRepository, OrganizationRepository, RoleRepository, PersonRepository, SignalRepository
 
-**Specifications**: AssetHasControlCoverageSpecification (gap = documented absence, not silent null), AssetIsInComplianceAreaSpecification, PersonHasResolvableRoleSpecification (currently always-false for all 7 seeded People — kept because "documented absence is a first-class state," not because it's expected to fire soon)
+**Specifications**: AssetHasControlCoverageSpecification (gap = documented absence, not silent null), AssetIsInComplianceAreaSpecification, PersonHasResolvableRoleSpecification (currently always-false for all 7 seeded People — kept because "documented absence is a first-class state," not because it's expected to fire soon), AssetHasValidConsentSpecification (**designed, not yet active** — gap = an Asset with no `COVERED_BY_CONSENT` edge to a non-expired `Permit`, the same documented-absence discipline as coverage; backs the posture view in Phase J0 Sub-phase 2 Step 3)
 
 **Open note**: `MappingProvenance` models an edge property (on `COVERED_BY`), not a property of either endpoint Entity. Classic Entity/VO/Aggregate assumes object references, not property-bearing relationships — this doc doesn't yet have a clean answer for edge-attached VOs, and it recurs (cadence, coverage ranges, provenance). Flagged, not resolved.
 
@@ -90,8 +92,8 @@ Every subdomain is described the same way:
 
 **Aggregates**
 - **`Schedule`** (root, standalone) — owns its `CadenceRule` state; refs nothing. **Deliberately not a VO embedded on `Task`**: a cadence like "quarterly fire-safety check" can legitimately drive more than one `Task` (or a future non-Task action), and a VO has no identity to be shared across owners. `Task` and any future action-aggregate hold a `scheduleId` reference instead of a private copy — one change to the cadence is one write, not N.
-- **`Task`** (root) — refs `Control` (IMPLEMENTS), `Schedule` (by id, not embedded).
-- **`CAPA`** (root) — owns `Verification` (child). Refs `Finding`. Invariant: a CAPA transitions to closed only via `capa.close(verifiedBy, outcome)`, which constructs its own `Verification` as one behavior — not two independent writes joined after the fact by `CLOSES`. This is where `CAPAIsClosedSpecification` gets **enforced**, not merely queried.
+- **`Task`** (root) — refs `Control` (IMPLEMENTS), `Schedule` (by id, not embedded), `Vendor` (by id, `ASSIGNED_TO` — **designed, not yet active**, `graph.md`, 2026-10-03, for vendor-executed tasks).
+- **`CAPA`** (root) — owns `Verification` (child). Refs `Finding`. Invariant: a CAPA transitions to closed only via `capa.close(verifiedBy, outcome)`, which constructs its own `Verification` as one behavior — not two independent writes joined after the fact by `CLOSES`. This is where `CAPAIsClosedSpecification` gets **enforced**, not merely queried. `triggerCondition`/`deviationApprovedBy` (**designed, not yet active** — `graph.md`, 2026-10-03) are plain fields, not a separate `Deviation` entity: an approved-extension-when-a-CAPA-can't-close-on-time is a state transition on the CAPA itself, the same reasoning that keeps `instrumentType` a field on `Permit` rather than its own subtype.
 - `Workflow`, `Program` (designed, not yet active) — will be standalone aggregates, referenced by id from `Task`/`Workflow` respectively via `PART_OF`, once ratified in `graph.md`.
 
 **Value Objects**: CadenceRule (now internal state of `Schedule`, not a per-Task copy), ComplianceWindow (derived occurrence set — computed on `Schedule`, never stored)
@@ -146,6 +148,7 @@ This is the reasoning core, and where aggregate size matters most — every root
 - **`EvidencePackage`** (root) — owns `Attestation` (child), `AssuranceStatement` (child). Refs `Evidence[]` (PART_OF, by id), `Audit` (by id). Attesting to a package and issuing its posture statement have no meaning outside "this specific package," and the live write path already constructs all three together from one Decision approval — collapsing them into one aggregate matches what already happens atomically, instead of three independent writes joined by relationships after the fact.
 - **`Evidence`** (root, standalone) — refs `Task` (by id). Kept independent of `EvidencePackage` because Evidence is produced continuously as work happens, before any package exists to bundle it.
 - **`Audit`** (root, standalone) — no owned children. The engagement can exist before evidence is assembled against it.
+- **`ReportSubmission`** (root, standalone, **designed, not yet active** — `graph.md`, 2026-10-03) — refs `Report` (Knowledge subdomain, by id, `FILED_AGAINST`), `Authority` (by id, `SUBMITTED_TO`). The tenant's actual per-period filing event, kept independent of `Report` for the same reason `Evidence` is kept independent of `EvidencePackage`: submissions happen continuously, one per filing period, against a `Report` requirement that itself never changes shape.
 
 **Value Objects**: PostureStatement (scope, posture, generatedAt — posture always computed, never asserted, now specifically as `EvidencePackage`'s own computed state), CoverageScore
 
@@ -155,9 +158,9 @@ This is the reasoning core, and where aggregate size matters most — every root
 
 **Factories**: `AssurancePackageFactory` — consumes `AssurancePackageProposalApproved` (live path) **or** is called directly by the Phase-4b historical batch script (synthetic path). One Factory, two callers — this removes the current split between live and synthetic construction logic, which today are two independently-maintained code paths producing the same shape.
 
-**Repositories**: EvidencePackageRepository, EvidenceRepository, AuditRepository (`Attestation`/`AssuranceStatement` have no repository of their own — read/written only through `EvidencePackageRepository`)
+**Repositories**: EvidencePackageRepository, EvidenceRepository, AuditRepository (`Attestation`/`AssuranceStatement` have no repository of their own — read/written only through `EvidencePackageRepository`), ReportSubmissionRepository
 
-**Specifications**: EvidencePackageIsCompleteSpecification, PostureIsCompliantSpecification (every reachable CAPA has a Verification), AssuranceStatementCoversRegulationSpecification
+**Specifications**: EvidencePackageIsCompleteSpecification, PostureIsCompliantSpecification (every reachable CAPA has a Verification), AssuranceStatementCoversRegulationSpecification, ReportSubmissionIsAcknowledgedSpecification (**designed, not yet active** — `acknowledgedAt` is null until the regulator confirms receipt; closes the filing loop the same way `Verification` closes a `CAPA`)
 
 ---
 

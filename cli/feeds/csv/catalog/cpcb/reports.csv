@@ -1,0 +1,20 @@
+id,name,reportType,authorityId,cadenceUnit,cadenceInterval,triggerCondition,cadenceRaw,tags
+RPT-CPCB-01,Form V (Annual Environmental Statement),statutory,AUTH-010,month,12,statutory deadline: Sep 30,Annual (by Sep 30),CPCB|statutory|SPCB
+RPT-CPCB-02,CTO compliance report,statutory,AUTH-010,,,As required at renewal,As required at renewal,CPCB|statutory|SPCB
+RPT-CPCB-03,CTO Renewal Application,statutory,AUTH-010,,,90-120 days pre-expiry,90-120 days pre-expiry,CPCB|statutory|SPCB
+RPT-CPCB-04,Water Cess Return,statutory,AUTH-010,month,3,,Quarterly,CPCB|statutory|SPCB
+RPT-CPCB-05,Form V + CTO compliance report,statutory,AUTH-010,month,12,at renewal,Annual / at renewal,CPCB|statutory|SPCB
+RPT-CPCB-06,Form V,statutory,AUTH-010,month,12,,Annual,CPCB|statutory|SPCB
+RPT-CPCB-07,CTO compliance report,statutory,AUTH-010,month,3,,Quarterly,CPCB|statutory|SPCB
+RPT-CPCB-08,CTO compliance report,statutory,AUTH-010,month,12,,Annual,CPCB|statutory|SPCB
+RPT-CPCB-09,Form V,statutory,AUTH-010,month,12,statutory deadline: Sep 30,Annual (by Sep 30),CPCB|statutory|SPCB
+RPT-CPCB-10,CGWA Compliance Report,statutory,AUTH-012,month,3,at NOC renewal,Quarterly / at NOC renewal,CPCB|statutory|CGWA
+RPT-CPCB-11,Annual Return (Form 4),statutory,AUTH-010,month,12,statutory deadline: Jun 30,Annual (by Jun 30),CPCB|statutory|SPCB
+RPT-CPCB-12,Annual Return (Form 4),statutory,AUTH-010,month,12,,Annual,CPCB|statutory|SPCB
+RPT-CPCB-13,Authorization Renewal Application,statutory,AUTH-010,,,Prior to expiry,Prior to expiry,CPCB|statutory|SPCB
+RPT-CPCB-14,Bulk Generator Compliance Report,statutory,AUTH-013,month,12,,Annual,CPCB|statutory|ULB
+RPT-CPCB-15,ULB Compliance Report,statutory,AUTH-013,month,3,,Quarterly,CPCB|statutory|ULB
+RPT-CPCB-16,EPR Annual Return,statutory,AUTH-009,month,12,,Annual,CPCB|statutory|CPCB
+RPT-CPCB-17,Bulk Consumer Annual Return,statutory,AUTH-010,month,12,,Annual,CPCB|statutory|SPCB
+RPT-CPCB-18,Annual Report (Form II),statutory,AUTH-010,month,12,,Annual,CPCB|statutory|SPCB
+RPT-CPCB-19,Project closure report,statutory,AUTH-013,,,At project completion,At project completion,CPCB|statutory|ULB

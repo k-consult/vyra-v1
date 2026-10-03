@@ -17,13 +17,23 @@ export const compile = (
         const id = String(row['id'] ?? '').trim();
         if (!id) continue;
 
-        // Map CSV columns → node props via TypeSpec.props
+        // Map CSV columns → node props via TypeSpec.props. The object form's
+        // isArray splits a delimited CSV cell (default '|') into a real string[] —
+        // e.g. tags: { mapTo: 'tags', isArray: true } turns "CPCB|SPCB|India" into
+        // ['CPCB', 'SPCB', 'India']. resolveBy is declared but has no implementation
+        // yet; a PropMap entry using only resolveBy is silently skipped, same as before.
         const props: Record<string, any> = {};
         for (const [propName, csvCol] of Object.entries(typeSpec.props)) {
             if (typeof csvCol === 'string') {
                 const val = row[csvCol];
                 if (val !== undefined && val !== null && String(val).trim() !== '') {
                     props[propName] = String(val).trim();
+                }
+            } else if (csvCol.isArray) {
+                const val = row[csvCol.mapTo];
+                if (val !== undefined && val !== null && String(val).trim() !== '') {
+                    const delimiter = csvCol.delimiter ?? '|';
+                    props[propName] = String(val).split(delimiter).map(s => s.trim()).filter(Boolean);
                 }
             }
         }

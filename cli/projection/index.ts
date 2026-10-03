@@ -92,6 +92,11 @@ export const project = (ir: GraphIR): ProjectionResult => {
         `CREATE INDEX rsk_score   IF NOT EXISTS FOR (n:Risk)      ON (n.residualScore);`,
         `CREATE INDEX capa_status IF NOT EXISTS FOR (n:CAPA)      ON (n.status);`,
         `CREATE INDEX ast_fac     IF NOT EXISTS FOR (n:Asset)     ON (n.facilityId);`,
+        // Catalog full-text search (2026-10-03) — backs the `tags` property added to
+        // Regulation/Clause/Obligation/Control/Report. Multi-label full-text indexes
+        // tolerate a listed property being absent on a given label (e.g. Report has no
+        // `text`) — it's just skipped for that node, not an error.
+        `CREATE FULLTEXT INDEX catalog_search IF NOT EXISTS FOR (n:Regulation|Clause|Obligation|Control|Report) ON EACH [n.name, n.text, n.description, n.tags];`,
     ].join('\n');
     const indexesPath = path.join(cypherDir, 'indexes.cypher');
     fs.writeFileSync(indexesPath, indexesCypher + '\n');

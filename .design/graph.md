@@ -619,6 +619,59 @@ Industry/international standard (Knowledge, `:Catalog`) — a `Clause`'s source 
 
 **`sourceDocumentId`/`sourceAnchor` (2026-09-22):** every `Clause` carries `sourceDocumentId: '<RegulationID|StandardID>-DOC'` and `sourceAnchor: 'Clause <Clause Number>'`, synthesized from `05_Clauses`' real `Source ID`/`Clause Number` columns — the actual in-document locator the source data has, not a fabricated page/paragraph number it doesn't. Each `Obligation` inherits its parent `Clause`'s span (an obligation has no independent document position). Surfaced as a "Source" line per chain link in `ui/src/features/knowledge/knowledge.tsx`.
 
+**`reportId`** — an optional flat FK to the `Report` an `Obligation` requires filing (e.g. CPCB's Form V). Populated for 24 of the 29 CPCB `:Catalog` obligations (the other 5 are internal-NC-log-only — no distinct external filing, see `Report` below).
+
+**`tags` (2026-10-03):** `string[]`, backs the `catalog_search` full-text index (see `Report`'s entry below for the full writeup — same mechanism, repeated once per node type rather than per type here).
+
+---
+
+### `Report`
+A recurring statutory filing requirement an `Obligation` names (e.g. CPCB's Form V Annual Environmental Statement to SPCB). Knowledge, `:Catalog` — amortized-once catalog data, same shape as `Obligation`/`Control`, not tenant-specific. Distinct from `ReportSubmission` (Assurance Graph, below), which is the tenant's actual per-period filing event against this requirement.
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `RPT-CPCB-01` |
+| name | string | `Form V (Annual Environmental Statement)` |
+| reportType | string | `statutory` |
+| authorityId | string | flat reference to `Authority` — same "no dedicated rel" convention as `Control.riskId`; the traversable edge to `Authority` belongs on `ReportSubmission` (`SUBMITTED_TO`), the actual filing event |
+| cadenceUnit / cadenceInterval | string | `month` / `3` — periodic component, reusing `Schedule`'s exact property names. Blank when the filing is purely event-triggered (no periodic component) |
+| triggerCondition | string | `statutory deadline: Sep 30`, `90-120 days pre-expiry`, `at NOC renewal` — event component. A filing can have a period, a trigger, both (hybrid, e.g. "Quarterly / at NOC renewal"), or in practice always at least one |
+| cadenceRaw | string | the original source text verbatim (e.g. `Quarterly / at NOC renewal`) — kept beside the structured split, same "raw text alongside structured chain" discipline `Incident.escalationPath`/`ESCALATES_TO` already uses, so nothing is lost if the split is ever wrong |
+| tags | string[] | `['CPCB', 'statutory', 'SPCB']` |
+
+**Cadence is split, not one free-text field (corrected 2026-10-03).** The original single `cadence` string conflated a periodic schedule and an event trigger — CPCB's own `report_cadence` text does the same thing in its source data (e.g. "Quarterly / at NOC renewal" is both at once). `cli/scripts/convert-cpcb-seed.ts`'s `parseCadence()` derives `cadenceUnit`/`cadenceInterval`/`triggerCondition` from `cadenceRaw`, handling all three shapes (pure periodic, pure event, hybrid) via one small parser rather than per-row hardcoding.
+
+**19 reports**, live via `cli/orchestration/catalog-sync.ts --authority=cpcb`, deduped on the full `(report_type, report_authority, report_cadence)` tuple from `cpcb_spo_map.json` — not `report_type` alone, since the same report name genuinely recurs at different cadences across obligations in the source data.
+
+---
+
+### Catalog full-text search — `tags` + `catalog_search` index (2026-10-03)
+
+`Regulation`, `Clause`, `Obligation`, `Control`, and `Report` each carry a `tags: string[]` property — e.g. an `Obligation`'s tags are `['CPCB', <CPCB spo.subject>, <CPCB spo.predicate>, 'Mandatory']`; a `Regulation`'s are `['CPCB', <issuing Authority's abbreviation>, 'India']`. The authority/board name (`'CPCB'`) is one of these tag values, not a separate structural label — a tenant searching "CPCB" and a tenant searching "DG Set" use the same mechanism.
+
+A multi-label full-text index, `catalog_search` (`cli/projection/index.ts`'s `indexesCypher`, regenerated into `cli/cypher/indexes.cypher` every ingest run — **do not hand-edit that file**, it's overwritten), covers `[name, text, description, tags]` across all five types:
+
+```cypher
+CALL db.index.fulltext.queryNodes('catalog_search', 'DG') YIELD node, score
+RETURN labels(node), node.id, node.name, score ORDER BY score DESC
+```
+
+A listed property absent on a given label (e.g. `Report` has no `text`) is simply skipped for that node, not an error — this is standard Neo4j full-text index behavior, not something this schema has to work around.
+
+**Schema is general, not CPCB-specific** — `tags` is declared on the TypeSpec for all five types in `v2.ts`, so any future authority board populates the same column and gets full-text search for free. `v2.ts`'s `PropMap` type gained `isArray`/`delimiter` to support this: a CSV cell like `"CPCB|SPCB|India"` compiles to a real `string[]` property (`cli/compiler/index.ts`), not a single delimited string.
+
+---
+
+### Catalog ingestion — per-authority folders, `--authority` flag (2026-10-03)
+
+Each regulatory board/authority is ingested from its own `cli/feeds/csv/catalog/<authority>/` folder (currently just `cpcb/`) rather than one flat `catalog/` directory shared by every board. Filenames inside a board folder are a fixed convention — `authorities.csv`, `jurisdictions.csv`, `regulations.csv`, `standards.csv`, `clauses.csv`, `obligations.csv`, `complianceAreas.csv`, `controls.csv`, `reports.csv`, `tasks.csv`, `schedules.csv` — mapped to entity type by filename, not by a per-board registration list (`cli/orchestration/catalog-sync.ts`'s `FILENAME_TO_ENTITY_TYPE`). Dropping a correctly-named file into a new board's folder is the whole registration; nothing else needs editing to onboard a new board.
+
+`catalog-sync.ts` now requires `--authority=<folder>`, e.g. `--authority=cpcb` — there is no "ingest everything" default, since that was the actual bug this replaces (the flat `catalog/` directory silently mixed unrelated boards together). `./ingest.sh` loops over every subfolder of `catalog/` except `ignore/`, calling `catalog-sync.ts --authority=<board>` once per board.
+
+**A board's folder is self-contained** — even for reference data that is conceptually shared across boards (`Jurisdiction`, `ComplianceArea`), each board's folder carries the rows its own data references (e.g. `cpcb/jurisdictions.csv` has just `JUR-INDIA`). `MERGE`-by-id makes this safe to repeat: a second board redefining `JUR-INDIA` identically is a harmless no-op, not a collision.
+
+**The pre-existing Fire Safety/Building Code demo catalog (the original `REG-001`–`REG-011`, 34 clauses/obligations, 30 `:Catalog` controls this document described in earlier revisions) now lives under `cli/feeds/csv/catalog/ignore/`, excluded from ingestion.** As of 2026-10-03 the live graph was cleaned and re-seeded CPCB-only — node counts stated elsewhere in this document for that original dataset (e.g. `Control`'s "15 controls... + 30 controls", `Clause`/`Obligation`'s "34 clauses, 34 obligations") describe data that is **not currently in the live graph**, not a claim about today's database. Re-ingesting that board (moving `ignore/` back to a named folder, e.g. `fire-safety/`) would restore it additively alongside `cpcb/` — nothing about the per-authority design prevents multiple boards coexisting, only one happens to be loaded today.
+
 ---
 
 ### `Control`
@@ -679,6 +732,8 @@ Compliance activities that must be performed to maintain or restore compliance.
 | status | string | `open` / `in-progress` / `done` / `closed` (fixed vocabulary, enforced by `api/modules/execution/spec.ts`; `closed` stays terminal so existing `status <> 'closed'` dashboard queries are unaffected) |
 | statusUpdatedAt | datetime | set by `PATCH /execution/tasks/:id` (2026-09-22) — the first task-completion write path; wired into `ui/src/features/calendar/calendar.tsx`'s per-row status control |
 | lastTriggeredAt | datetime | `:Catalog` rows only, non-Fixed-schedule tasks — set when the task's trigger condition fires (see below) |
+| evidenceMethod | string | `Lab`, `Manual Log`, `Mobile`, `IoT`, `Document` — how evidence for this task is captured (2026-10-03, schema only, no data yet) |
+| vendorId | string | FK to `Vendor`, for vendor-executed tasks (e.g. AMC-performed stack monitoring) — designed, not yet active; see `ASSIGNED_TO` in Appendix B |
 
 **Signal-driven Tasks** are created live by the events sink when a signal arrives, not by the batch ingest — see §3.3.
 
@@ -699,6 +754,8 @@ Corrective and preventive actions triggered by findings.
 | dueDate | datetime | |
 | findingId | string | FK to Finding |
 | status | string | `closed` |
+| triggerCondition | string | the breach/exceedance condition that raised this CAPA, e.g. `Effluent BOD exceeds CTO-prescribed limit` (2026-10-03, schema only, no data yet) |
+| deviationApprovedBy | string | set when a CAPA can't close by its `dueDate` and an extension is approved — the approver's `Person.id`; null otherwise (2026-10-03, schema only, no data yet) |
 
 **20 CAPAs** across 7 incidents.
 
@@ -811,6 +868,7 @@ The compliance-bearing physical unit — the thing that gets inspected, audited,
 | region | string | |
 | company | string | `Vantage Industrial Parks & Logistics REIT` (`:Enterprise` rows only) |
 | status | string | `active` |
+| facilityType | string | `hospitality` / `healthcare` / `commercial` / `industrial` — drives which CPCB obligation set applies (e.g. `BMW_RULES_2016` for `healthcare` only) (2026-10-03, schema only, no data yet) |
 
 **7 facilities** (`FAC-1002`–`FAC-1008`, enterprise pipeline, unlabeled) **+ 20 facilities** (`LOC-001`–`LOC-020`, `:Enterprise` label, deduped to Site granularity from `11_Spatial_Mapping`'s 100 rows by `cli/scripts/convert-enterprise-seed.ts`).
 
@@ -936,6 +994,24 @@ A vendor service agreement (AMC/SLA) — kept as its own node rather than fields
 **Append-and-supersede, same discipline as `Regulation` (2026-09-22):** a Contract's terms are never mutated in place. `POST /enterprise/contracts` (`api/modules/enterprise/repo.ts`'s `proposeContractChange`) never writes a Contract directly — it creates a `pending` `Decision {type: 'contract-proposal', origin: 'human'}`. Approving it (`api/modules/intelligence/repo.ts`'s `contract-proposal` branch) creates a **new** `Contract:HumanProposed` node (fresh id `CTR-{decisionId}`) carrying the proposed terms; if the proposal named a `priorContractId` (an amendment/renewal), the *only* write to the prior node is `SET prior.supersededBy = ctr.id` — its `serviceType`/SLA/AMC dates are never touched, forever. See `ui/src/features/enterprise/contracts.tsx`'s proposal form.
 
 **12 contracts**, 1:1 from `20_Vendor_Master`. `Sites Covered` (`"India Sites (LOC-001 to LOC-010)"` / `"UK Sites (LOC-011 to LOC-020)"` / `"All Sites (LOC-001 to LOC-020)"` — exactly 3 regular patterns across all 12 rows) is expanded via a mechanical regex range parse into real `COVERS -> Facility` edges against the 20 `:Enterprise` Facility rows already seeded in Phase 2 — not a guess, since the pattern is 100% regular and the `LOC-` ids already exist. **Explicitly not done**: no `Contract -> Control` link — `serviceType` free text plausibly relates to specific Controls, but there's no clean FK for it in the source data, same discipline as the unmapped `Security`-category assets. A separate, unrelated concept surfaced during this work — `InsuranceClause` (`21_Insurance_Risk_Clauses`, 15 rows) — was explicitly kept out of scope; it belongs in the Assurance graph as a warranty/attestation instrument linked to `Risk`/`Control`, not here.
+
+---
+
+### `Permit` — designed, not yet active
+A regulatory instrument the enterprise holds — Consent, Authorization, NOC, Registration, Permit, or License in CPCB/WINAIM vocabulary, collapsed into **one node type with an `instrumentType` discriminator**, the same pattern as `Control.controlType`, rather than six node labels (`grc_registry_model_explorer.html`'s registry meta-model names six distinct concepts; Vyra deliberately doesn't mirror that 1:1). Decision-gated, mirroring `Contract` exactly: a proposal writes only a `pending Decision`, the real `Permit` node is created only on approval.
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `PMT-{decisionId}` |
+| instrumentType | string | `consent` \| `authorization` \| `noc` \| `registration` \| `permit` \| `license` |
+| authorityId | string | FK to `Authority` (e.g. SPCB, CGWA) |
+| facilityId | string | the `Facility` this instrument is scoped to, where the instrument covers a whole site (e.g. Fire NOC) — see `COVERS` below |
+| issuedDate / expiryDate | datetime | renewal tracking |
+| renewalWindowDays | int | lead-time before `expiryDate` at which renewal filing should start |
+
+**`Asset -[:COVERED_BY_CONSENT]-> Permit`** — **required, not optional** (Appendix B, Operational Graph): the edge that lets a Permit renewal or amendment identify which Assets it covers. Without it, "which assets does this consent's amendment affect" has no answer. A single Asset may be covered by more than one Permit (e.g. a DG Set under both an Air-Act consent and an HWM authorization for its used-oil handling) — many-valued, written live, not CSV-driven.
+
+**Zero seed data, live-write-only** — same as `Contract`/`CutoverCriterion`/`Blueprint`. No CSV feed, no `CREATE CONSTRAINT`. Write path (propose/approve, upload-driven extraction) lands in journey/v1-plan.md Phase J0 Sub-phase 2.
 
 ---
 
@@ -1154,6 +1230,22 @@ Together, Phase 8's `assurance-intelligence` agent means the Audit-Ready Export 
 
 ---
 
+### `ReportSubmission` — designed, not yet active
+The tenant's actual per-period filing event against a `Report` requirement (Knowledge Graph, above) — e.g. "Form V filed to SPCB for FY26, acknowledged." Distinct from `Report` itself, which is the recurring catalog-defined requirement every tenant with that obligation shares.
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `RPTSUB-{decisionId}` |
+| reportId | string | FK to `Report` |
+| authorityId | string | FK to `Authority` — the filing recipient, which can differ from the regulation's own `ISSUED_BY` authority (e.g. CGWA receives a groundwater report under a Water Act obligation administered by SPCB) |
+| periodCovered | string | `FY26`, `2026-Q3` |
+| submittedAt | datetime | |
+| acknowledgedAt | datetime | null until the regulator confirms receipt — closes the filing loop |
+
+**Zero seed data, live-write-only** — same as `Permit`. Write path (extracted from the customer's "Filings" folder, Decision-gated) lands in journey/v1-plan.md Phase J0 Sub-phase 2.
+
+---
+
 ## Onboarding Graph (transitional)
 
 Not one of the five permanent domains — `foundation.md`'s "dashed fourth region," a phase rather than a subject-matter graph. `domain.md`'s Onboarding subdomain designs three aggregates (`Blueprint`, `CutoverCriterion`, `ContinuityBaseline`); `CutoverCriterion` (2026-09-25) and `Blueprint` (2026-09-26) are live so far, both first/second real slices of `track.md` Gap #8. `ContinuityBaseline` remains target — no graph footprint yet.
@@ -1289,6 +1381,13 @@ Part of the designed model, awaiting the entities they connect — they carry no
 | `WAIVES` | Exception → Obligation | Records a formal exception that waives an obligation |
 | `HAS_ASSIGNMENT` | Task → Assignment | Points a Task at the Assignment governing who executes it and at what autonomy level |
 | `ASSIGNED_TO` | Assignment → Actor | Resolves to whichever actor — human or agent — the assignment names |
+| `ASSIGNED_TO` | Task → Vendor | 2026-10-03 — vendor-executed compliance work (e.g. AMC-performed stack monitoring); reuses `ASSIGNED_TO`, safe under the same `(relType, sourceLabel, targetLabel)` grouping as `Assignment → Actor` above. Journey v1-plan.md Phase J0 Sub-phase 2 |
+| `REQUIRES_FILING` | Obligation → Report | 2026-10-03 — an obligation names the recurring statutory report it must file (e.g. Form V). Seeded by Phase J0 Sub-phase 1 Step 2's CPCB catalog ingest |
+| `FILED_AGAINST` | ReportSubmission → Report | 2026-10-03 — the tenant's actual filing event, against the `Report` requirement it satisfies. Phase J0 Sub-phase 2 |
+| `SUBMITTED_TO` | ReportSubmission → Authority | 2026-10-03 — the filing recipient, which can differ from the regulation's own `ISSUED_BY` authority (e.g. CGWA vs SPCB). Phase J0 Sub-phase 2 |
+| `ISSUED_BY` | Permit → Authority | 2026-10-03 — reuses `ISSUED_BY`, already used for `Regulation → Authority`, safe under the same grouping. Phase J0 Sub-phase 2 |
+| `COVERS` | Permit → Facility | 2026-10-03 — site-level instrument scope (e.g. a Fire NOC covering a whole property); reuses `COVERS`, already used for `Contract → Facility` and `AssuranceStatement → Regulation`/`Blueprint → Role/Asset`. Phase J0 Sub-phase 2 |
+| `COVERED_BY_CONSENT` | Asset → Permit | 2026-10-03 — asset-level instrument scope, **required** per `grc_registry_model_explorer.html`'s explicit justification: without it, a Permit renewal/amendment can't identify which Assets it covers. Many-valued (an Asset may be covered by more than one Permit, e.g. a DG Set under both an Air-Act consent and an HWM authorization). Phase J0 Sub-phase 2 |
 
 ---
 

@@ -1,0 +1,872 @@
+{
+  "cpcb_regulatory_spo_map": [
+    {
+      "act_code": "WATER_ACT_1974",
+      "act_name": "Water (Prevention and Control of Pollution) Act, 1974",
+      "year": 1974,
+      "administering_authority": "CPCB / State Pollution Control Board (SPCB)",
+      "primary_instrument": "Consent to Establish (CTE) / Consent to Operate (CTO) \u2014 Section 25/26",
+      "applicability_trigger": "Any establishment discharging trade effluent or sewage, or drawing/using water in a manner covered by Section 25",
+      "applicable_to": "both",
+      "instrument_spo_chain": [
+        {
+          "s": "WATER_ACT_1974",
+          "p": "administeredBy",
+          "o": "CPCB / State Pollution Control Board (SPCB)"
+        },
+        {
+          "s": "WATER_ACT_1974",
+          "p": "requires",
+          "o": "Consent to Establish (CTE) / Consent to Operate (CTO) \u2014 Section 25/26"
+        },
+        {
+          "s": "Consent to Establish (CTE) / Consent to Operate (CTO) \u2014 Section 25/26",
+          "p": "appliesTo",
+          "o": "Site"
+        },
+        {
+          "s": "Consent to Establish (CTE) / Consent to Operate (CTO) \u2014 Section 25/26",
+          "p": "createsObligation",
+          "o": "ComplianceObligation"
+        }
+      ],
+      "obligations": [
+        {
+          "obligation_id": "WA-01",
+          "spo": {
+            "subject": "STP",
+            "predicate": "subjectTo",
+            "object": "Effluent Quality Standard (BOD/COD/TSS/pH/O&G)"
+          },
+          "description": "Treated effluent must meet prescribed discharge/reuse standards before release or reuse",
+          "frequency": "Monthly",
+          "data_collection_method": "Lab (external, NABL)",
+          "evidence_type": "Lab test report",
+          "responsible_role": "Site EHS Coordinator",
+          "capa_trigger": "Any parameter exceeds CTO-prescribed limit",
+          "report_type": "Form V (Annual Environmental Statement)",
+          "report_authority": "SPCB",
+          "report_cadence": "Annual (by Sep 30)"
+        },
+        {
+          "obligation_id": "WA-02",
+          "spo": {
+            "subject": "Site",
+            "predicate": "requiresCheck",
+            "object": "Flow Meter Calibration"
+          },
+          "description": "Effluent/water flow meters must be calibrated and log maintained",
+          "frequency": "Half-yearly",
+          "data_collection_method": "Manual Log + Mobile",
+          "evidence_type": "Calibration certificate",
+          "responsible_role": "Facilities Manager",
+          "capa_trigger": "Calibration overdue or drift beyond tolerance",
+          "report_type": "CTO compliance report",
+          "report_authority": "SPCB",
+          "report_cadence": "As required at renewal"
+        },
+        {
+          "obligation_id": "WA-03",
+          "spo": {
+            "subject": "Organization",
+            "predicate": "requires",
+            "object": "Consent to Operate (Water)"
+          },
+          "description": "Valid CTO must be held and renewed before expiry for water-related discharge",
+          "frequency": "Per consent validity (1-5 yr cycle)",
+          "data_collection_method": "Document",
+          "evidence_type": "Consent order copy",
+          "responsible_role": "Central Compliance Lead",
+          "capa_trigger": "Consent nearing expiry within lead-time window without renewal filed",
+          "report_type": "CTO Renewal Application",
+          "report_authority": "SPCB",
+          "report_cadence": "90-120 days pre-expiry"
+        },
+        {
+          "obligation_id": "WA-04",
+          "spo": {
+            "subject": "Site",
+            "predicate": "subjectTo",
+            "object": "Water Cess Return (Water Cess Act 1977)"
+          },
+          "description": "Self-assessed water consumption cess return, where applicable",
+          "frequency": "Quarterly",
+          "data_collection_method": "Manual Log",
+          "evidence_type": "Water meter readings + return copy",
+          "responsible_role": "Facilities Manager",
+          "capa_trigger": "Return not filed within due date",
+          "report_type": "Water Cess Return",
+          "report_authority": "SPCB",
+          "report_cadence": "Quarterly"
+        }
+      ]
+    },
+    {
+      "act_code": "AIR_ACT_1981",
+      "act_name": "Air (Prevention and Control of Pollution) Act, 1981",
+      "year": 1981,
+      "administering_authority": "CPCB / SPCB",
+      "primary_instrument": "Consent to Establish (CTE) / Consent to Operate (CTO) \u2014 Section 21",
+      "applicability_trigger": "Any premises operating an 'air pollutant' emitting source (DG sets, boilers) above notified capacity thresholds",
+      "applicable_to": "both",
+      "instrument_spo_chain": [
+        {
+          "s": "AIR_ACT_1981",
+          "p": "administeredBy",
+          "o": "CPCB / SPCB"
+        },
+        {
+          "s": "AIR_ACT_1981",
+          "p": "requires",
+          "o": "Consent to Establish (CTE) / Consent to Operate (CTO) \u2014 Section 21"
+        },
+        {
+          "s": "Consent to Establish (CTE) / Consent to Operate (CTO) \u2014 Section 21",
+          "p": "appliesTo",
+          "o": "Site"
+        },
+        {
+          "s": "Consent to Establish (CTE) / Consent to Operate (CTO) \u2014 Section 21",
+          "p": "createsObligation",
+          "o": "ComplianceObligation"
+        }
+      ],
+      "obligations": [
+        {
+          "obligation_id": "AA-01",
+          "spo": {
+            "subject": "DG Set",
+            "predicate": "subjectTo",
+            "object": "Stack Emission Limit (PM/SO2/NOx/CO)"
+          },
+          "description": "Stack emissions from DG sets must remain within CPCB/SPCB notified limits",
+          "frequency": "Half-yearly",
+          "data_collection_method": "Lab (external)",
+          "evidence_type": "Stack monitoring report",
+          "responsible_role": "Vendor (O&M) / Site EHS Coordinator",
+          "capa_trigger": "Any parameter exceeds notified limit",
+          "report_type": "Form V + CTO compliance report",
+          "report_authority": "SPCB",
+          "report_cadence": "Annual / at renewal"
+        },
+        {
+          "obligation_id": "AA-02",
+          "spo": {
+            "subject": "Boiler",
+            "predicate": "subjectTo",
+            "object": "Stack Emission Limit"
+          },
+          "description": "Boiler stack emissions must remain within prescribed limits",
+          "frequency": "Half-yearly",
+          "data_collection_method": "Lab (external)",
+          "evidence_type": "Stack monitoring report",
+          "responsible_role": "Vendor (O&M)",
+          "capa_trigger": "Exceedance of prescribed limit",
+          "report_type": "Form V",
+          "report_authority": "SPCB",
+          "report_cadence": "Annual"
+        },
+        {
+          "obligation_id": "AA-03",
+          "spo": {
+            "subject": "Site",
+            "predicate": "subjectTo",
+            "object": "Ambient Air Quality Standard (NAAQS)"
+          },
+          "description": "Ambient air quality at site boundary must meet National Ambient Air Quality Standards",
+          "frequency": "Quarterly",
+          "data_collection_method": "Lab (external)",
+          "evidence_type": "Ambient air monitoring report",
+          "responsible_role": "Site EHS Coordinator",
+          "capa_trigger": "Any parameter exceeds NAAQS",
+          "report_type": "CTO compliance report",
+          "report_authority": "SPCB",
+          "report_cadence": "Quarterly"
+        },
+        {
+          "obligation_id": "AA-04",
+          "spo": {
+            "subject": "DG Set",
+            "predicate": "requiresCheck",
+            "object": "Stack Height Compliance"
+          },
+          "description": "DG set stack height must meet CPCB norm relative to DG capacity/building height",
+          "frequency": "At installation, verified annually",
+          "data_collection_method": "Mobile (physical verification)",
+          "evidence_type": "Site inspection photo + measurement",
+          "responsible_role": "Facilities Manager",
+          "capa_trigger": "Stack height below norm at inspection",
+          "report_type": "CTO compliance report",
+          "report_authority": "SPCB",
+          "report_cadence": "Annual"
+        },
+        {
+          "obligation_id": "AA-05",
+          "spo": {
+            "subject": "Organization",
+            "predicate": "requires",
+            "object": "Consent to Operate (Air)"
+          },
+          "description": "Valid CTO must be held and renewed for air-emission sources",
+          "frequency": "Per consent validity (1-5 yr cycle)",
+          "data_collection_method": "Document",
+          "evidence_type": "Consent order copy",
+          "responsible_role": "Central Compliance Lead",
+          "capa_trigger": "Consent nearing expiry without renewal filed",
+          "report_type": "CTO Renewal Application",
+          "report_authority": "SPCB",
+          "report_cadence": "90-120 days pre-expiry"
+        }
+      ]
+    },
+    {
+      "act_code": "EPA_1986",
+      "act_name": "Environment (Protection) Act, 1986",
+      "year": 1986,
+      "administering_authority": "Ministry of Environment, Forest and Climate Change (MoEFCC) / CPCB",
+      "primary_instrument": "Umbrella statute \u2014 enabling framework for all subordinate Rules below",
+      "applicability_trigger": "Applies to every establishment; gives rise to the subordinate Rules (HWM, SWM, Plastic, Noise, E-Waste, Battery, BMW, C&D)",
+      "applicable_to": "both",
+      "instrument_spo_chain": [
+        {
+          "s": "EPA_1986",
+          "p": "administeredBy",
+          "o": "Ministry of Environment, Forest and Climate Change (MoEFCC) / CPCB"
+        },
+        {
+          "s": "EPA_1986",
+          "p": "requires",
+          "o": "Umbrella statute \u2014 enabling framework for all subordinate Rules below"
+        },
+        {
+          "s": "Umbrella statute \u2014 enabling framework for all subordinate Rules below",
+          "p": "appliesTo",
+          "o": "Site"
+        },
+        {
+          "s": "Umbrella statute \u2014 enabling framework for all subordinate Rules below",
+          "p": "createsObligation",
+          "o": "ComplianceObligation"
+        }
+      ],
+      "obligations": [
+        {
+          "obligation_id": "EPA-01",
+          "spo": {
+            "subject": "Site",
+            "predicate": "subjectTo",
+            "object": "Environmental Statement (Form V)"
+          },
+          "description": "Annual environmental statement summarizing water/air/waste performance must be filed",
+          "frequency": "Annual",
+          "data_collection_method": "Document (compiled from register)",
+          "evidence_type": "Filed Form V + acknowledgement",
+          "responsible_role": "Central Compliance Lead",
+          "capa_trigger": "Not filed by statutory deadline",
+          "report_type": "Form V",
+          "report_authority": "SPCB",
+          "report_cadence": "Annual (by Sep 30)"
+        },
+        {
+          "obligation_id": "EPA-02",
+          "spo": {
+            "subject": "Site",
+            "predicate": "subjectTo",
+            "object": "CGWA Groundwater Extraction NOC"
+          },
+          "description": "Bore-well water extraction requires CGWA No-Objection Certificate and periodic reporting",
+          "frequency": "Quarterly (level) / Annual (NOC renewal)",
+          "data_collection_method": "IoT (level) + Document",
+          "evidence_type": "Water level log + NOC copy",
+          "responsible_role": "Facilities Manager",
+          "capa_trigger": "NOC expired or extraction beyond permitted quantum",
+          "report_type": "CGWA Compliance Report",
+          "report_authority": "CGWA",
+          "report_cadence": "Quarterly / at NOC renewal"
+        }
+      ]
+    },
+    {
+      "act_code": "HWM_RULES_2016",
+      "act_name": "Hazardous and Other Wastes (Management and Transboundary Movement) Rules, 2016",
+      "year": 2016,
+      "administering_authority": "SPCB (authorization) / CPCB (policy)",
+      "primary_instrument": "Hazardous Waste Authorization \u2014 Rule 6",
+      "applicability_trigger": "Any establishment generating, storing, or transporting hazardous waste (used oil, e-waste, batteries, chemical residues)",
+      "applicable_to": "both",
+      "instrument_spo_chain": [
+        {
+          "s": "HWM_RULES_2016",
+          "p": "administeredBy",
+          "o": "SPCB (authorization) / CPCB (policy)"
+        },
+        {
+          "s": "HWM_RULES_2016",
+          "p": "requires",
+          "o": "Hazardous Waste Authorization \u2014 Rule 6"
+        },
+        {
+          "s": "Hazardous Waste Authorization \u2014 Rule 6",
+          "p": "appliesTo",
+          "o": "Site"
+        },
+        {
+          "s": "Hazardous Waste Authorization \u2014 Rule 6",
+          "p": "createsObligation",
+          "o": "ComplianceObligation"
+        }
+      ],
+      "obligations": [
+        {
+          "obligation_id": "HW-01",
+          "spo": {
+            "subject": "Hazardous Waste Yard",
+            "predicate": "subjectTo",
+            "object": "Storage Duration Limit (<=90 days)"
+          },
+          "description": "Hazardous waste must not be stored beyond the permitted duration without SPCB extension",
+          "frequency": "Continuous, checked weekly",
+          "data_collection_method": "Mobile (round) + Manual Log",
+          "evidence_type": "Storage log + photo evidence",
+          "responsible_role": "Site EHS Coordinator",
+          "capa_trigger": "Waste stored beyond 90 days without extension",
+          "report_type": "Annual Return (Form 4)",
+          "report_authority": "SPCB",
+          "report_cadence": "Annual (by Jun 30)"
+        },
+        {
+          "obligation_id": "HW-02",
+          "spo": {
+            "subject": "DG Set / Vendor",
+            "predicate": "generates",
+            "object": "Used Oil Manifest"
+          },
+          "description": "Used oil from DG sets must be handed over to an authorized recycler with a manifest",
+          "frequency": "At each disposal (~2x/year)",
+          "data_collection_method": "Document (manifest)",
+          "evidence_type": "Manifest copy + recycler authorization",
+          "responsible_role": "Vendor (O&M)",
+          "capa_trigger": "Disposal to unauthorized party or missing manifest",
+          "report_type": "Annual Return (Form 4)",
+          "report_authority": "SPCB",
+          "report_cadence": "Annual"
+        },
+        {
+          "obligation_id": "HW-03",
+          "spo": {
+            "subject": "Hazardous Waste Yard",
+            "predicate": "requiresCheck",
+            "object": "Segregation & Labelling"
+          },
+          "description": "Hazardous waste must be segregated by category and labelled per Schedule III",
+          "frequency": "Weekly round",
+          "data_collection_method": "Mobile (photo + checklist)",
+          "evidence_type": "Inspection photo + checklist",
+          "responsible_role": "Site EHS Coordinator",
+          "capa_trigger": "Mixed/unlabelled waste found at inspection",
+          "report_type": "Internal NC log; feeds Annual Return",
+          "report_authority": "SPCB",
+          "report_cadence": "Annual"
+        },
+        {
+          "obligation_id": "HW-04",
+          "spo": {
+            "subject": "Organization",
+            "predicate": "requires",
+            "object": "Hazardous Waste Authorization"
+          },
+          "description": "Valid Rule 6 authorization must be held and renewed",
+          "frequency": "Per authorization validity (typically 5 yr)",
+          "data_collection_method": "Document",
+          "evidence_type": "Authorization copy",
+          "responsible_role": "Central Compliance Lead",
+          "capa_trigger": "Authorization nearing expiry without renewal filed",
+          "report_type": "Authorization Renewal Application",
+          "report_authority": "SPCB",
+          "report_cadence": "Prior to expiry"
+        }
+      ]
+    },
+    {
+      "act_code": "SWM_RULES_2016",
+      "act_name": "Solid Waste Management Rules, 2016",
+      "year": 2016,
+      "administering_authority": "Urban Local Body (ULB) / SPCB oversight",
+      "primary_instrument": "Bulk Waste Generator Registration / Segregation Compliance",
+      "applicability_trigger": "Any establishment generating solid waste above the 'bulk generator' threshold (most hotels/hospitals qualify)",
+      "applicable_to": "both",
+      "instrument_spo_chain": [
+        {
+          "s": "SWM_RULES_2016",
+          "p": "administeredBy",
+          "o": "Urban Local Body (ULB) / SPCB oversight"
+        },
+        {
+          "s": "SWM_RULES_2016",
+          "p": "requires",
+          "o": "Bulk Waste Generator Registration / Segregation Compliance"
+        },
+        {
+          "s": "Bulk Waste Generator Registration / Segregation Compliance",
+          "p": "appliesTo",
+          "o": "Site"
+        },
+        {
+          "s": "Bulk Waste Generator Registration / Segregation Compliance",
+          "p": "createsObligation",
+          "o": "ComplianceObligation"
+        }
+      ],
+      "obligations": [
+        {
+          "obligation_id": "SWM-01",
+          "spo": {
+            "subject": "Site",
+            "predicate": "requiresCheck",
+            "object": "Source Segregation (Wet/Dry/Hazardous)"
+          },
+          "description": "Solid waste must be segregated at source into wet, dry and domestic-hazardous streams",
+          "frequency": "Daily, audited weekly",
+          "data_collection_method": "Mobile (round)",
+          "evidence_type": "Inspection checklist + photo",
+          "responsible_role": "Facilities Manager",
+          "capa_trigger": "Mixed waste found at collection point",
+          "report_type": "Internal NC log; feeds ULB compliance report",
+          "report_authority": "ULB",
+          "report_cadence": "As required"
+        },
+        {
+          "obligation_id": "SWM-02",
+          "spo": {
+            "subject": "Organization",
+            "predicate": "subjectTo",
+            "object": "Bulk Generator Registration"
+          },
+          "description": "Registration as a bulk waste generator with the local body, with a waste management plan on file",
+          "frequency": "One-time, reviewed annually",
+          "data_collection_method": "Document",
+          "evidence_type": "Registration certificate",
+          "responsible_role": "Central Compliance Lead",
+          "capa_trigger": "Registration lapsed or plan not updated",
+          "report_type": "Bulk Generator Compliance Report",
+          "report_authority": "ULB",
+          "report_cadence": "Annual"
+        },
+        {
+          "obligation_id": "SWM-03",
+          "spo": {
+            "subject": "Site",
+            "predicate": "generates",
+            "object": "Wet Waste Processing Record"
+          },
+          "description": "On-site wet waste processing (composting/biogas) volumes must be logged where mandated",
+          "frequency": "Weekly",
+          "data_collection_method": "Mobile / IoT (weighbridge)",
+          "evidence_type": "Processing log",
+          "responsible_role": "Facilities Manager",
+          "capa_trigger": "Processing capacity shortfall vs. generation",
+          "report_type": "ULB Compliance Report",
+          "report_authority": "ULB",
+          "report_cadence": "Quarterly"
+        }
+      ]
+    },
+    {
+      "act_code": "NOISE_RULES_2000",
+      "act_name": "Noise Pollution (Regulation and Control) Rules, 2000",
+      "year": 2000,
+      "administering_authority": "SPCB",
+      "primary_instrument": "Ambient Noise Standard Compliance",
+      "applicability_trigger": "Applies to premises adjoining or within notified zones (commercial/industrial/silence)",
+      "applicable_to": "both",
+      "instrument_spo_chain": [
+        {
+          "s": "NOISE_RULES_2000",
+          "p": "administeredBy",
+          "o": "SPCB"
+        },
+        {
+          "s": "NOISE_RULES_2000",
+          "p": "requires",
+          "o": "Ambient Noise Standard Compliance"
+        },
+        {
+          "s": "Ambient Noise Standard Compliance",
+          "p": "appliesTo",
+          "o": "Site"
+        },
+        {
+          "s": "Ambient Noise Standard Compliance",
+          "p": "createsObligation",
+          "o": "ComplianceObligation"
+        }
+      ],
+      "obligations": [
+        {
+          "obligation_id": "NZ-01",
+          "spo": {
+            "subject": "Site",
+            "predicate": "subjectTo",
+            "object": "Ambient Noise Limit (day/night, zone-specific)"
+          },
+          "description": "Boundary noise levels must remain within notified day/night limits for the applicable zone",
+          "frequency": "Quarterly",
+          "data_collection_method": "Lab (external) / Mobile (spot check)",
+          "evidence_type": "Noise monitoring report",
+          "responsible_role": "Site EHS Coordinator",
+          "capa_trigger": "Reading exceeds notified limit for zone",
+          "report_type": "CTO compliance report",
+          "report_authority": "SPCB",
+          "report_cadence": "Quarterly"
+        },
+        {
+          "obligation_id": "NZ-02",
+          "spo": {
+            "subject": "DG Set",
+            "predicate": "requiresCheck",
+            "object": "Acoustic Enclosure Integrity"
+          },
+          "description": "DG sets must be housed in acoustic enclosures maintained to manufacturer/CPCB spec",
+          "frequency": "Monthly",
+          "data_collection_method": "Mobile (round)",
+          "evidence_type": "Inspection checklist",
+          "responsible_role": "Vendor (O&M)",
+          "capa_trigger": "Enclosure damaged or missing",
+          "report_type": "Internal NC log",
+          "report_authority": "SPCB",
+          "report_cadence": "As required"
+        }
+      ]
+    },
+    {
+      "act_code": "PWM_RULES_2016",
+      "act_name": "Plastic Waste Management Rules, 2016 (as amended 2022)",
+      "year": 2016,
+      "administering_authority": "CPCB / SPCB (EPR portal)",
+      "primary_instrument": "Extended Producer Responsibility (EPR) Registration",
+      "applicability_trigger": "Brand owners/users of plastic packaging above notified thresholds (F&B outlets, amenities packaging)",
+      "applicable_to": "both",
+      "instrument_spo_chain": [
+        {
+          "s": "PWM_RULES_2016",
+          "p": "administeredBy",
+          "o": "CPCB / SPCB (EPR portal)"
+        },
+        {
+          "s": "PWM_RULES_2016",
+          "p": "requires",
+          "o": "Extended Producer Responsibility (EPR) Registration"
+        },
+        {
+          "s": "Extended Producer Responsibility (EPR) Registration",
+          "p": "appliesTo",
+          "o": "Site"
+        },
+        {
+          "s": "Extended Producer Responsibility (EPR) Registration",
+          "p": "createsObligation",
+          "o": "ComplianceObligation"
+        }
+      ],
+      "obligations": [
+        {
+          "obligation_id": "PW-01",
+          "spo": {
+            "subject": "Organization",
+            "predicate": "subjectTo",
+            "object": "Single-Use Plastic (SUP) Prohibition"
+          },
+          "description": "Identified single-use plastic items (notified list) must not be used or distributed on-site",
+          "frequency": "Continuous, audited monthly",
+          "data_collection_method": "Mobile (round)",
+          "evidence_type": "Inspection checklist",
+          "responsible_role": "Facilities Manager",
+          "capa_trigger": "Prohibited SUP item found in use",
+          "report_type": "Internal NC log; feeds EPR return",
+          "report_authority": "CPCB (EPR portal)",
+          "report_cadence": "Annual"
+        },
+        {
+          "obligation_id": "PW-02",
+          "spo": {
+            "subject": "Organization",
+            "predicate": "requires",
+            "object": "EPR Registration & Annual Return"
+          },
+          "description": "Plastic packaging use must be registered on the CPCB EPR portal with an annual return",
+          "frequency": "Annual",
+          "data_collection_method": "Document",
+          "evidence_type": "EPR portal filing acknowledgement",
+          "responsible_role": "Central Compliance Lead",
+          "capa_trigger": "Return not filed or EPR targets unmet",
+          "report_type": "EPR Annual Return",
+          "report_authority": "CPCB",
+          "report_cadence": "Annual"
+        }
+      ]
+    },
+    {
+      "act_code": "EWASTE_RULES_2022",
+      "act_name": "E-Waste (Management) Rules, 2022",
+      "year": 2022,
+      "administering_authority": "CPCB / SPCB",
+      "primary_instrument": "Extended Producer Responsibility (EPR) \u2014 for bulk consumers",
+      "applicability_trigger": "Establishments disposing of end-of-life electronic/IT equipment as bulk consumers",
+      "applicable_to": "both",
+      "instrument_spo_chain": [
+        {
+          "s": "EWASTE_RULES_2022",
+          "p": "administeredBy",
+          "o": "CPCB / SPCB"
+        },
+        {
+          "s": "EWASTE_RULES_2022",
+          "p": "requires",
+          "o": "Extended Producer Responsibility (EPR) \u2014 for bulk consumers"
+        },
+        {
+          "s": "Extended Producer Responsibility (EPR) \u2014 for bulk consumers",
+          "p": "appliesTo",
+          "o": "Site"
+        },
+        {
+          "s": "Extended Producer Responsibility (EPR) \u2014 for bulk consumers",
+          "p": "createsObligation",
+          "o": "ComplianceObligation"
+        }
+      ],
+      "obligations": [
+        {
+          "obligation_id": "EW-01",
+          "spo": {
+            "subject": "IT/Electronic Asset",
+            "predicate": "generates",
+            "object": "E-Waste Disposal Manifest"
+          },
+          "description": "End-of-life electronics must be handed to an authorized dismantler/recycler with a manifest",
+          "frequency": "At disposal (~1x/year)",
+          "data_collection_method": "Document (manifest)",
+          "evidence_type": "Manifest + recycler authorization",
+          "responsible_role": "IT/Facilities Manager",
+          "capa_trigger": "Disposal to unauthorized party",
+          "report_type": "Bulk Consumer Annual Return",
+          "report_authority": "SPCB",
+          "report_cadence": "Annual"
+        }
+      ]
+    },
+    {
+      "act_code": "BATTERY_RULES_2022",
+      "act_name": "Battery Waste Management Rules, 2022",
+      "year": 2022,
+      "administering_authority": "CPCB / SPCB",
+      "primary_instrument": "Bulk Consumer Take-Back Compliance",
+      "applicability_trigger": "Establishments using DG-set/UPS batteries above bulk-consumer threshold",
+      "applicable_to": "both",
+      "instrument_spo_chain": [
+        {
+          "s": "BATTERY_RULES_2022",
+          "p": "administeredBy",
+          "o": "CPCB / SPCB"
+        },
+        {
+          "s": "BATTERY_RULES_2022",
+          "p": "requires",
+          "o": "Bulk Consumer Take-Back Compliance"
+        },
+        {
+          "s": "Bulk Consumer Take-Back Compliance",
+          "p": "appliesTo",
+          "o": "Site"
+        },
+        {
+          "s": "Bulk Consumer Take-Back Compliance",
+          "p": "createsObligation",
+          "o": "ComplianceObligation"
+        }
+      ],
+      "obligations": [
+        {
+          "obligation_id": "BW-01",
+          "spo": {
+            "subject": "DG Set / UPS Battery",
+            "predicate": "generates",
+            "object": "Battery Take-Back Manifest"
+          },
+          "description": "Used lead-acid/other batteries must be returned to an authorized collection agency",
+          "frequency": "At replacement (~1x/year per battery bank)",
+          "data_collection_method": "Document (manifest)",
+          "evidence_type": "Take-back receipt",
+          "responsible_role": "Facilities Manager",
+          "capa_trigger": "Battery disposed outside take-back channel",
+          "report_type": "Bulk Consumer Annual Return",
+          "report_authority": "SPCB",
+          "report_cadence": "Annual"
+        }
+      ]
+    },
+    {
+      "act_code": "BMW_RULES_2016",
+      "act_name": "Bio-Medical Waste Management Rules, 2016",
+      "year": 2016,
+      "administering_authority": "SPCB",
+      "primary_instrument": "Bio-Medical Waste Authorization \u2014 Rule 10",
+      "applicability_trigger": "Hospitals, clinics, diagnostic centres and any healthcare facility generating bio-medical waste",
+      "applicable_to": "hospital",
+      "instrument_spo_chain": [
+        {
+          "s": "BMW_RULES_2016",
+          "p": "administeredBy",
+          "o": "SPCB"
+        },
+        {
+          "s": "BMW_RULES_2016",
+          "p": "requires",
+          "o": "Bio-Medical Waste Authorization \u2014 Rule 10"
+        },
+        {
+          "s": "Bio-Medical Waste Authorization \u2014 Rule 10",
+          "p": "appliesTo",
+          "o": "Site"
+        },
+        {
+          "s": "Bio-Medical Waste Authorization \u2014 Rule 10",
+          "p": "createsObligation",
+          "o": "ComplianceObligation"
+        }
+      ],
+      "obligations": [
+        {
+          "obligation_id": "BMW-01",
+          "spo": {
+            "subject": "Bio-Medical Waste Store",
+            "predicate": "requiresCheck",
+            "object": "Colour-Coded Segregation (Schedule I)"
+          },
+          "description": "Bio-medical waste must be segregated into colour-coded bags/containers per category",
+          "frequency": "Daily, audited weekly",
+          "data_collection_method": "Mobile (round)",
+          "evidence_type": "Inspection checklist + photo",
+          "responsible_role": "Infection Control Officer",
+          "capa_trigger": "Wrong category or unsegregated waste found",
+          "report_type": "Internal NC log; feeds Annual Report",
+          "report_authority": "SPCB",
+          "report_cadence": "Annual (by Jun 30)"
+        },
+        {
+          "obligation_id": "BMW-02",
+          "spo": {
+            "subject": "Bio-Medical Waste Store",
+            "predicate": "generates",
+            "object": "CBWTF Handover Manifest (barcoded)"
+          },
+          "description": "Waste must be handed to the Common Bio-medical Waste Treatment Facility with a barcoded manifest",
+          "frequency": "Daily",
+          "data_collection_method": "Mobile (barcode scan)",
+          "evidence_type": "CBWTF manifest / weighing slip",
+          "responsible_role": "Infection Control Officer",
+          "capa_trigger": "Manifest mismatch or handover delay beyond 48 hours",
+          "report_type": "Annual Report (Form II)",
+          "report_authority": "SPCB",
+          "report_cadence": "Annual"
+        },
+        {
+          "obligation_id": "BMW-03",
+          "spo": {
+            "subject": "Autoclave/Deep Burial Pit (if on-site)",
+            "predicate": "subjectTo",
+            "object": "Treatment Efficacy Standard"
+          },
+          "description": "On-site autoclaving, where used, must meet validated time/temperature/pressure parameters",
+          "frequency": "Per batch, logged daily",
+          "data_collection_method": "IoT (autoclave log) + Manual",
+          "evidence_type": "Autoclave cycle log",
+          "responsible_role": "Infection Control Officer",
+          "capa_trigger": "Cycle parameters outside validated range",
+          "report_type": "Annual Report (Form II)",
+          "report_authority": "SPCB",
+          "report_cadence": "Annual"
+        },
+        {
+          "obligation_id": "BMW-04",
+          "spo": {
+            "subject": "Organization",
+            "predicate": "requires",
+            "object": "Bio-Medical Waste Authorization"
+          },
+          "description": "Valid Rule 10 authorization must be held and renewed",
+          "frequency": "Per authorization validity",
+          "data_collection_method": "Document",
+          "evidence_type": "Authorization copy",
+          "responsible_role": "Central Compliance Lead",
+          "capa_trigger": "Authorization nearing expiry without renewal filed",
+          "report_type": "Authorization Renewal Application",
+          "report_authority": "SPCB",
+          "report_cadence": "Prior to expiry"
+        }
+      ]
+    },
+    {
+      "act_code": "CD_RULES_2016",
+      "act_name": "Construction and Demolition Waste Management Rules, 2016",
+      "year": 2016,
+      "administering_authority": "ULB / SPCB",
+      "primary_instrument": "Waste Management Plan for C&D activity",
+      "applicability_trigger": "Applies during renovation, refurbishment, or demolition activity generating C&D waste above threshold",
+      "applicable_to": "both",
+      "instrument_spo_chain": [
+        {
+          "s": "CD_RULES_2016",
+          "p": "administeredBy",
+          "o": "ULB / SPCB"
+        },
+        {
+          "s": "CD_RULES_2016",
+          "p": "requires",
+          "o": "Waste Management Plan for C&D activity"
+        },
+        {
+          "s": "Waste Management Plan for C&D activity",
+          "p": "appliesTo",
+          "o": "Site"
+        },
+        {
+          "s": "Waste Management Plan for C&D activity",
+          "p": "createsObligation",
+          "o": "ComplianceObligation"
+        }
+      ],
+      "obligations": [
+        {
+          "obligation_id": "CD-01",
+          "spo": {
+            "subject": "Site (during renovation)",
+            "predicate": "subjectTo",
+            "object": "C&D Waste Management Plan"
+          },
+          "description": "A waste management plan must be filed and executed for renovation/demolition activity",
+          "frequency": "Per project",
+          "data_collection_method": "Document",
+          "evidence_type": "Plan + disposal records",
+          "responsible_role": "Facilities Manager",
+          "capa_trigger": "C&D waste disposed without an approved plan",
+          "report_type": "Project closure report",
+          "report_authority": "ULB",
+          "report_cadence": "At project completion"
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "scope": "Core CPCB / MoEFCC-administered statutes and rules relevant to a 100-site hospitality and healthcare portfolio in India",
+    "note": "Section/Rule references are given at the instrument level (e.g. 'Section 25/26 consent', 'Rule 6 authorization') which are stable, well-established references. Exact clause numbers, monitoring frequencies and numeric limits vary by state PCB and CPCB category (Red/Orange/Green/White) and are amended periodically \u2014 validate against the current gazette text and each site's actual consent order before operational use. This is a structural/operating model, not a legal opinion.",
+    "spo_predicate_legend": {
+      "subjectTo": "Asset/Site is bound by a compliance standard or obligation",
+      "requiresCheck": "Asset/Site requires a recurring verification task",
+      "requires": "Organization/Site must hold a specific instrument (consent/authorization/registration)",
+      "generates": "Asset/Process produces a compliance artifact (manifest, log, record)"
+    },
+    "total_acts_rules": 11,
+    "total_obligations": 29
+  }
+}

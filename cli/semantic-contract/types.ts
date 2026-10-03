@@ -17,7 +17,7 @@ export enum Axis {
     Assurance = 'Assurance',
 }
 
-export type PropMap = string | { mapTo: string; resolveBy?: 'id' | 'name' };
+export type PropMap = string | { mapTo: string; resolveBy?: 'id' | 'name'; isArray?: true; delimiter?: string };
 
 export interface RelSpec {
     type: string;

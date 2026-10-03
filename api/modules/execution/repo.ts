@@ -81,9 +81,12 @@ export const computeWindow = (cadence: Cadence, horizonWeeks: number): string[] 
     return Array.from(new Set(occurrences));
 };
 
+// Task -[:IMPLEMENTS]-> Control -[:IMPLEMENTS]-> Obligation — same chain
+// graph.md's Execution Traceability pattern walks; every :Catalog-origin Task
+// carries the full chain, which is the only source this calendar reads from.
 const TASK_CALENDAR = `
-    MATCH (s:Schedule)-[:APPLIES_TO]->(t:Task)-[:IMPLEMENTS]->(c:Control)
-    RETURN properties(s) AS schedule, properties(t) AS task, properties(c) AS control
+    MATCH (s:Schedule)-[:APPLIES_TO]->(t:Task)-[:IMPLEMENTS]->(c:Control)-[:IMPLEMENTS]->(o:Obligation)
+    RETURN properties(s) AS schedule, properties(t) AS task, properties(c) AS control, properties(o) AS obligation
     ORDER BY s.anchorDate
 `;
 
@@ -103,6 +106,8 @@ export const fetchTaskCalendar = async (horizonWeeks = 52) => {
             status: r.task.status,
             controlId: r.control.id,
             controlName: r.control.name,
+            obligationId: r.obligation.id,
+            obligationName: r.obligation.name,
             occurrences: computeWindow(cadence, horizonWeeks),
         };
     });

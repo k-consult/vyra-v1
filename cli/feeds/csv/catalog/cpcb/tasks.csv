@@ -1,0 +1,30 @@
+id,name,controlId,frequency,priority,evidenceRequired,evidenceMethod,owner,status
+TSK-WA-01,Treated effluent must meet prescribed discharge/reuse standards before release or reuse,CTRL-WA-01,Monthly,High,yes,"Lab (external, NABL)",Site EHS Coordinator,open
+TSK-WA-02,Effluent/water flow meters must be calibrated and log maintained,CTRL-WA-02,Half-yearly,High,yes,Manual Log + Mobile,Facilities Manager,open
+TSK-WA-03,Valid CTO must be held and renewed before expiry for water-related discharge,CTRL-WA-03,Per consent validity (1-5 yr cycle),High,yes,Document,Central Compliance Lead,closed
+TSK-WA-04,"Self-assessed water consumption cess return, where applicable",CTRL-WA-04,Quarterly,High,yes,Manual Log,Facilities Manager,open
+TSK-AA-01,Stack emissions from DG sets must remain within CPCB/SPCB notified limits,CTRL-AA-01,Half-yearly,High,yes,Lab (external),Vendor (O&M) / Site EHS Coordinator,open
+TSK-AA-02,Boiler stack emissions must remain within prescribed limits,CTRL-AA-02,Half-yearly,High,yes,Lab (external),Vendor (O&M),open
+TSK-AA-03,Ambient air quality at site boundary must meet National Ambient Air Quality Standards,CTRL-AA-03,Quarterly,High,yes,Lab (external),Site EHS Coordinator,open
+TSK-AA-04,DG set stack height must meet CPCB norm relative to DG capacity/building height,CTRL-AA-04,"At installation, verified annually",High,yes,Mobile (physical verification),Facilities Manager,open
+TSK-AA-05,Valid CTO must be held and renewed for air-emission sources,CTRL-AA-05,Per consent validity (1-5 yr cycle),High,yes,Document,Central Compliance Lead,closed
+TSK-EPA-01,Annual environmental statement summarizing water/air/waste performance must be filed,CTRL-EPA-01,Annual,High,yes,Document (compiled from register),Central Compliance Lead,open
+TSK-EPA-02,Bore-well water extraction requires CGWA No-Objection Certificate and periodic reporting,CTRL-EPA-02,Quarterly (level) / Annual (NOC renewal),High,yes,IoT (level) + Document,Facilities Manager,open
+TSK-HW-01,Hazardous waste must not be stored beyond the permitted duration without SPCB extension,CTRL-HW-01,"Continuous, checked weekly",High,yes,Mobile (round) + Manual Log,Site EHS Coordinator,open
+TSK-HW-02,Used oil from DG sets must be handed over to an authorized recycler with a manifest,CTRL-HW-02,At each disposal (~2x/year),High,yes,Document (manifest),Vendor (O&M),closed
+TSK-HW-03,Hazardous waste must be segregated by category and labelled per Schedule III,CTRL-HW-03,Weekly round,High,yes,Mobile (photo + checklist),Site EHS Coordinator,open
+TSK-HW-04,Valid Rule 6 authorization must be held and renewed,CTRL-HW-04,Per authorization validity (typically 5 yr),High,yes,Document,Central Compliance Lead,closed
+TSK-SWM-01,"Solid waste must be segregated at source into wet, dry and domestic-hazardous streams",CTRL-SWM-01,"Daily, audited weekly",High,yes,Mobile (round),Facilities Manager,open
+TSK-SWM-02,"Registration as a bulk waste generator with the local body, with a waste management plan on file",CTRL-SWM-02,"One-time, reviewed annually",High,yes,Document,Central Compliance Lead,open
+TSK-SWM-03,On-site wet waste processing (composting/biogas) volumes must be logged where mandated,CTRL-SWM-03,Weekly,High,yes,Mobile / IoT (weighbridge),Facilities Manager,open
+TSK-NZ-01,Boundary noise levels must remain within notified day/night limits for the applicable zone,CTRL-NZ-01,Quarterly,High,yes,Lab (external) / Mobile (spot check),Site EHS Coordinator,open
+TSK-NZ-02,DG sets must be housed in acoustic enclosures maintained to manufacturer/CPCB spec,CTRL-NZ-02,Monthly,High,yes,Mobile (round),Vendor (O&M),open
+TSK-PW-01,Identified single-use plastic items (notified list) must not be used or distributed on-site,CTRL-PW-01,"Continuous, audited monthly",High,yes,Mobile (round),Facilities Manager,open
+TSK-PW-02,Plastic packaging use must be registered on the CPCB EPR portal with an annual return,CTRL-PW-02,Annual,High,yes,Document,Central Compliance Lead,open
+TSK-EW-01,End-of-life electronics must be handed to an authorized dismantler/recycler with a manifest,CTRL-EW-01,At disposal (~1x/year),High,yes,Document (manifest),IT/Facilities Manager,closed
+TSK-BW-01,Used lead-acid/other batteries must be returned to an authorized collection agency,CTRL-BW-01,At replacement (~1x/year per battery bank),High,yes,Document (manifest),Facilities Manager,closed
+TSK-BMW-01,Bio-medical waste must be segregated into colour-coded bags/containers per category,CTRL-BMW-01,"Daily, audited weekly",High,yes,Mobile (round),Infection Control Officer,open
+TSK-BMW-02,Waste must be handed to the Common Bio-medical Waste Treatment Facility with a barcoded manifest,CTRL-BMW-02,Daily,High,yes,Mobile (barcode scan),Infection Control Officer,open
+TSK-BMW-03,"On-site autoclaving, where used, must meet validated time/temperature/pressure parameters",CTRL-BMW-03,"Per batch, logged daily",High,yes,IoT (autoclave log) + Manual,Infection Control Officer,open
+TSK-BMW-04,Valid Rule 10 authorization must be held and renewed,CTRL-BMW-04,Per authorization validity,High,yes,Document,Central Compliance Lead,closed
+TSK-CD-01,A waste management plan must be filed and executed for renovation/demolition activity,CTRL-CD-01,Per project,High,yes,Document,Facilities Manager,closed

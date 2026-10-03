@@ -1,5 +1,5 @@
-import { LandscapeView } from '@/features/landscape/landscape';
+import { redirect } from 'next/navigation';
 
 export default function Home() {
-    return <LandscapeView />;
+    redirect('/catalog');
 }

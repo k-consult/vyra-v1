@@ -10,6 +10,7 @@ import {
     listControls,
     listAgentProposedControls,
     listAuthorities,
+    listJurisdictions,
     listComplianceAreas,
     getLastSyncedAt,
 } from './repo';
@@ -71,6 +72,10 @@ const catalog: any = async (fastify: FastifyInstance) => {
 
     fastify.get('/authorities', async (_req, reply) => {
         reply.send({ authorities: await listAuthorities() });
+    });
+
+    fastify.get('/jurisdictions', async (_req, reply) => {
+        reply.send({ jurisdictions: await listJurisdictions() });
     });
 
     fastify.get('/compliance-areas', async (_req, reply) => {

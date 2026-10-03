@@ -1,13 +1,42 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, RefreshCw, BookOpen, History, ShieldAlert, Plus } from 'lucide-react';
+import { AlertTriangle, RefreshCw, BookOpen, History, ShieldAlert, Plus, Share2, CalendarDays, Inbox } from 'lucide-react';
 import { catalog } from '@/lib/api';
 import { PropRow } from '@/features/landscape/landscape';
 import { formatValue } from '@/features/validation/display';
 import { PageHeader } from '@/components/page-header';
+import { CalendarView } from '@/features/calendar/calendar';
 
-type View = 'regulations' | 'obligations';
+type View = 'regulations' | 'obligations' | 'graph' | 'calendar';
+
+function EmptyState({ label }: { label: string }) {
+    return (
+        <div className="flex flex-col items-center justify-center gap-2 py-16 text-zinc-600">
+            <Inbox size={20} />
+            <p className="text-xs">{label}</p>
+        </div>
+    );
+}
+
+// Backs the catalog_search full-text index (cli/projection/index.ts) — the same
+// `tags` array Neo4j indexes is what's rendered here, nothing re-derived.
+function TagPills({ tags }: { tags?: string[] }) {
+    if (!tags?.length) return null;
+    // Dedupe — the same tag value can legitimately appear twice in the source data
+    // (e.g. a Report's board tag and its authority abbreviation both being "CPCB"),
+    // and a raw-value key broke React's uniqueness requirement for duplicates.
+    const unique = Array.from(new Set(tags));
+    return (
+        <div className="flex flex-wrap gap-1 mt-1.5">
+            {unique.map(t => (
+                <span key={t} className="text-[9px] px-1.5 py-0.5 rounded-full bg-zinc-800/80 text-zinc-400 border border-zinc-700/60">
+                    {t}
+                </span>
+            ))}
+        </div>
+    );
+}
 
 // ── Regulations view ────────────────────────────────────────────────────────
 
@@ -24,6 +53,7 @@ function RegulationListItem({ regulation, selected, onSelect }: { regulation: an
             {regulation.supersededBy && (
                 <p className="text-[10px] text-amber-500 mt-1">superseded by {regulation.supersededBy}</p>
             )}
+            <TagPills tags={regulation.tags} />
         </button>
     );
 }
@@ -71,7 +101,7 @@ function VersionHistoryStrip({ history }: { history: any[] }) {
     );
 }
 
-function ChainRow({ row, complianceAreaName }: { row: any; complianceAreaName: string }) {
+function ChainRow({ row, complianceAreaName, reportAuthorityName }: { row: any; complianceAreaName: string; reportAuthorityName: string }) {
     return (
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 flex flex-col gap-2">
             <div>
@@ -83,10 +113,131 @@ function ChainRow({ row, complianceAreaName }: { row: any; complianceAreaName: s
             </div>
             <PropRow label="obligation" value={row.obligation?.name} />
             <PropRow label="mandatory" value={row.obligation?.mandatory} />
-            <PropRow label="control" value={row.control?.name} />
-            <PropRow label="mechanism" value={row.control?.controlType} />
-            <PropRow label="docType" value={row.control?.docType} />
-            <PropRow label="complianceArea" value={complianceAreaName} />
+            <TagPills tags={row.obligation?.tags} />
+            {row.control ? (
+                <>
+                    <PropRow label="control" value={row.control?.name} />
+                    <PropRow label="mechanism" value={row.control?.controlType} />
+                    <PropRow label="docType" value={row.control?.docType} />
+                    <PropRow label="complianceArea" value={complianceAreaName} />
+                </>
+            ) : (
+                <p className="text-[11px] text-amber-500">no implementing control — documented gap, not a silent omission</p>
+            )}
+            {row.report ? (
+                <div className="mt-1 pt-2 border-t border-zinc-800/60 flex flex-col gap-1">
+                    <p className="text-[10px] font-semibold text-sky-500/80 uppercase tracking-wider">Requires filing</p>
+                    <PropRow label="report" value={row.report?.name} />
+                    <PropRow label="cadence" value={row.report?.cadenceRaw} />
+                    {row.report?.triggerCondition && <PropRow label="trigger" value={row.report?.triggerCondition} />}
+                    <PropRow label="filed with" value={reportAuthorityName} />
+                    <TagPills tags={row.report?.tags} />
+                </div>
+            ) : (
+                <p className="text-[11px] text-zinc-600">no distinct external filing — internal record only</p>
+            )}
+        </div>
+    );
+}
+
+// ── Graph view ───────────────────────────────────────────────────────────────
+// Real data only — the selected regulation's own chain (same `chain` the card
+// grid renders), laid out as four columns (Regulation / Clause / Obligation /
+// Control) rather than a full-catalog force-directed mindmap. A ~90-node
+// whole-catalog graph with pan/zoom is a real, separate feature (interactive
+// canvas, hit-testing, layout engine) — scoping to one regulation's fan-out
+// ships something complete and correct now instead of something half-built.
+
+const GRAPH_COLORS: Record<string, string> = {
+    regulation: '#38bdf8',
+    clause: '#a78bfa',
+    obligation: '#34d399',
+    control: '#fbbf24',
+};
+
+function GraphView({ regulation, chain }: { regulation: any; chain: any[] }) {
+    if (!regulation || !chain.length) {
+        return <EmptyState label="Select a regulation with a chain to visualize." />;
+    }
+
+    const clauses = Array.from(new Map<string, any>(chain.filter(r => r.clause?.id).map(r => [r.clause.id, r.clause])).values());
+    const obligations = Array.from(new Map<string, any>(chain.filter(r => r.obligation?.id).map(r => [r.obligation.id, r.obligation])).values());
+    const controls = Array.from(new Map<string, any>(chain.filter(r => r.control?.id).map(r => [r.control.id, r.control])).values());
+
+    const colW = 230;
+    const rowH = 34;
+    const colX = { regulation: 20, clause: 20 + colW, obligation: 20 + colW * 2, control: 20 + colW * 3 };
+    const maxRows = Math.max(1, clauses.length, obligations.length, controls.length);
+    const height = Math.max(200, maxRows * rowH + 40);
+
+    const yFor = (i: number, count: number) => (height / (count + 1)) * (i + 1);
+
+    const regPos = { x: colX.regulation + 90, y: height / 2 };
+    const clausePos = new Map(clauses.map((c: any, i) => [c.id, { x: colX.clause + 90, y: yFor(i, clauses.length) }]));
+    const oblPos = new Map(obligations.map((o: any, i) => [o.id, { x: colX.obligation + 90, y: yFor(i, obligations.length) }]));
+    const ctlPos = new Map(controls.map((c: any, i) => [c.id, { x: colX.control + 90, y: yFor(i, controls.length) }]));
+
+    const edges: { from: { x: number; y: number }; to: { x: number; y: number } }[] = [];
+    chain.forEach(row => {
+        const cp = row.clause && clausePos.get(row.clause.id);
+        const op = row.obligation && oblPos.get(row.obligation.id);
+        const ctp = row.control && ctlPos.get(row.control.id);
+        if (cp) edges.push({ from: regPos, to: cp });
+        if (cp && op) edges.push({ from: cp, to: op });
+        if (op && ctp) edges.push({ from: op, to: ctp });
+    });
+
+    return (
+        <div className="flex-1 min-w-0 overflow-auto px-6 py-4">
+            <div className="flex items-center gap-4 mb-3">
+                {(['Regulation', 'Clause', 'Obligation', 'Control'] as const).map(label => (
+                    <div key={label} className="flex items-center gap-1.5 text-[10px] text-zinc-500">
+                        <span className="w-2 h-2 rounded-full" style={{ background: GRAPH_COLORS[label.toLowerCase()] }} />
+                        {label}
+                    </div>
+                ))}
+            </div>
+            <svg width="100%" height={height} viewBox={`0 0 ${colX.control + colW} ${height}`} preserveAspectRatio="xMinYMin meet">
+                {edges.map((e, i) => (
+                    <line key={i} x1={e.from.x} y1={e.from.y} x2={e.to.x} y2={e.to.y} stroke="#3f3f46" strokeWidth={1} />
+                ))}
+                <circle cx={regPos.x} cy={regPos.y} r={7} fill={GRAPH_COLORS.regulation} />
+                <text x={regPos.x} y={regPos.y - 12} textAnchor="middle" fontSize="10" fill="#e4e4e7">{regulation.id}</text>
+                <title>{regulation.name}</title>
+
+                {clauses.map((c: any) => {
+                    const p = clausePos.get(c.id)!;
+                    return (
+                        <g key={c.id}>
+                            <circle cx={p.x} cy={p.y} r={6} fill={GRAPH_COLORS.clause} />
+                            <text x={p.x} y={p.y - 10} textAnchor="middle" fontSize="9" fill="#d4d4d8">{c.clauseRef?.slice(0, 24) ?? c.id}</text>
+                            <title>{c.name}</title>
+                        </g>
+                    );
+                })}
+
+                {obligations.map((o: any) => {
+                    const p = oblPos.get(o.id)!;
+                    return (
+                        <g key={o.id}>
+                            <circle cx={p.x} cy={p.y} r={6} fill={GRAPH_COLORS.obligation} />
+                            <text x={p.x} y={p.y - 10} textAnchor="middle" fontSize="9" fill="#d4d4d8">{o.id}</text>
+                            <title>{o.name}</title>
+                        </g>
+                    );
+                })}
+
+                {controls.map((c: any) => {
+                    const p = ctlPos.get(c.id)!;
+                    return (
+                        <g key={c.id}>
+                            <circle cx={p.x} cy={p.y} r={6} fill={GRAPH_COLORS.control} />
+                            <text x={p.x} y={p.y - 10} textAnchor="middle" fontSize="9" fill="#d4d4d8">{c.id}</text>
+                            <title>{c.name}</title>
+                        </g>
+                    );
+                })}
+            </svg>
         </div>
     );
 }
@@ -102,6 +253,7 @@ function ObligationRow({ obligation }: { obligation: any }) {
             <PropRow label="mandatory" value={obligation.mandatory} />
             <PropRow label="clause" value={obligation.clauseId} />
             <PropRow label="source" value={obligation.sourceAnchor} />
+            <TagPills tags={obligation.tags} />
         </div>
     );
 }
@@ -185,14 +337,18 @@ export function CatalogView() {
     const [chain, setChain] = useState<any[]>([]);
     const [history, setHistory] = useState<any[]>([]);
     const [authorities, setAuthorities] = useState<any[]>([]);
+    const [jurisdictions, setJurisdictions] = useState<any[]>([]);
     const [complianceAreas, setComplianceAreas] = useState<any[]>([]);
     const [clauses, setClauses] = useState<any[]>([]);
+    const [controls, setControls] = useState<any[]>([]);
 
     const [obligations, setObligations] = useState<any[]>([]);
     const [uncontrolledOnly, setUncontrolledOnly] = useState(false);
     const [mandatoryOnly, setMandatoryOnly] = useState(false);
     const [currentOnly, setCurrentOnly] = useState(false);
     const [authorityFilter, setAuthorityFilter] = useState<Set<string>>(new Set());
+    const [jurisdictionFilter, setJurisdictionFilter] = useState<Set<string>>(new Set());
+    const [mechanismFilter, setMechanismFilter] = useState<Set<string>>(new Set());
     const [yearFilter, setYearFilter] = useState<Set<string>>(new Set());
 
     const [lastSyncedAt, setLastSyncedAt] = useState<any>(null);
@@ -206,17 +362,21 @@ export function CatalogView() {
             catalog.regulations(currentOnly),
             catalog.syncStatus(),
             catalog.authorities(),
+            catalog.jurisdictions(),
             catalog.complianceAreas(),
             catalog.clauses(),
+            catalog.controls(),
             uncontrolledOnly ? catalog.uncontrolledObligations() : catalog.obligations(),
         ])
-            .then(([r, s, auth, ca, cls, obl]) => {
+            .then(([r, s, auth, jur, ca, cls, ctl, obl]) => {
                 const regs = r.regulations ?? [];
                 setRegulations(regs);
                 setLastSyncedAt(s.lastSyncedAt);
                 setAuthorities(auth.authorities ?? []);
+                setJurisdictions(jur.jurisdictions ?? []);
                 setComplianceAreas(ca.complianceAreas ?? []);
                 setClauses(cls.clauses ?? []);
+                setControls(ctl.controls ?? []);
                 setObligations(obl.obligations ?? []);
                 if (regs.length && !selectedId) setSelectedId(regs[0].id);
             })
@@ -241,6 +401,11 @@ export function CatalogView() {
         return (id: string) => byId.get(id) ?? id ?? 'UNKNOWN';
     }, [authorities]);
 
+    const jurisdictionName = useMemo(() => {
+        const byId = new Map(jurisdictions.map((j: any) => [j.id, j.name]));
+        return (id: string) => byId.get(id) ?? id ?? 'UNKNOWN';
+    }, [jurisdictions]);
+
     const complianceAreaName = useMemo(() => {
         const byId = new Map(complianceAreas.map((c: any) => [c.id, c.name]));
         return (id: string) => byId.get(id) ?? id ?? 'UNKNOWN';
@@ -264,6 +429,14 @@ export function CatalogView() {
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [regulations, authorityName]);
 
+    const jurisdictionOptions = useMemo(() => {
+        const counts = new Map<string, number>();
+        regulations.forEach((r: any) => { if (r.jurisdictionId) counts.set(r.jurisdictionId, (counts.get(r.jurisdictionId) ?? 0) + 1); });
+        return Array.from(counts.entries())
+            .map(([id, count]) => ({ value: id, label: jurisdictionName(id), count }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [regulations, jurisdictionName]);
+
     const yearOptions = useMemo(() => {
         const counts = new Map<string, number>();
         regulations.forEach((r: any) => { const y = yearOf(r); if (y) counts.set(y, (counts.get(y) ?? 0) + 1); });
@@ -272,10 +445,42 @@ export function CatalogView() {
             .sort((a, b) => b.value.localeCompare(a.value));
     }, [regulations]);
 
+    // Which control mechanisms (Preventive/Detective/Corrective) a Regulation has,
+    // via its Obligations' Controls — reached through Control.regulationId, the
+    // same flat reference catalog/cpcb/controls.csv already carries.
+    const mechanismsByRegulation = useMemo(() => {
+        const byReg = new Map<string, Set<string>>();
+        controls.forEach((c: any) => {
+            if (!c.regulationId || !c.controlType) return;
+            if (!byReg.has(c.regulationId)) byReg.set(c.regulationId, new Set());
+            byReg.get(c.regulationId)!.add(c.controlType);
+        });
+        return byReg;
+    }, [controls]);
+
+    const mechanismOptions = useMemo(() => {
+        const counts = new Map<string, number>();
+        regulations.forEach((r: any) => {
+            (mechanismsByRegulation.get(r.id) ?? new Set()).forEach((m: string) => counts.set(m, (counts.get(m) ?? 0) + 1));
+        });
+        return Array.from(counts.entries())
+            .map(([value, count]) => ({ value, label: value, count }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [regulations, mechanismsByRegulation]);
+
     const visibleRegulations = regulations.filter((r: any) =>
         (authorityFilter.size === 0 || authorityFilter.has(r.authorityId)) &&
-        (yearFilter.size === 0 || yearFilter.has(yearOf(r)))
+        (jurisdictionFilter.size === 0 || jurisdictionFilter.has(r.jurisdictionId)) &&
+        (yearFilter.size === 0 || yearFilter.has(yearOf(r))) &&
+        (mechanismFilter.size === 0 || Array.from(mechanismsByRegulation.get(r.id) ?? []).some(m => mechanismFilter.has(m)))
     );
+
+    // Same facet set drives the Calendar — narrow its tasks to the controls
+    // belonging to whichever regulations survive the facet filters above.
+    const visibleControlIds = useMemo(() => {
+        const regIds = new Set(visibleRegulations.map((r: any) => r.id));
+        return new Set(controls.filter((c: any) => regIds.has(c.regulationId)).map((c: any) => c.id));
+    }, [controls, visibleRegulations]);
 
     if (loading) {
         return (
@@ -307,12 +512,14 @@ export function CatalogView() {
 
             <PageHeader icon={BookOpen} iconClassName="text-emerald-400" title="Catalog" subtitle="Regulation → Clause → Obligation → Control">
                 <div className="flex items-center gap-1 rounded-md border border-zinc-800 p-0.5">
-                    {(['regulations', 'obligations'] as View[]).map(v => (
+                    {(['regulations', 'obligations', 'graph', 'calendar'] as View[]).map(v => (
                         <button
                             key={v}
                             onClick={() => setView(v)}
-                            className={`px-2.5 py-1 rounded text-[11px] capitalize transition-colors ${view === v ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'}`}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] capitalize transition-colors ${view === v ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'}`}
                         >
+                            {v === 'graph' && <Share2 size={11} />}
+                            {v === 'calendar' && <CalendarDays size={11} />}
                             {v}
                         </button>
                     ))}
@@ -326,15 +533,23 @@ export function CatalogView() {
             </PageHeader>
 
             <div className="flex-1 min-h-0 overflow-hidden flex">
-                {/* ── Facet rail ── */}
+                {/* ── Facet rail — same Jurisdiction/Authority/Year/Mechanism facets
+                     drive Regulations, Graph, and Calendar; Obligations gets its own
+                     mandatory/uncontrolled facet set ── */}
                 <aside className="w-56 shrink-0 border-r border-zinc-800/60 overflow-auto px-4 py-4 flex flex-col gap-4">
                     <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">Facets</p>
-                    {view === 'regulations' ? (
+                    {view === 'regulations' || view === 'graph' || view === 'calendar' ? (
                         <>
                             <label className="flex items-center gap-2 text-xs text-zinc-400">
                                 <input type="checkbox" checked={currentOnly} onChange={e => setCurrentOnly(e.target.checked)} />
                                 current versions only
                             </label>
+                            <FacetGroup
+                                title="Jurisdiction"
+                                options={jurisdictionOptions}
+                                selected={jurisdictionFilter}
+                                onToggle={v => toggleInSet(jurisdictionFilter, setJurisdictionFilter, v)}
+                            />
                             <FacetGroup
                                 title="Authority"
                                 options={authorityOptions}
@@ -347,6 +562,12 @@ export function CatalogView() {
                                 selected={yearFilter}
                                 onToggle={v => toggleInSet(yearFilter, setYearFilter, v)}
                             />
+                            <FacetGroup
+                                title="Control Mechanism"
+                                options={mechanismOptions}
+                                selected={mechanismFilter}
+                                onToggle={v => toggleInSet(mechanismFilter, setMechanismFilter, v)}
+                            />
                         </>
                     ) : (
                         <>
@@ -355,7 +576,7 @@ export function CatalogView() {
                                 mandatory only
                             </label>
                             <label className="flex items-center gap-2 text-xs text-zinc-400">
-                                <ShieldAlert size={12} className="text-amber-500" />
+                                {uncontrolledOnly && <ShieldAlert size={12} className="text-amber-500 shrink-0" />}
                                 <input type="checkbox" checked={uncontrolledOnly} onChange={e => setUncontrolledOnly(e.target.checked)} />
                                 uncontrolled only
                             </label>
@@ -363,40 +584,61 @@ export function CatalogView() {
                     )}
                 </aside>
 
-                {view === 'regulations' ? (
+                {view === 'calendar' ? (
+                    <CalendarView embedded controlIds={visibleControlIds} />
+                ) : view === 'regulations' || view === 'graph' ? (
                     <>
                         <aside className="w-80 shrink-0 border-r border-zinc-800/60 overflow-auto px-4 py-4 flex flex-col gap-2">
                             <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mb-1">
                                 Regulations · {visibleRegulations.length}
                             </p>
-                            {visibleRegulations.map(r => (
-                                <RegulationListItem key={r.id} regulation={r} selected={r.id === selectedId} onSelect={() => setSelectedId(r.id)} />
-                            ))}
+                            {visibleRegulations.length === 0 ? (
+                                <EmptyState label="No regulations match the selected facets." />
+                            ) : (
+                                visibleRegulations.map(r => (
+                                    <RegulationListItem key={r.id} regulation={r} selected={r.id === selectedId} onSelect={() => setSelectedId(r.id)} />
+                                ))
+                            )}
                         </aside>
 
-                        <div className="flex-1 min-w-0 overflow-auto px-6 py-4 flex flex-col gap-3">
-                            {selected && (
-                                <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
-                                    <p className="text-[11px] font-mono text-zinc-500">{selected.id}</p>
-                                    <p className="text-sm text-zinc-200 font-medium mb-1">{selected.name}</p>
-                                    <PropRow label="authority" value={authorityName(selected.authorityId)} />
-                                    <PropRow label="catalogVersion" value={selected.catalogVersion} />
-                                    <PropRow label="effectiveFrom" value={selected.effectiveFrom} />
-                                    <PropRow label="supersededBy" value={selected.supersededBy} />
-                                </div>
-                            )}
+                        {view === 'graph' ? (
+                            <GraphView regulation={selected} chain={chain} />
+                        ) : (
+                            <div className="flex-1 min-w-0 overflow-auto px-6 py-4 flex flex-col gap-3">
+                                {selected && (
+                                    <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3">
+                                        <p className="text-[11px] font-mono text-zinc-500">{selected.id}</p>
+                                        <p className="text-sm text-zinc-200 font-medium mb-1">{selected.name}</p>
+                                        <PropRow label="jurisdiction" value={jurisdictionName(selected.jurisdictionId)} />
+                                        <PropRow label="authority" value={authorityName(selected.authorityId)} />
+                                        <PropRow label="catalogVersion" value={selected.catalogVersion} />
+                                        <PropRow label="effectiveFrom" value={selected.effectiveFrom} />
+                                        <PropRow label="supersededBy" value={selected.supersededBy} />
+                                        <TagPills tags={selected.tags} />
+                                    </div>
+                                )}
 
-                            <VersionHistoryStrip history={history} />
+                                <VersionHistoryStrip history={history} />
 
-                            <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mt-1">
-                                Clause → Obligation → Control chain · {chain.length}
-                            </p>
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                                {chain.map((row, i) => (
-                                    <ChainRow key={i} row={row} complianceAreaName={complianceAreaName(row.control?.complianceAreaId)} />
-                                ))}
+                                <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mt-1">
+                                    Clause → Obligation → Control chain · {chain.length}
+                                </p>
+                                {chain.length === 0 ? (
+                                    <EmptyState label="This regulation has no chained clauses yet." />
+                                ) : (
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                        {chain.map((row, i) => (
+                                            <ChainRow
+                                                key={i}
+                                                row={row}
+                                                complianceAreaName={complianceAreaName(row.control?.complianceAreaId)}
+                                                reportAuthorityName={authorityName(row.report?.authorityId)}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                        </div>
+                        )}
                     </>
                 ) : (
                     <div className="flex-1 min-w-0 overflow-auto px-6 py-4 flex flex-col gap-3">
@@ -404,9 +646,13 @@ export function CatalogView() {
                         <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mt-1">
                             Obligations · {visibleObligations.length}
                         </p>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                            {visibleObligations.map(o => <ObligationRow key={o.id} obligation={o} />)}
-                        </div>
+                        {visibleObligations.length === 0 ? (
+                            <EmptyState label={uncontrolledOnly ? 'No uncontrolled obligations — every obligation here has an implementing control.' : 'No obligations match the selected facets.'} />
+                        ) : (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                {visibleObligations.map(o => <ObligationRow key={o.id} obligation={o} />)}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

@@ -130,6 +130,7 @@ export const catalog = {
     controls:        () => get<{ controls: any[] }>('/catalog/controls'),
     agentProposedControls: () => get<{ controls: any[] }>('/catalog/controls/agent-proposed'),
     authorities:     () => get<{ authorities: any[] }>('/catalog/authorities'),
+    jurisdictions:   () => get<{ jurisdictions: any[] }>('/catalog/jurisdictions'),
     complianceAreas: () => get<{ complianceAreas: any[] }>('/catalog/compliance-areas'),
 };
 

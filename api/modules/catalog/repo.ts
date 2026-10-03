@@ -47,6 +47,12 @@ const LIST_AUTHORITIES = `
     ORDER BY n.name
 `;
 
+const LIST_JURISDICTIONS = `
+    MATCH (n:Jurisdiction)
+    RETURN properties(n) AS jurisdiction
+    ORDER BY n.name
+`;
+
 const LIST_COMPLIANCE_AREAS = `
     MATCH (n:ComplianceArea)
     RETURN properties(n) AS complianceArea
@@ -67,16 +73,23 @@ const REGULATION_HISTORY = `
     ORDER BY r.catalogVersion
 `;
 
+// OPTIONAL on both Control and Report — CPCB's chain is the first real exercise of
+// an Obligation with no Control, and separately of REQUIRES_FILING. Neither should
+// hide an obligation from the chain view: a missing Control is "documented absence"
+// (foundation.md §2), and a missing Report is correct for the 5 internal-NC-log-only
+// CPCB obligations (see convert-cpcb-seed.ts) — both must render, not disappear.
 const TRACE_FORWARD = `
     MATCH (reg:Regulation {id: $id})
                  <-[:BELONGS_TO]-(cls:Clause)
                  <-[:DEFINED_BY]-(obl:Obligation)
-                 <-[:IMPLEMENTS]-(ctl:Control)
+    OPTIONAL MATCH (obl)<-[:IMPLEMENTS]-(ctl:Control)
+    OPTIONAL MATCH (obl)-[:REQUIRES_FILING]->(rpt:Report)
     RETURN
         properties(reg) AS regulation,
         properties(cls) AS clause,
         properties(obl) AS obligation,
-        properties(ctl) AS control
+        properties(ctl) AS control,
+        properties(rpt) AS report
     LIMIT 200
 `;
 
@@ -120,6 +133,12 @@ export const listAuthorities = async () => {
     const raw: any = await db().fetch(LIST_AUTHORITIES, {});
     const rows = Array.isArray(raw) ? raw : [raw];
     return rows.map((r: any) => r.authority).filter(Boolean);
+};
+
+export const listJurisdictions = async () => {
+    const raw: any = await db().fetch(LIST_JURISDICTIONS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.jurisdiction).filter(Boolean);
 };
 
 export const listComplianceAreas = async () => {
