@@ -94,6 +94,13 @@ export const assetExists = async (id: string): Promise<boolean> => {
     return Boolean(row?.assetExists);
 };
 
+const HAZARD_EXISTS = `MATCH (h:Hazard {id: $id}) RETURN count(h) > 0 AS hazardExists`;
+export const hazardExists = async (id: string): Promise<boolean> => {
+    const raw: any = await db().fetch(HAZARD_EXISTS, { id });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    return Boolean(row?.hazardExists);
+};
+
 const LIST_BLUEPRINTS = `
     MATCH (bp:Blueprint)
     OPTIONAL MATCH (bp)-[:ABOUT]->(f:Facility)
@@ -162,6 +169,185 @@ export const proposeBlueprint = async (input: ProposeBlueprintInput) => {
             scopeDescription: input.scopeDescription,
             roleIds: input.roleIds,
             assetIds: input.assetIds,
+        },
+    });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    return { decision: row?.decision };
+};
+
+const LIST_HAZARDS = `
+    MATCH (h:Hazard)
+    RETURN properties(h) AS hazard
+    ORDER BY h.createdAt DESC
+`;
+
+export const listHazards = async () => {
+    const raw: any = await db().fetch(LIST_HAZARDS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.filter((r: any) => r?.hazard).map((r: any) => r.hazard);
+};
+
+export interface ProposeHazardInput {
+    proposedBy: string;
+    name: string;
+    hazardType: string;
+    description: string;
+    facilityId: string;
+    assetId?: string;
+}
+
+// Writes only a pending Decision — never a Hazard directly. The real node is
+// created on approval by intelligence/repo.ts's hazard-proposal branch (same
+// discipline as Blueprint/Contract above). Scoped to Facility like Blueprint,
+// since every Hazard is at minimum site-located even when it also names a
+// specific Asset (domain-extension.md §8.4(a)).
+const PROPOSE_HAZARD = `
+    MERGE (d:Decision {id: $id})
+    ON CREATE SET
+        d += $props,
+        d.decidedAt = datetime(),
+        d.status = 'pending',
+        d.origin = 'human'
+    WITH d
+    MATCH (f:Facility {id: d.facilityId})
+    MERGE (d)-[:ABOUT]->(f)
+    RETURN properties(d) AS decision
+`;
+
+export const proposeHazard = async (input: ProposeHazardInput) => {
+    const id = `DEC-HAZARD-${Date.now()}`;
+    const raw: any = await db().exec(PROPOSE_HAZARD, {
+        id,
+        props: {
+            type: 'hazard-proposal',
+            rationale: `Human-proposed hazard "${input.name}" at facility "${input.facilityId}"`,
+            agentId: input.proposedBy,
+            autonomyLevel: 0,
+            confidence: 1,
+            proposedBy: input.proposedBy,
+            name: input.name,
+            hazardType: input.hazardType,
+            description: input.description,
+            facilityId: input.facilityId,
+            assetId: input.assetId ?? '',
+        },
+    });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    return { decision: row?.decision };
+};
+
+const LIST_HAZARD_ASSESSMENTS = `
+    MATCH (hsa:HazardAssessment)
+    RETURN properties(hsa) AS assessment
+    ORDER BY hsa.assessedAt DESC
+`;
+
+export const listHazardAssessments = async () => {
+    const raw: any = await db().fetch(LIST_HAZARD_ASSESSMENTS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.filter((r: any) => r?.assessment).map((r: any) => r.assessment);
+};
+
+export interface ProposeHazardAssessmentInput {
+    proposedBy: string;
+    hazardId: string;
+    name?: string;
+    likelihood: number;
+    severity: number;
+    rating: string;
+}
+
+// Writes only a pending Decision — never a HazardAssessment directly. The real
+// node is created on approval by intelligence/repo.ts's hazard-assessment-proposal
+// branch. likelihood/severity are carried as proposed values; score is computed
+// in Cypher at approval time (likelihood x severity), never trusted as arithmetic
+// from the proposer — same discipline Risk already uses for proposedLikelihood/
+// proposedConsequence.
+const PROPOSE_HAZARD_ASSESSMENT = `
+    MERGE (d:Decision {id: $id})
+    ON CREATE SET
+        d += $props,
+        d.decidedAt = datetime(),
+        d.status = 'pending',
+        d.origin = 'human'
+    WITH d
+    MATCH (h:Hazard {id: d.hazardId})
+    MERGE (d)-[:ABOUT]->(h)
+    RETURN properties(d) AS decision
+`;
+
+export const proposeHazardAssessment = async (input: ProposeHazardAssessmentInput) => {
+    const id = `DEC-HAZASSESS-${Date.now()}`;
+    const raw: any = await db().exec(PROPOSE_HAZARD_ASSESSMENT, {
+        id,
+        props: {
+            type: 'hazard-assessment-proposal',
+            rationale: `Human-proposed hazard assessment for hazard "${input.hazardId}"`,
+            agentId: input.proposedBy,
+            autonomyLevel: 0,
+            confidence: 1,
+            proposedBy: input.proposedBy,
+            hazardId: input.hazardId,
+            name: input.name ?? '',
+            proposedLikelihood: input.likelihood,
+            proposedSeverity: input.severity,
+            proposedRating: input.rating,
+        },
+    });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    return { decision: row?.decision };
+};
+
+const LIST_EMERGENCY_PLANS = `
+    MATCH (ep:EmergencyPlan)
+    RETURN properties(ep) AS plan
+    ORDER BY ep.createdAt DESC
+`;
+
+export const listEmergencyPlans = async () => {
+    const raw: any = await db().fetch(LIST_EMERGENCY_PLANS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.filter((r: any) => r?.plan).map((r: any) => r.plan);
+};
+
+export interface ProposeEmergencyPlanInput {
+    proposedBy: string;
+    facilityId: string;
+    name?: string;
+    drillFrequency: string;
+}
+
+// Writes only a pending Decision — never an EmergencyPlan directly. The real
+// node is created on approval by intelligence/repo.ts's emergency-plan-proposal
+// branch (same discipline as Blueprint above, which this mirrors exactly: scoped
+// to one Facility, real ABOUT edge since Facility already exists live).
+const PROPOSE_EMERGENCY_PLAN = `
+    MERGE (d:Decision {id: $id})
+    ON CREATE SET
+        d += $props,
+        d.decidedAt = datetime(),
+        d.status = 'pending',
+        d.origin = 'human'
+    WITH d
+    MATCH (f:Facility {id: d.facilityId})
+    MERGE (d)-[:ABOUT]->(f)
+    RETURN properties(d) AS decision
+`;
+
+export const proposeEmergencyPlan = async (input: ProposeEmergencyPlanInput) => {
+    const id = `DEC-EMERGENCYPLAN-${Date.now()}`;
+    const raw: any = await db().exec(PROPOSE_EMERGENCY_PLAN, {
+        id,
+        props: {
+            type: 'emergency-plan-proposal',
+            rationale: `Human-proposed emergency plan for facility "${input.facilityId}"`,
+            agentId: input.proposedBy,
+            autonomyLevel: 0,
+            confidence: 1,
+            proposedBy: input.proposedBy,
+            facilityId: input.facilityId,
+            name: input.name ?? '',
+            drillFrequency: input.drillFrequency,
         },
     });
     const row = Array.isArray(raw) ? raw[0] : raw;

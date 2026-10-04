@@ -732,7 +732,7 @@ Compliance activities that must be performed to maintain or restore compliance.
 | status | string | `open` / `in-progress` / `done` / `closed` (fixed vocabulary, enforced by `api/modules/execution/spec.ts`; `closed` stays terminal so existing `status <> 'closed'` dashboard queries are unaffected) |
 | statusUpdatedAt | datetime | set by `PATCH /execution/tasks/:id` (2026-09-22) — the first task-completion write path; wired into `ui/src/features/calendar/calendar.tsx`'s per-row status control |
 | lastTriggeredAt | datetime | `:Catalog` rows only, non-Fixed-schedule tasks — set when the task's trigger condition fires (see below) |
-| evidenceMethod | string | `Lab`, `Manual Log`, `Mobile`, `IoT`, `Document` — how evidence for this task is captured (2026-10-03, schema only, no data yet) |
+| evidenceMethod | string | `Lab`, `Manual Log`, `Mobile`, `IoT`, `Document` — how evidence for this task is captured (2026-10-03, schema only, no data yet). `Lab` is the resolution for WINAIM's `LabReport`/`EvidenceType` concepts (`domain-extension.md` §8.3) — no separate node, a Task's `evidenceMethod` plus the resulting `Evidence.type` already say what kind of proof is expected |
 | vendorId | string | FK to `Vendor`, for vendor-executed tasks (e.g. AMC-performed stack monitoring) — designed, not yet active; see `ASSIGNED_TO` in Appendix B |
 
 **Signal-driven Tasks** are created live by the events sink when a signal arrives, not by the batch ingest — see §3.3.
@@ -756,6 +756,8 @@ Corrective and preventive actions triggered by findings.
 | status | string | `closed` |
 | triggerCondition | string | the breach/exceedance condition that raised this CAPA, e.g. `Effluent BOD exceeds CTO-prescribed limit` (2026-10-03, schema only, no data yet) |
 | deviationApprovedBy | string | set when a CAPA can't close by its `dueDate` and an extension is approved — the approver's `Person.id`; null otherwise (2026-10-03, schema only, no data yet) |
+| deviationDueBy | datetime | the new, extended deadline agreed for the approved exception (2026-10-04, schema only, no data yet — `domain-extension.md` §8.3's `Deviation` resolution, completing WINAIM's "approved exception when a CAPA can't close on time" shape as `CAPA` fields rather than a new node) |
+| deviationReason | string | why the original `dueDate` couldn't be met (2026-10-04, schema only, no data yet) |
 
 **20 CAPAs** across 7 incidents.
 
@@ -881,7 +883,7 @@ Equipment, systems, or infrastructure involved in the incident.
 |---|---|---|
 | id | string | `FSD-BLR-WH-B-447`, `AST-001` |
 | name | string | `Honeywell NOTIFIER Smoke Detector` |
-| assetType | string | `equipment` |
+| assetType | string | `equipment`; controlled vocabulary extended 2026-10-04 (`domain-extension.md` §8.3) with `hazardous-material-store`, `fire-alarm-panel`, `sprinkler-system`, `fire-hydrant-system`, `fire-pump` — WINAIM's `HazardousMaterialStore`/`FireSafetySystem` resolved onto this property rather than new node types, same precedent §7.4(b) used for Asset subtyping. No seed data for these values yet |
 | owner | string | `Facility & EHS` (enterprise-pipeline rows only) |
 | facilityId | string | `FAC-1002`, `LOC-001` — FK to Facility |
 | vendorId | string | `VND-2002` (enterprise-pipeline rows only) |
@@ -1036,6 +1038,62 @@ No CSV feed — written live by the events sink when a signal arrives. See §3.3
 
 ---
 
+### `Hazard`
+An identified source of potential harm (fire, chemical, electrical, structural) — `domain-extension.md` §8.4(a), decided and built 2026-10-04 from the Fire/Hazard cluster in `grc_registry_model_explorer.html`. `hazardType` is a discriminator on this one node type, same idiom as `Permit.instrumentType`/`Control.docType`, rather than a label per hazard class.
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `HAZ-{decisionId}` |
+| name | string | `LPG Storage` |
+| hazardType | string | `fire` \| `chemical` \| `electrical` \| `structural` |
+| description | string | free text |
+| facilityId | string | FK to `Facility` |
+| assetId | string | optional FK to `Asset`, when the hazard is tied to a specific asset rather than just a site |
+| status | string | `active` |
+
+**`Hazard -[:LOCATED_AT]-> Facility`, optionally also `-> Asset`** — reuses `LOCATED_AT` (already `Asset → Facility`), safe under the established `(relType, sourceLabel, targetLabel)` grouping.
+
+**Zero seed data, live-write-only** — same as `Permit`/`Contract`/`CutoverCriterion`/`Blueprint`. `POST /onboarding/hazards` → pending `Decision {type: 'hazard-proposal'}` → `POST /intelligence/decisions/:id/approve` (`api/modules/intelligence/repo.ts`'s `hazard-proposal` branch) creates the node. No CSV feed, no `CREATE CONSTRAINT`. Verified live 2026-10-04: proposed and approved `HAZ-DEC-HAZARD-1791087205703` against `FAC-1002`, confirmed `LOCATED_AT`/`RESULTED_IN` via direct Cypher; a rejected proposal left no `Hazard` node.
+
+### `HazardAssessment`
+A HIRA (Hazard Identification & Risk Assessment) record — the proactive counterpart to `RCA` below (`RCA` only exists after a `Finding`; `HazardAssessment` exists before anything goes wrong). `domain-extension.md` §8.4(b).
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `HSA-{decisionId}` |
+| name | string | `HIRA-2026-014` |
+| hazardId | string | FK to `Hazard` |
+| likelihood | int | `1`–`5` |
+| severity | int | `1`–`5` |
+| score | int | `likelihood × severity`, computed server-side at approval time — never trusted as arithmetic from the proposer, same discipline as `Risk.inherentScore` |
+| rating | string | `Low` / `Medium` / `High` / `Critical` |
+| assessedAt | datetime | |
+| status | string | `completed` |
+
+**`Hazard -[:ASSESSED_BY]-> HazardAssessment`** — new relationship, mirroring `Finding -[:ANALYSED_BY]-> RCA`'s exact direction/naming convention (the subject points at its own analysis).
+
+**Zero seed data, live-write-only.** `POST /onboarding/hazard-assessments` → pending `Decision {type: 'hazard-assessment-proposal'}` → approval (`hazard-assessment-proposal` branch) creates the node. Verified live 2026-10-04: `HSA-DEC-HAZASSESS-1791087213844` created against `HAZ-DEC-HAZARD-1791087205703` with `likelihood: 4`, `severity: 5`, `score: 20` (computed, matched).
+
+### `EmergencyPlan`
+A per-`Facility` fire/evacuation/emergency response plan. `domain-extension.md` §8.4(c).
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `EMP-{decisionId}` |
+| name | string | `FAC-1002 Emergency Response Plan` |
+| facilityId | string | FK to `Facility` |
+| drillFrequency | string | `Weekly` / `Fortnightly` / `Monthly` / `Quarterly` / `Half-Yearly` / `Annual` — same qualitative cadence vocabulary `cli/scripts/convert-catalog-seed.ts` already uses for `Schedule` |
+| lastReviewedAt | datetime | |
+| status | string | `active` |
+
+**`EmergencyPlan -[:COVERS]-> Facility`** — reuses `COVERS` (already `Permit → Facility`/`Contract → Facility`/`AssuranceStatement → Regulation`/`Blueprint → Role,Asset`).
+
+**Zero seed data, live-write-only.** `POST /onboarding/emergency-plans` → pending `Decision {type: 'emergency-plan-proposal'}` → approval creates the node. Verified live 2026-10-04: `EMP-DEC-EMERGENCYPLAN-1791087213900` created against `FAC-1002` with `drillFrequency: 'Quarterly'`.
+
+**Not built in this slice:** a recurring Drill `Task` is not auto-generated from `drillFrequency` — `EmergencyPlan` has no CSV feed to hook a batch generator into, and no agent family targets it yet. `Task -[:VERIFIES]-> EmergencyPlan` (below, Appendix B) is schema-designed for when that lands. See `domain-extension.md` §8.5.
+
+---
+
 ## Intelligence Graph
 
 ### `Finding`
@@ -1147,7 +1205,7 @@ Artifacts collected during the incident/audit that prove compliance activities.
 |---|---|---|
 | id | string | `EVD-001-01` |
 | name | string | `Audit report` |
-| type | string | `audit-artifact` |
+| type | string | `audit-artifact`; vocabulary extended 2026-10-04 (`domain-extension.md` §8.3) with `lab-report`, `safety-data-sheet`, `drill-report` — WINAIM's `LabReport`/`SafetyDataSheet`/`Drill` concepts all resolved onto this property, reached via the existing `PRODUCED_BY` edge from whatever Task required them, rather than new node types. No seed data for these values yet |
 | source | string | `INC-001` |
 | collectedAt | datetime | |
 | taskId | string | FK to Task |
@@ -1230,8 +1288,8 @@ Together, Phase 8's `assurance-intelligence` agent means the Audit-Ready Export 
 
 ---
 
-### `ReportSubmission` — designed, not yet active
-The tenant's actual per-period filing event against a `Report` requirement (Knowledge Graph, above) — e.g. "Form V filed to SPCB for FY26, acknowledged." Distinct from `Report` itself, which is the recurring catalog-defined requirement every tenant with that obligation shares.
+### `ReportSubmission`
+The tenant's actual per-period filing event against a `Report` requirement (Knowledge Graph, above) — e.g. "Form V filed to SPCB for FY26, acknowledged." Distinct from `Report` itself, which is the recurring catalog-defined requirement every tenant with that obligation shares. `track.md`/`track-platform.md` Gap #20, built live 2026-10-04.
 
 | Property | Type | Example |
 |---|---|---|
@@ -1242,7 +1300,7 @@ The tenant's actual per-period filing event against a `Report` requirement (Know
 | submittedAt | datetime | |
 | acknowledgedAt | datetime | null until the regulator confirms receipt — closes the filing loop |
 
-**Zero seed data, live-write-only** — same as `Permit`. Write path (extracted from the customer's "Filings" folder, Decision-gated) lands in journey/v1-plan.md Phase J0 Sub-phase 2.
+**Zero seed data, live-write-only** — same as `Contract`/`Blueprint`/`Hazard`. `POST /catalog/report-submissions` → pending `Decision {type: 'report-submission-proposal'}` → `POST /intelligence/decisions/:id/approve` (`api/modules/intelligence/repo.ts`'s `report-submission-proposal` branch) creates the node with real `FILED_AGAINST`/`SUBMITTED_TO` edges. `acknowledgedAt` is set separately via `PATCH /catalog/report-submissions/:id/acknowledge` — a **direct write with no Decision gate**, same shape as `PATCH /execution/tasks/:id`: acknowledgment is an external fact received from the regulator, not an internal reasoning output to ratify. Verified live 2026-10-04: proposed and approved `RPTSUB-DEC-REPORTSUB-1791088580768` against `RPT-CPCB-01`/`AUTH-010`, then acknowledged it; a rejected proposal left no orphan node.
 
 ---
 
@@ -1362,8 +1420,8 @@ Authored at runtime (by the events sink or the agent runtime) or by a derived jo
 | `RAISED_BY` | Signal → Person | Who reported the signal — required at write time (2026-09-22), see `Signal` in Appendix A |
 | `HAS_TASK` | Signal → Task | Follow-up work derived from a signal (reuses the `HAS_TASK` name used for `Incident → Task`) |
 | `COVERED_BY` | Asset → Control | Asset falls under a control, derived through the shared `ComplianceArea`. Carries `origin: 'inferred'`, `confidence: 0.6`, `derivedAt` (2026-09-22, `cli/scripts/backfill-asset-control.ts`) — a taxonomy-only inference, not a validated per-asset review |
-| `ABOUT` | Decision → * | An agent recommendation about some entity (polymorphic target — whatever the decision concerns); for `contract-proposal` this points at the `Vendor` (new contract) or prior `Contract` (amendment); for `blueprint-proposal` (2026-09-26) this points at the `Facility` the blueprint is scoped to |
-| `RESULTED_IN` | Decision → Control/Finding/Risk/Audit/Contract/CutoverCriterion/Blueprint | The reverse of `ABOUT` — points from an *approved* Decision to the real node its approval created. Written only on approval (never reject, since nothing is created); `assurance-package-proposal` links to `Audit` only, not the full chain, since the rest is already reachable from it via `PREPARED_FOR`/`DERIVED_FROM`/`BACKED_BY`/`PART_OF`. Added 2026-08-23 to back a per-Decision origin→result timeline in the Intelligence UI — `GET /intelligence/decisions` now also resolves `ABOUT`/`RESULTED_IN` server-side rather than the UI inferring either from `Decision.id`/result-id string conventions. `contract-proposal` (2026-09-22) links to the new `Contract:HumanProposed` node. `cutover-criterion-proposal` (2026-09-25) links to the new `CutoverCriterion` node — the one `RESULTED_IN` target whose proposing Decision carries **no** `ABOUT` edge, since no real `Workflow` node exists yet to point at (see Appendix A's `CutoverCriterion` entry). `blueprint-proposal` (2026-09-26) links to the new `Blueprint` node |
+| `ABOUT` | Decision → * | An agent recommendation about some entity (polymorphic target — whatever the decision concerns); for `contract-proposal` this points at the `Vendor` (new contract) or prior `Contract` (amendment); for `blueprint-proposal` (2026-09-26) this points at the `Facility` the blueprint is scoped to; for `hazard-proposal`/`emergency-plan-proposal` (2026-10-04) this points at the `Facility`; for `hazard-assessment-proposal` (2026-10-04) this points at the `Hazard`; for `report-submission-proposal` (2026-10-04) this points at the `Report` |
+| `RESULTED_IN` | Decision → Control/Finding/Risk/Audit/Contract/CutoverCriterion/Blueprint/Hazard/HazardAssessment/EmergencyPlan/ReportSubmission | The reverse of `ABOUT` — points from an *approved* Decision to the real node its approval created. Written only on approval (never reject, since nothing is created); `assurance-package-proposal` links to `Audit` only, not the full chain, since the rest is already reachable from it via `PREPARED_FOR`/`DERIVED_FROM`/`BACKED_BY`/`PART_OF`. Added 2026-08-23 to back a per-Decision origin→result timeline in the Intelligence UI — `GET /intelligence/decisions` now also resolves `ABOUT`/`RESULTED_IN` server-side rather than the UI inferring either from `Decision.id`/result-id string conventions. `contract-proposal` (2026-09-22) links to the new `Contract:HumanProposed` node. `cutover-criterion-proposal` (2026-09-25) links to the new `CutoverCriterion` node — the one `RESULTED_IN` target whose proposing Decision carries **no** `ABOUT` edge, since no real `Workflow` node exists yet to point at (see Appendix A's `CutoverCriterion` entry). `blueprint-proposal` (2026-09-26) links to the new `Blueprint` node. `hazard-proposal`/`hazard-assessment-proposal`/`emergency-plan-proposal` (2026-10-04) link to the new `Hazard`/`HazardAssessment`/`EmergencyPlan` nodes respectively. `report-submission-proposal` (2026-10-04) links to the new `ReportSubmission` node |
 | `REVIEWED_BY` | Decision → Person | Phase 7 — human reviewer attribution on approve/reject, written only when `reviewedBy` resolves to a real seeded `Person.id` |
 | `IMPLEMENTS` | Control:AgentProposed → Obligation | Phase 7 — approved `control-recommendation`; same relationship the catalog pipeline already uses, on a `:AgentProposed`-labeled `Control` |
 | `AGAINST` / `ABOUT` | Finding:AgentProposed → Control / Signal | Phase 7 — approved `deviation-assessment`; `AGAINST` per covered `Control`, or `ABOUT` the `Signal` directly if the asset had no coverage |
@@ -1371,6 +1429,11 @@ Authored at runtime (by the events sink or the agent runtime) or by a derived jo
 | `PART_OF` / `BACKED_BY` / `DERIVED_FROM` / `COVERS` / `PREPARED_FOR` | EvidencePackage:AgentProposed / Attestation:AgentProposed / AssuranceStatement:AgentProposed chain | Phase 8 — approved `assurance-package-proposal`; the same five Assurance-graph relationships above, now also writable live (not only by Phase 4b's batch script) on `:AgentProposed`-labeled nodes |
 | `WITH_VENDOR` / `COORDINATED_BY` | Contract:HumanProposed → Vendor / Role | 2026-09-22 — approved `contract-proposal`; same relationships the enterprise pipeline already uses, on a `:HumanProposed`-labeled `Contract`. An amendment additionally `SET`s `supersededBy` on the prior `Contract` — the only write ever made to that node |
 | `ABOUT` / `COVERS` | Blueprint → Facility / Blueprint → Role / Blueprint → Asset | 2026-09-26 — approved `blueprint-proposal`; `ABOUT` links the ratified `Blueprint` to the same `Facility` its proposing Decision is `ABOUT`, `COVERS` links it to each validated `Role`/`Asset` id — reuses `COVERS`, already used for `Contract → Facility` and `AssuranceStatement → Regulation`, safe under the same `(relType, sourceLabel, targetLabel)` grouping |
+| `LOCATED_AT` | Hazard → Facility / Asset | 2026-10-04 — approved `hazard-proposal`; reuses `LOCATED_AT`, already `Asset → Facility`. The `Asset` edge is only written when the proposal named one and it resolves. `domain-extension.md` §8.4(a) |
+| `ASSESSED_BY` | Hazard → HazardAssessment | 2026-10-04 — approved `hazard-assessment-proposal`; new relationship, mirrors `Finding -[:ANALYSED_BY]-> RCA`'s exact direction/naming convention. `domain-extension.md` §8.4(b) |
+| `COVERS` | EmergencyPlan → Facility | 2026-10-04 — approved `emergency-plan-proposal`; reuses `COVERS`, already used for `Contract`/`Permit` → `Facility` and `AssuranceStatement → Regulation`/`Blueprint → Role,Asset`. `domain-extension.md` §8.4(c) |
+| `FILED_AGAINST` | ReportSubmission → Report | 2026-10-04 — approved `report-submission-proposal`; the tenant's actual filing event, against the `Report` requirement it satisfies. Moved here from "Designed, not yet active" — `track.md`/`track-platform.md` Gap #20 |
+| `SUBMITTED_TO` | ReportSubmission → Authority | 2026-10-04 — approved `report-submission-proposal`; the filing recipient, which can differ from the regulation's own `ISSUED_BY` authority (e.g. CGWA vs SPCB). Moved here from "Designed, not yet active" |
 
 ### Designed, not yet active
 Part of the designed model, awaiting the entities they connect — they carry no data today.
@@ -1383,11 +1446,10 @@ Part of the designed model, awaiting the entities they connect — they carry no
 | `ASSIGNED_TO` | Assignment → Actor | Resolves to whichever actor — human or agent — the assignment names |
 | `ASSIGNED_TO` | Task → Vendor | 2026-10-03 — vendor-executed compliance work (e.g. AMC-performed stack monitoring); reuses `ASSIGNED_TO`, safe under the same `(relType, sourceLabel, targetLabel)` grouping as `Assignment → Actor` above. Journey v1-plan.md Phase J0 Sub-phase 2 |
 | `REQUIRES_FILING` | Obligation → Report | 2026-10-03 — an obligation names the recurring statutory report it must file (e.g. Form V). Seeded by Phase J0 Sub-phase 1 Step 2's CPCB catalog ingest |
-| `FILED_AGAINST` | ReportSubmission → Report | 2026-10-03 — the tenant's actual filing event, against the `Report` requirement it satisfies. Phase J0 Sub-phase 2 |
-| `SUBMITTED_TO` | ReportSubmission → Authority | 2026-10-03 — the filing recipient, which can differ from the regulation's own `ISSUED_BY` authority (e.g. CGWA vs SPCB). Phase J0 Sub-phase 2 |
 | `ISSUED_BY` | Permit → Authority | 2026-10-03 — reuses `ISSUED_BY`, already used for `Regulation → Authority`, safe under the same grouping. Phase J0 Sub-phase 2 |
 | `COVERS` | Permit → Facility | 2026-10-03 — site-level instrument scope (e.g. a Fire NOC covering a whole property); reuses `COVERS`, already used for `Contract → Facility` and `AssuranceStatement → Regulation`/`Blueprint → Role/Asset`. Phase J0 Sub-phase 2 |
 | `COVERED_BY_CONSENT` | Asset → Permit | 2026-10-03 — asset-level instrument scope, **required** per `grc_registry_model_explorer.html`'s explicit justification: without it, a Permit renewal/amendment can't identify which Assets it covers. Many-valued (an Asset may be covered by more than one Permit, e.g. a DG Set under both an Air-Act consent and an HWM authorization). Phase J0 Sub-phase 2 |
+| `VERIFIES` | Task → EmergencyPlan | 2026-10-04 — the registry's `Drill` concept, resolved onto a recurring `Task` rather than a new node (`domain-extension.md` §8.3/§8.4(c)). Awaiting a live Drill-task generator keyed off `EmergencyPlan.drillFrequency` — `EmergencyPlan` has no CSV feed to hook a batch generator into, and no agent family targets it yet |
 
 ---
 
@@ -1555,7 +1617,7 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 
 # Appendix F · Document History
 
-**Version 1.16** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
+**Version 1.17** — Canonical. Reconciled against the running pipeline (`v2.ts` + `ingest-hints.json`) and API queries (`api/modules/*/repo.ts`).
 
 | Date | Change |
 |---|---|
@@ -1579,3 +1641,5 @@ Enterprise_GRC_Incident_Graph_With_NodeIDs.xlsx
 | 2026-09-22 | Closed 12 of `track.md`'s 17 onboarding-readiness gaps in one batch (excluding #2/#6, already correct-by-design, and #7/#8/#9, scoped for their own dedicated design pass). Schema/relationship changes: `Control.docType` (policy/sop, legacy feed only); `Clause`/`Obligation.sourceDocumentId`/`sourceAnchor`; `Regulation.catalogVersion`/`supersededBy` now exercised (`REG-001`/`REG-001-V2`); new `ESCALATES_TO {order}` (Incident→Role, partial); `HAS_ROLE` now fires for 6 of 7 people (moved out of "designed, not yet active"); `Signal.raisedBy` + new `RAISED_BY` (Signal→Person), required at write time; `COVERED_BY` gained `origin`/`confidence`/`derivedAt`; `Task.status` constrained to a 4-value vocabulary + `statusUpdatedAt`/`lastTriggeredAt`, with the 10 non-Fixed-schedule `:Catalog` Tasks now starting `closed` and reactivating on their real trigger; `Contract.effectiveFrom`/`supersededBy` + new `:HumanProposed` origin label, always created via a `contract-proposal` Decision, never an in-place edit (Contracts, like Regulations, are append-and-supersede); `Decision.origin`/`proposedBy` + `contract-proposal` type. Also: universal `syncedAt`/`sourceRevision` stamping on every batch-synced node/edge; a generic edge-property mechanism in the compiler/projection/runtime pipeline (`GraphEdge.props`/`EdgeDef.propCols`); `control-intelligence` gained bounded multi-turn tool-calling (`reasonWithTools`, one family only) and agreement-rate-aware prompting. New `ui/src/features/knowledge/knowledge.tsx` (previously a TODO stub). No breaking changes to any existing live query. |
 | 2026-09-25 | Gap #8, first real slice — new `## Onboarding Graph (transitional)` section, new `CutoverCriterion` node (live, `:HumanProposed`-style: `POST /onboarding/cutover-criteria` creates only a `pending Decision {type: 'cutover-criterion-proposal'}`; the node itself is created on approval, `api/modules/intelligence/repo.ts`'s matching `resolveDecision` branch). `RESULTED_IN` extended to include `CutoverCriterion` as a target. This is the one Decision-write path in the codebase with **no `ABOUT` edge** — no real `Workflow` node exists yet to reference, so `workflowName` is a plain string, not a relationship; flagged explicitly rather than fabricated. `status` is only ever written as `proving`/`cutover-complete` — `cutover-overdue` is derived live at read time (`dueBy < datetime()`), never stamped, matching Coverage Scoring's existing live-query discipline. `Blueprint`/`ContinuityBaseline` (`domain.md`'s other two Onboarding aggregates) remain target — not built in this slice. New `ui/src/features/onboarding/onboarding.tsx` (previously nonexistent). |
 | 2026-09-26 | Gap #8, second slice — new `Blueprint` node (live, same `:HumanProposed`-style discipline as `CutoverCriterion`/`Contract`: `POST /onboarding/blueprints` creates only a `pending Decision {type: 'blueprint-proposal'}`; the node itself is created on approval, `api/modules/intelligence/repo.ts`'s matching `resolveDecision` branch). Unlike `CutoverCriterion`, `Blueprint` references real live nodes (`Facility`/`Role`/`Asset`), so it gets a real `ABOUT` edge (Decision and Blueprint both point at the scoped `Facility`) plus new `COVERS` edges (Blueprint→Role, Blueprint→Asset, reusing the existing `COVERS` name) — validated referentially at proposal time (`api/modules/onboarding/spec.ts`'s `isValidBlueprintProposal`, same discipline as `enterprise/spec.ts`'s `vendorExists`/`contractExists`). `RESULTED_IN` and `ABOUT`'s polymorphic-target note both extended to include `Blueprint`/`blueprint-proposal`. No agent-driven blueprint inference yet — human-proposed only, same Phase-11 deferral as `CutoverCriterion`. `ContinuityBaseline`, shadow-mode dual-write tracking, and decommissioning-as-a-Decision remain target. `ui/src/features/onboarding/onboarding.tsx` gained a blueprint proposal form and ratified-blueprints list. |
+| 2026-10-04 | Gap #21 (`track.md`) decision pass + first slice, from the Fire/Hazard cluster in `grc_registry_model_explorer.html` (see `domain-extension.md` §8). Three new live nodes, same zero-seed/live-write-only/Decision-gated discipline as `Contract`/`Blueprint`/`CutoverCriterion`: `Hazard` (Operational — `hazardType` discriminator, new `LOCATED_AT` reuse to `Facility`/`Asset`), `HazardAssessment` (Intelligence — the proactive counterpart to `RCA`; new `ASSESSED_BY` relationship, `score` computed server-side from `likelihood × severity`, never trusted as proposer arithmetic), `EmergencyPlan` (Operational — new `COVERS` reuse to `Facility`). New `api/modules/onboarding/{repo,spec,index}.ts` routes `/onboarding/{hazards,hazard-assessments,emergency-plans}`; new `intelligence/repo.ts` approval branches `hazard-proposal`/`hazard-assessment-proposal`/`emergency-plan-proposal`. Most of the cluster's remaining concepts resolved onto *existing* nodes rather than new ones: `Asset.assetType` vocabulary extended (`HazardousMaterialStore`/`FireSafetySystem`), `Evidence.type` vocabulary extended (`SafetyDataSheet`/`LabReport`/`Drill`), new `CAPA.deviationDueBy`/`deviationReason` (schema-only, alongside the existing `deviationApprovedBy`). New `VERIFIES` (Task→EmergencyPlan) added to "Designed, not yet active" — no live Drill-task generator exists yet. The `Form`/`Question`/`InspectionEvent`/`Observation` execution-capture layer and IoT-sensor-as-`Actor` remain explicitly deferred (`domain-extension.md` §8.5). Verified live: proposed and approved one of each new node against real seeded data (`FAC-1002`), confirmed via direct Cypher; one reject path confirmed no orphan node. No UI yet — same state `Permit` has been in since its own schema landed. |
+| 2026-10-04 | Gap #20 (`track.md`) — `ReportSubmission` promoted from "designed, not yet active" to live. `POST /catalog/report-submissions` → pending `Decision {type: 'report-submission-proposal'}` → approval (new `intelligence/repo.ts` branch) creates the node with real `FILED_AGAINST`/`SUBMITTED_TO` edges (both moved out of "Designed, not yet active" into the live Runtime & derived relationships table). `authorityId` is matched directly against a live `Authority`, confirmed real at proposal time by `catalog/spec.ts`'s new `authorityExists` — deliberately not inherited from the Report's own obligation chain, since a filing recipient can differ from the regulation's `ISSUED_BY` authority. New `PATCH /catalog/report-submissions/:id/acknowledge` sets `acknowledgedAt` as a direct write with **no** Decision gate (same shape as `PATCH /execution/tasks/:id`) — acknowledgment is an external fact from the regulator, not an internal reasoning output. Verified live: proposed, approved, and acknowledged `RPTSUB-DEC-REPORTSUB-1791088580768` against `RPT-CPCB-01`/`AUTH-010`; a rejected proposal left no orphan node. |

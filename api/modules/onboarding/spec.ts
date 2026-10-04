@@ -1,7 +1,16 @@
-import { ProposeCutoverCriterionInput, ProposeBlueprintInput, facilityExists, roleExists, assetExists } from './repo';
+import {
+    ProposeCutoverCriterionInput, ProposeBlueprintInput, facilityExists, roleExists, assetExists,
+    ProposeHazardInput, ProposeHazardAssessmentInput, ProposeEmergencyPlanInput, hazardExists,
+} from './repo';
 
 const isNonEmptyString = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
 const SYSTEMS_OF_RECORD = new Set(['legacy', 'vyra']);
+const HAZARD_TYPES = new Set(['fire', 'chemical', 'electrical', 'structural']);
+const RATINGS = new Set(['Low', 'Medium', 'High', 'Critical']);
+// Same qualitative cadence vocabulary cli/scripts/convert-catalog-seed.ts already
+// uses for Schedule.cadenceUnit/cadenceInterval — reused here rather than inventing
+// a second frequency vocabulary for EmergencyPlan.drillFrequency.
+const DRILL_FREQUENCIES = new Set(['Weekly', 'Fortnightly', 'Monthly', 'Quarterly', 'Half-Yearly', 'Annual']);
 
 // Structural validity for POST /onboarding/cutover-criteria — this never writes a
 // CutoverCriterion directly (see repo.ts's proposeCutoverCriterion), so validation
@@ -64,5 +73,76 @@ export const isValidBlueprintProposal = async (input: Partial<ProposeBlueprintIn
         if (!(await assetExists(assetId))) {
             throw new Error(`assetIds must reference existing Assets; got "${assetId}"`);
         }
+    }
+};
+
+// Structural validity for POST /onboarding/hazards — never writes a Hazard
+// directly (see repo.ts's proposeHazard), so this only confirms the proposal
+// points at a real Facility (and, if given, a real Asset) and names a hazardType
+// from the fixed vocabulary — not that the hazard itself is a sound call (a
+// human reviewer's judgment at approval).
+export const isValidHazardProposal = async (input: Partial<ProposeHazardInput>): Promise<void> => {
+    if (!isNonEmptyString(input.proposedBy)) {
+        throw new Error(`proposedBy must be a non-empty string; got ${JSON.stringify(input.proposedBy)}`);
+    }
+    if (!isNonEmptyString(input.name)) {
+        throw new Error(`name must be a non-empty string; got ${JSON.stringify(input.name)}`);
+    }
+    if (!HAZARD_TYPES.has(input.hazardType as string)) {
+        throw new Error(`hazardType must be one of [${[...HAZARD_TYPES].join(', ')}]; got ${JSON.stringify(input.hazardType)}`);
+    }
+    if (!isNonEmptyString(input.facilityId)) {
+        throw new Error(`facilityId must be a non-empty string; got ${JSON.stringify(input.facilityId)}`);
+    }
+    if (!(await facilityExists(input.facilityId))) {
+        throw new Error(`facilityId must reference an existing Facility; got "${input.facilityId}"`);
+    }
+    if (input.assetId && !(await assetExists(input.assetId))) {
+        throw new Error(`assetId must reference an existing Asset; got "${input.assetId}"`);
+    }
+};
+
+// Structural validity for POST /onboarding/hazard-assessments — never writes a
+// HazardAssessment directly (see repo.ts's proposeHazardAssessment). likelihood/
+// severity are checked as 1-5 ints here (the same shape Decision.proposedLikelihood/
+// proposedConsequence already use for risk-assessment); score itself is computed
+// in Cypher at approval time, not here.
+export const isValidHazardAssessmentProposal = async (input: Partial<ProposeHazardAssessmentInput>): Promise<void> => {
+    if (!isNonEmptyString(input.proposedBy)) {
+        throw new Error(`proposedBy must be a non-empty string; got ${JSON.stringify(input.proposedBy)}`);
+    }
+    if (!isNonEmptyString(input.hazardId)) {
+        throw new Error(`hazardId must be a non-empty string; got ${JSON.stringify(input.hazardId)}`);
+    }
+    if (!(await hazardExists(input.hazardId))) {
+        throw new Error(`hazardId must reference an existing Hazard; got "${input.hazardId}"`);
+    }
+    const { likelihood, severity } = input;
+    if (typeof likelihood !== 'number' || likelihood < 1 || likelihood > 5) {
+        throw new Error(`likelihood must be a number between 1 and 5; got ${JSON.stringify(likelihood)}`);
+    }
+    if (typeof severity !== 'number' || severity < 1 || severity > 5) {
+        throw new Error(`severity must be a number between 1 and 5; got ${JSON.stringify(severity)}`);
+    }
+    if (!RATINGS.has(input.rating as string)) {
+        throw new Error(`rating must be one of [${[...RATINGS].join(', ')}]; got ${JSON.stringify(input.rating)}`);
+    }
+};
+
+// Structural validity for POST /onboarding/emergency-plans — never writes an
+// EmergencyPlan directly (see repo.ts's proposeEmergencyPlan), mirrors
+// isValidBlueprintProposal's referential-existence discipline for facilityId.
+export const isValidEmergencyPlanProposal = async (input: Partial<ProposeEmergencyPlanInput>): Promise<void> => {
+    if (!isNonEmptyString(input.proposedBy)) {
+        throw new Error(`proposedBy must be a non-empty string; got ${JSON.stringify(input.proposedBy)}`);
+    }
+    if (!isNonEmptyString(input.facilityId)) {
+        throw new Error(`facilityId must be a non-empty string; got ${JSON.stringify(input.facilityId)}`);
+    }
+    if (!(await facilityExists(input.facilityId))) {
+        throw new Error(`facilityId must reference an existing Facility; got "${input.facilityId}"`);
+    }
+    if (!DRILL_FREQUENCIES.has(input.drillFrequency as string)) {
+        throw new Error(`drillFrequency must be one of [${[...DRILL_FREQUENCIES].join(', ')}]; got ${JSON.stringify(input.drillFrequency)}`);
     }
 };

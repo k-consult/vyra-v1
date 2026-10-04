@@ -13,6 +13,9 @@ import {
     listJurisdictions,
     listComplianceAreas,
     getLastSyncedAt,
+    listReportSubmissions,
+    proposeReportSubmission,
+    acknowledgeReportSubmission,
 } from './repo';
 import * as spec from './spec';
 
@@ -80,6 +83,34 @@ const catalog: any = async (fastify: FastifyInstance) => {
 
     fastify.get('/compliance-areas', async (_req, reply) => {
         reply.send({ complianceAreas: await listComplianceAreas() });
+    });
+
+    fastify.get('/report-submissions', async (_req, reply) => {
+        reply.send({ reportSubmissions: await listReportSubmissions() });
+    });
+
+    // Never writes a ReportSubmission — creates a pending Decision only. Approving
+    // it via POST /intelligence/decisions/:id/approve is what actually creates the
+    // ReportSubmission — see intelligence/repo.ts's report-submission-proposal branch.
+    fastify.post('/report-submissions', async (req: any, reply) => {
+        try {
+            await spec.isValidReportSubmissionProposal(req.body ?? {});
+        } catch (err: any) {
+            return reply.code(400).send({ error: err.message });
+        }
+        const result = await proposeReportSubmission(req.body);
+        reply.code(201).send(result);
+    });
+
+    // Direct write, no Decision gate — recording the regulator's acknowledgment of
+    // an already-real ReportSubmission, same shape as PATCH /execution/tasks/:id.
+    fastify.patch('/report-submissions/:id/acknowledge', async (req: any, reply) => {
+        try {
+            const reportSubmission = await acknowledgeReportSubmission(req.params.id);
+            reply.send({ reportSubmission });
+        } catch (err: any) {
+            reply.code(404).send({ error: err.message });
+        }
     });
 };
 

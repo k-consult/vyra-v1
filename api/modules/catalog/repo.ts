@@ -171,6 +171,20 @@ export const clauseExists = async (id: string): Promise<boolean> => {
     return Boolean(row?.clauseExists);
 };
 
+const REPORT_EXISTS = `MATCH (r:Report {id: $id}) RETURN count(r) > 0 AS reportExists`;
+export const reportExists = async (id: string): Promise<boolean> => {
+    const raw: any = await db().fetch(REPORT_EXISTS, { id });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    return Boolean(row?.reportExists);
+};
+
+const AUTHORITY_EXISTS = `MATCH (a:Authority {id: $id}) RETURN count(a) > 0 AS authorityExists`;
+export const authorityExists = async (id: string): Promise<boolean> => {
+    const raw: any = await db().fetch(AUTHORITY_EXISTS, { id });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    return Boolean(row?.authorityExists);
+};
+
 export interface ProposeObligationInput {
     proposedBy: string;
     clauseId: string;
@@ -218,4 +232,82 @@ export const proposeObligation = async (input: ProposeObligationInput) => {
     });
     const row = Array.isArray(raw) ? raw[0] : raw;
     return { decision: row?.decision };
+};
+
+const LIST_REPORT_SUBMISSIONS = `
+    MATCH (rs:ReportSubmission)
+    RETURN properties(rs) AS reportSubmission
+    ORDER BY rs.submittedAt DESC
+`;
+
+export const listReportSubmissions = async () => {
+    const raw: any = await db().fetch(LIST_REPORT_SUBMISSIONS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.filter((r: any) => r?.reportSubmission).map((r: any) => r.reportSubmission);
+};
+
+export interface ProposeReportSubmissionInput {
+    proposedBy: string;
+    reportId: string;
+    authorityId: string;
+    periodCovered: string;
+    submittedAt?: string;
+}
+
+// Writes only a pending Decision — never a ReportSubmission directly, same
+// discipline as Obligation/Contract/Hazard above. The real node is created on
+// approval by intelligence/repo.ts's report-submission-proposal branch.
+// authorityId is carried as a plain proposed value, not resolved here — it can
+// legitimately differ from the Report's own obligation's ISSUED_BY authority
+// (graph.md's ReportSubmission entry), so there is nothing to MATCH against on
+// the Report side; spec.ts's authorityExists already confirms it's real.
+const PROPOSE_REPORT_SUBMISSION = `
+    MERGE (d:Decision {id: $id})
+    ON CREATE SET
+        d += $props,
+        d.decidedAt = datetime(),
+        d.status = 'pending',
+        d.origin = 'human'
+    WITH d
+    MATCH (rpt:Report {id: d.reportId})
+    MERGE (d)-[:ABOUT]->(rpt)
+    RETURN properties(d) AS decision
+`;
+
+export const proposeReportSubmission = async (input: ProposeReportSubmissionInput) => {
+    const id = `DEC-REPORTSUB-${Date.now()}`;
+    const raw: any = await db().exec(PROPOSE_REPORT_SUBMISSION, {
+        id,
+        props: {
+            type: 'report-submission-proposal',
+            rationale: `Human-proposed filing of Report "${input.reportId}" for period "${input.periodCovered}"`,
+            agentId: input.proposedBy,
+            autonomyLevel: 0,
+            confidence: 1,
+            proposedBy: input.proposedBy,
+            reportId: input.reportId,
+            authorityId: input.authorityId,
+            periodCovered: input.periodCovered,
+            submittedAt: input.submittedAt ?? new Date().toISOString(),
+        },
+    });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    return { decision: row?.decision };
+};
+
+// Direct write, no Decision gate — acknowledgment is an external fact received
+// from the regulator, not an internal reasoning output to ratify. Same shape as
+// execution/repo.ts's updateTaskStatus (PATCH /execution/tasks/:id): a factual
+// state update on an already-real node, not a proposal.
+const ACKNOWLEDGE_REPORT_SUBMISSION = `
+    MATCH (rs:ReportSubmission {id: $id})
+    SET rs.acknowledgedAt = datetime()
+    RETURN properties(rs) AS reportSubmission
+`;
+
+export const acknowledgeReportSubmission = async (id: string) => {
+    const raw: any = await db().exec(ACKNOWLEDGE_REPORT_SUBMISSION, { id });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    if (!row?.reportSubmission) throw new Error(`ReportSubmission not found: ${id}`);
+    return row.reportSubmission;
 };

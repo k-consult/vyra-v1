@@ -1,10 +1,11 @@
 # External Domain Comparisons ↔ Vyra Domain Map
 
-**A comparison note, not a canonical doc.** Working analysis reviewing external proposed models (from win-aim document drops, not versioned in this repo) against Vyra's own domain model. Captures what's structurally comparable, what Vyra was found to be missing, and the design decision on how to close it — so the reasoning doesn't have to be redone if this is revisited. Status: **decided, not yet implemented.**
+**A comparison note, not a canonical doc.** Working analysis reviewing external proposed models (from win-aim document drops, not versioned in this repo) against Vyra's own domain model. Captures what's structurally comparable, what Vyra was found to be missing, and the design decision on how to close it — so the reasoning doesn't have to be redone if this is revisited. Status varies by section — see each section's own build-status note; §1–7 are decided-not-yet-implemented, §8's `Hazard`/`HazardAssessment`/`EmergencyPlan` slice is decided **and** live.
 
-Two comparisons, different purpose:
+Three comparisons, different purpose:
 - **§1–6 (2026-09-25): CTN-SPO** — tests Vyra's *meta-model* (can the schema flex to represent tenants/relationships/versions at all). Mostly "no gap"; one real narrow item (`PredicateDefinition`).
 - **§7 (2026-09-26): WINAIM Concept Tree** — tests Vyra's *domain content* (does the Catalog/Enterprise graph actually cover the vocabulary a real vertical needs). **Corrected framing, important:** WINAIM is not a peer system to reconcile against — it white-labels Vyra. Its 535-concept tree is a specification of general domain/industry requirements Vyra's own graph must be able to represent for this vertical (and, by the same logic, any future one) — a content gap here is a Vyra gap, not a WINAIM-vs-Vyra difference to negotiate.
+- **§8 (2026-10-04): Fire/Hazard cluster** (`grc_registry_model_explorer.html`) — same purpose as §7, narrower scope: tests whether the Catalog/Enterprise graph covers a Fire Safety/Hazard Management vertical. Unlike §7, this section's decided items were also built the same day — see §8.4.
 
 > Not part of the `.design/README.md` reading order. Treat like `.design/__ref/` — background for a specific decision, not ground truth. `domain.md` and `graph.md` remain canonical; if anything here is ever implemented, it should land there, and this file should be updated to point at where.
 
@@ -146,4 +147,59 @@ Gap confirmed absent from `domain.md` today — verified directly, no existing o
 - `graph.md` — `Facility` entry (site/building/zone/room-as-attributes precedent), `Asset` entry (`category`/`buildingId`/`zoneId`/`roomId`), `Authority` entry, `Contract` entry incl. its 2026-08-22 changelog ruling on `InsuranceClause` → Assurance graph
 - `domain.md` — Operational subdomain's `MappingProvenance` open note (the precedent this doc's new Role/Authority note should follow), `Asset` Aggregate note ("no owned children")
 - `foundation.md` §1 (document/evidence provenance), §2 (agent proposals ratified through the Decision gate — the same gate `Permit`/`License` proposals would use)
+
+---
+
+## 8. Fire/Hazard Domain Cluster — a third comparison
+
+### 8.1 What it is
+
+`grc_registry_model_explorer.html` (WINAIM reference, 28-Sep-2026 drop, not versioned in this repo): a Concept/Facet/Predicate/SPO registry for a Fire Safety & Hazard Management vertical — 48 concepts, 5 facet groups, 36 predicates, 38 worked SPO triples. Same meta-model shape as `cpcb_spo_map.json` (the CPCB catalog already ingested live, `graph.md` 2026-10-03), just a different vertical and not yet run through a decision pass. `track.md`/`track-platform.md` Gap #21 opened this as "nothing decided yet" — this section is that decision pass, following §7's exact method.
+
+### 8.2 Concept map (by Vyra graph domain)
+
+| Registry concept cluster | Vyra domain | Verdict |
+|---|---|---|
+| `HazardousMaterialStore`, `FireSafetySystem` | Operational (`Asset`) | **Already covered by precedent** — see 8.3, same call as §7.4(b)'s `Asset.assetType` |
+| `Hazard`, `HazardAssessment` | Operational / Intelligence | **Gap** — see 8.4 |
+| `EmergencyPlan` | Operational | **Gap** — see 8.4 |
+| `Drill` | Execution / Assurance | **Resolved onto existing nodes** — see 8.3 |
+| `SafetyDataSheet`, `EvidenceType`, `LabReport` | Assurance (`Evidence`) | **Resolved onto existing nodes** — see 8.3 |
+| `NonConformance` | Intelligence (`Finding`) | **Already covered** — see 8.3 |
+| `Deviation` | Execution (`CAPA`) | **Resolved onto existing property** — see 8.3 |
+| `InspectionEvent`, `Form`, `Question`, `Observation`; IoT sensor as capture source | Execution / Operational | **Not reviewed in depth this pass** — see 8.5, deliberately deferred |
+
+### 8.3 Already covered / resolved onto existing nodes — no new node
+
+- **`HazardousMaterialStore`, `FireSafetySystem`.** Same precedent §7.4(b) already established for `Asset.assetType`: a controlled-vocabulary property, not a new node type. New values: `hazardous-material-store`, `fire-alarm-panel`, `sprinkler-system`, `fire-hydrant-system`, `fire-pump`. Docs-only — `Asset.assetType` already exists as a free string.
+- **`NonConformance`.** `Finding` already serves this role exactly, same resolution §7.3 already gave WINAIM's `CORRECTIVE_AND_PREVENTIVE_ACTION` → `CAPA`. A detected breach is a `Finding`; `CAPA.findingId` already links the corrective action to it. No change.
+- **`Deviation`.** `CAPA.deviationApprovedBy` (schema-only, `graph.md` 2026-10-03) already covers "who approved the time-boxed exception." **Decided:** add sibling properties `CAPA.deviationDueBy` (datetime) and `CAPA.deviationReason` (string) — completes the registry's "approved exception when a CAPA can't close on time" shape as `CAPA` fields, not a new node. Schema-only, like `deviationApprovedBy` itself — no live write path exists for `CAPA` at all today (no agent family targets it), so there's no code to change alongside the schema.
+- **`EvidenceType`, `LabReport`.** `Evidence` is already generic (`Evidence.type` free string). **Decided:** `Evidence.type` gains `'lab-report'`; `Task.evidenceMethod` (schema-only since 2026-10-03) gains real values, starting with `'Lab'`. No new node, no new property — vocabulary only.
+- **`SafetyDataSheet`.** **Decided:** `Evidence.type = 'safety-data-sheet'`, reached via the existing `PRODUCED_BY` edge (`Evidence → Task`) from whatever recurring Task requires it (e.g. a "maintain SDS" task scoped to a `hazardous-material-store`-typed `Asset`). No new node, no new relationship.
+- **`Drill`.** **Decided:** not a node — a recurring `Task` + new `Task -[:VERIFIES]-> EmergencyPlan` edge (see 8.4); its evidence is a normal `Evidence` item (`type: 'drill-report'`) via the existing `PRODUCED_BY` edge. Auto-generating that recurring Task from `EmergencyPlan.drillFrequency` is **not built** — no batch/`Schedule` pipeline hook exists for a live-write-only node like `EmergencyPlan` — flagged in 8.5, not silently dropped.
+
+### 8.4 Real gaps — decided and built (2026-10-04)
+
+**(a) `Hazard`** — new Operational-graph node. `hazardType` discriminator (`fire` \| `chemical` \| `electrical` \| `structural`), same idiom as `Permit.instrumentType`/`Control.docType`. `-[:LOCATED_AT]-> Facility` and/or `-> Asset`, reusing `LOCATED_AT` (already `Asset → Facility`), safe under the established `(relType, sourceLabel, targetLabel)` grouping.
+
+**(b) `HazardAssessment`** (the registry's HIRA) — new Intelligence-graph node, the proactive counterpart to `RCA` (reactive — `RCA` only exists after a `Finding`). `score` computed server-side from `likelihood × severity` at approval time, never trusted as arithmetic from the proposer — same discipline `Risk` already uses. New relationship `Hazard -[:ASSESSED_BY]-> HazardAssessment`, mirroring `Finding -[:ANALYSED_BY]-> RCA`'s exact direction/naming convention (the subject points at its own analysis).
+
+**(c) `EmergencyPlan`** — new Operational-graph node, per-`Facility`. `-[:COVERS]-> Facility`, reusing `COVERS` (already `Permit → Facility`/`Contract → Facility`/`AssuranceStatement → Regulation`/`Blueprint → Role,Asset`).
+
+All three: zero CSV seed, live-write-only, Decision-gated — same discipline as `Contract`/`Blueprint`/`CutoverCriterion` (`POST /onboarding/{hazards,hazard-assessments,emergency-plans}` → pending `Decision` → `POST /intelligence/decisions/:id/approve` creates the real node). Built and verified live same day — see `graph.md` Appendix A/B for the shipped schema and `track.md`/`track-platform.md` Gap #21 for verification evidence.
+
+### 8.5 Open items surfaced but not addressed here
+
+- **`Form`/`Question`/`InspectionEvent`/`Observation` execution-capture layer.** No execution-capture layer exists between `Schedule`→`Task` and `Evidence` today; `Signal` is the closest live analog but models floor/system events, not a structured checklist run against an Asset. The largest, most architecturally consequential item in the registry — deliberately not designed here. Same item `track.md`/`track-platform.md` Gap #21 already names; nothing in 8.4's slice depends on it.
+- **IoT sensor as a capture source.** `Actor` (`:Human`/`:Agent`) is designed, not active, and has no sensor/device variant even in its own design — revisit once `Actor` has real infrastructure (same deferral `graph.md`'s `Signal` entry already applies to `RAISED_BY`).
+- **Live Drill-task generation.** `Task -[:VERIFIES]-> EmergencyPlan` is schema-designed (8.4) but nothing creates the recurring Task from `EmergencyPlan.drillFrequency` yet — `EmergencyPlan` has no CSV feed to hook a batch generator into, and no agent family targets it. Needs its own slice.
+- **UI.** No screen proposes or lists `Hazard`/`HazardAssessment`/`EmergencyPlan` yet — same state `Permit` has been in since its own schema landed. The API write path is real and verified; nothing in `ui/` calls it.
+- **Registry groups not reviewed in this pass** — Scheduling and Measurement's facet thresholds, the full Consent Portfolio facet set beyond what `Permit`/CPCB already cover. Revisit only if a concrete feature needs them.
+
+### 8.6 References
+
+- `grc_registry_model_explorer.html` — source, not versioned in this repo (`/Users/krishnan/_ks/work/win-aim/documents/from-winaim/28-SEP-2026/`)
+- `graph.md` — `Permit` entry (`instrumentType` discriminator precedent), `RCA`/`Finding` entries (`ANALYSED_BY` direction precedent), `Risk` entry (computed-score-never-trusted-as-input discipline), `CAPA` entry (`deviationApprovedBy`, 2026-10-03)
+- `api/modules/onboarding/{repo,spec,index}.ts` — `Blueprint`/`CutoverCriterion`'s exact propose→Decision→approve shape, reused as-is for `Hazard`/`HazardAssessment`/`EmergencyPlan`
+- `track.md` / `track-platform.md` Gap #21 — status and verification evidence for this section's built slice
 - `track.md` gap #18 — WINAIM concept-tree content gaps (Enterprise graph)

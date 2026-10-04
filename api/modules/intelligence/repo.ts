@@ -391,6 +391,127 @@ const APPROVE_BLUEPRINT_PROPOSAL = `
     RETURN properties(d) AS decision, properties(bp) AS blueprint
 `;
 
+// Creates the real Hazard on approval (domain-extension.md §8.4(a)) — the
+// proposing Decision (onboarding/repo.ts's proposeHazard) always carries an
+// ABOUT edge to a real Facility, mirroring Blueprint's shape. assetId is
+// optional on the proposal, so the second LOCATED_AT edge is only written when
+// one was given and actually resolves — same OPTIONAL MATCH + CASE-guarded
+// FOREACH idiom as APPROVE_BLUEPRINT_PROPOSAL's role/asset resolution.
+const APPROVE_HAZARD_PROPOSAL = `
+    MATCH (d:Decision {id: $id})-[:ABOUT]->(f:Facility)
+    MERGE (h:Hazard {id: $hazardId})
+    ON CREATE SET
+        h.name = d.name,
+        h.hazardType = d.hazardType,
+        h.description = coalesce(d.description, ''),
+        h.facilityId = f.id,
+        h.assetId = coalesce(d.assetId, ''),
+        h.status = 'active',
+        h.createdAt = datetime()
+    MERGE (h)-[:LOCATED_AT]->(f)
+    WITH d, h
+    OPTIONAL MATCH (a:Asset {id: d.assetId})
+    FOREACH (_ IN CASE WHEN a IS NOT NULL THEN [1] ELSE [] END | MERGE (h)-[:LOCATED_AT]->(a))
+    MERGE (d)-[:RESULTED_IN]->(h)
+    SET d.status = 'approved',
+        d.reviewedAt = datetime(),
+        d.reviewedBy = $reviewedBy,
+        d.reviewNote = $reviewNote
+    WITH d, h
+    OPTIONAL MATCH (p:Person {id: $reviewedBy})
+    FOREACH (_ IN CASE WHEN p IS NOT NULL THEN [1] ELSE [] END | MERGE (d)-[:REVIEWED_BY]->(p))
+    RETURN properties(d) AS decision, properties(h) AS hazard
+`;
+
+// Creates the real HazardAssessment on approval (domain-extension.md §8.4(b)) —
+// the proactive counterpart to APPROVE_RISK_ASSESSMENT above. score is computed
+// here from the Decision's own proposed likelihood/severity, never trusted as
+// arithmetic from the proposer, same discipline as Risk.inherentScore.
+// ASSESSED_BY mirrors Finding -[:ANALYSED_BY]-> RCA's exact direction (the
+// subject points at its own analysis).
+const APPROVE_HAZARD_ASSESSMENT_PROPOSAL = `
+    MATCH (d:Decision {id: $id})-[:ABOUT]->(h:Hazard)
+    MERGE (hsa:HazardAssessment {id: $assessmentId})
+    ON CREATE SET
+        hsa.name = CASE WHEN d.name <> '' THEN d.name ELSE 'Assessment - ' + h.name END,
+        hsa.hazardId = h.id,
+        hsa.likelihood = toInteger(d.proposedLikelihood),
+        hsa.severity = toInteger(d.proposedSeverity),
+        hsa.score = toInteger(d.proposedLikelihood) * toInteger(d.proposedSeverity),
+        hsa.rating = coalesce(d.proposedRating, 'UNKNOWN'),
+        hsa.assessedAt = datetime(),
+        hsa.status = 'completed'
+    MERGE (h)-[:ASSESSED_BY]->(hsa)
+    MERGE (d)-[:RESULTED_IN]->(hsa)
+    SET d.status = 'approved',
+        d.reviewedAt = datetime(),
+        d.reviewedBy = $reviewedBy,
+        d.reviewNote = $reviewNote
+    WITH d, hsa
+    OPTIONAL MATCH (p:Person {id: $reviewedBy})
+    FOREACH (_ IN CASE WHEN p IS NOT NULL THEN [1] ELSE [] END | MERGE (d)-[:REVIEWED_BY]->(p))
+    RETURN properties(d) AS decision, properties(hsa) AS assessment
+`;
+
+// Creates the real EmergencyPlan on approval (domain-extension.md §8.4(c)) —
+// same shape as APPROVE_BLUEPRINT_PROPOSAL: scoped to one Facility, real ABOUT
+// edge since Facility already exists live. COVERS reuses the name already used
+// for Permit/Contract -> Facility and AssuranceStatement -> Regulation.
+const APPROVE_EMERGENCY_PLAN_PROPOSAL = `
+    MATCH (d:Decision {id: $id})-[:ABOUT]->(f:Facility)
+    MERGE (ep:EmergencyPlan {id: $planId})
+    ON CREATE SET
+        ep.name = CASE WHEN d.name <> '' THEN d.name ELSE 'Emergency Plan - ' + f.name END,
+        ep.facilityId = f.id,
+        ep.drillFrequency = d.drillFrequency,
+        ep.lastReviewedAt = datetime(),
+        ep.status = 'active',
+        ep.createdAt = datetime()
+    MERGE (ep)-[:COVERS]->(f)
+    MERGE (d)-[:RESULTED_IN]->(ep)
+    SET d.status = 'approved',
+        d.reviewedAt = datetime(),
+        d.reviewedBy = $reviewedBy,
+        d.reviewNote = $reviewNote
+    WITH d, ep
+    OPTIONAL MATCH (p:Person {id: $reviewedBy})
+    FOREACH (_ IN CASE WHEN p IS NOT NULL THEN [1] ELSE [] END | MERGE (d)-[:REVIEWED_BY]->(p))
+    RETURN properties(d) AS decision, properties(ep) AS plan
+`;
+
+// Creates the real ReportSubmission on approval (graph.md's ReportSubmission
+// entry) — the proposing Decision (catalog/repo.ts's proposeReportSubmission)
+// always carries an ABOUT edge to a real Report. authorityId is matched directly
+// rather than inherited from the Report's own obligation chain — a
+// ReportSubmission's filing recipient can legitimately differ from the
+// regulation's ISSUED_BY authority (e.g. CGWA vs SPCB), already confirmed real by
+// catalog/spec.ts's authorityExists at proposal time. acknowledgedAt stays null
+// here — set later via PATCH /catalog/report-submissions/:id/acknowledge, a
+// direct write with no Decision gate, since acknowledgment is an external fact
+// received from the regulator, not an internal reasoning output.
+const APPROVE_REPORT_SUBMISSION_PROPOSAL = `
+    MATCH (d:Decision {id: $id})-[:ABOUT]->(rpt:Report)
+    MATCH (auth:Authority {id: d.authorityId})
+    MERGE (rs:ReportSubmission {id: $reportSubmissionId})
+    ON CREATE SET
+        rs.reportId = rpt.id,
+        rs.authorityId = auth.id,
+        rs.periodCovered = d.periodCovered,
+        rs.submittedAt = datetime(d.submittedAt),
+        rs.acknowledgedAt = null
+    MERGE (rs)-[:FILED_AGAINST]->(rpt)
+    MERGE (rs)-[:SUBMITTED_TO]->(auth)
+    MERGE (d)-[:RESULTED_IN]->(rs)
+    SET d.status = 'approved',
+        d.reviewedAt = datetime(),
+        d.reviewedBy = $reviewedBy,
+        d.reviewNote = $reviewNote
+    WITH d, rs
+    OPTIONAL MATCH (p:Person {id: $reviewedBy})
+    FOREACH (_ IN CASE WHEN p IS NOT NULL THEN [1] ELSE [] END | MERGE (d)-[:REVIEWED_BY]->(p))
+    RETURN properties(d) AS decision, properties(rs) AS reportSubmission
+`;
+
 // YYYY-Qn off an incidentTime-shaped "YYYY-MM-DD HH:mm" string — same derivation
 // cli/scripts/generate-assurance-seed.ts's quarterOf() uses, ported to JS since this is a
 // live API path rather than a batch script.
@@ -454,6 +575,30 @@ export const resolveDecision = async (
             const row = Array.isArray(raw) ? raw[0] : raw;
             if (!row?.decision) throw new Error(`Decision ${id} has no linked Facility to approve`);
             return { decision: row.decision, blueprint: row.blueprint };
+        }
+        if (type === 'hazard-proposal') {
+            const raw: any = await db().exec(APPROVE_HAZARD_PROPOSAL, { ...params, hazardId: `HAZ-${id}` });
+            const row = Array.isArray(raw) ? raw[0] : raw;
+            if (!row?.decision) throw new Error(`Decision ${id} has no linked Facility to approve`);
+            return { decision: row.decision, hazard: row.hazard };
+        }
+        if (type === 'hazard-assessment-proposal') {
+            const raw: any = await db().exec(APPROVE_HAZARD_ASSESSMENT_PROPOSAL, { ...params, assessmentId: `HSA-${id}` });
+            const row = Array.isArray(raw) ? raw[0] : raw;
+            if (!row?.decision) throw new Error(`Decision ${id} has no linked Hazard to approve`);
+            return { decision: row.decision, assessment: row.assessment };
+        }
+        if (type === 'emergency-plan-proposal') {
+            const raw: any = await db().exec(APPROVE_EMERGENCY_PLAN_PROPOSAL, { ...params, planId: `EMP-${id}` });
+            const row = Array.isArray(raw) ? raw[0] : raw;
+            if (!row?.decision) throw new Error(`Decision ${id} has no linked Facility to approve`);
+            return { decision: row.decision, plan: row.plan };
+        }
+        if (type === 'report-submission-proposal') {
+            const raw: any = await db().exec(APPROVE_REPORT_SUBMISSION_PROPOSAL, { ...params, reportSubmissionId: `RPTSUB-${id}` });
+            const row = Array.isArray(raw) ? raw[0] : raw;
+            if (!row?.decision) throw new Error(`Decision ${id} has no linked Report, or authorityId no longer resolves`);
+            return { decision: row.decision, reportSubmission: row.reportSubmission };
         }
         if (type === 'assurance-package-proposal') {
             const incRaw: any = await db().fetch(
