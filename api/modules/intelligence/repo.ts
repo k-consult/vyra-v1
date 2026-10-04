@@ -297,6 +297,95 @@ const APPROVE_CONTRACT_PROPOSAL = `
     RETURN properties(d) AS decision, properties(ctr) AS contract
 `;
 
+// Creates the real Warranty on approval (domain-extension.md §7.4(d)) — same
+// append-and-supersede, Decision-gated shape as APPROVE_CONTRACT_PROPOSAL above,
+// sibling by design. COVERS reuses the name already used for Contract/Permit ->
+// Facility (here, -> Asset instead); WITH_VENDOR reuses Contract's exact edge for
+// the same real-world relationship. A renewal's only write to the prior Warranty
+// is supersededBy — its coverageTerms/dates are never touched, forever.
+const APPROVE_WARRANTY_PROPOSAL = `
+    MATCH (d:Decision {id: $id})
+    MATCH (asset:Asset {id: d.proposedAssetId})
+    MATCH (vendor:Vendor {id: d.proposedVendorId})
+    MERGE (w:Warranty:HumanProposed {id: $warrantyId})
+    ON CREATE SET
+        w.name = d.proposedCoverageTerms + ' - ' + asset.name,
+        w.coverageTerms = d.proposedCoverageTerms,
+        w.startDate = d.proposedStartDate,
+        w.expiryDate = d.proposedExpiryDate,
+        w.assetId = asset.id,
+        w.vendorId = vendor.id,
+        w.effectiveFrom = datetime(),
+        w.supersededBy = '',
+        w.status = 'active',
+        w.createdAt = datetime()
+    MERGE (w)-[:COVERS]->(asset)
+    MERGE (w)-[:WITH_VENDOR]->(vendor)
+    WITH d, w
+    OPTIONAL MATCH (prior:Warranty {id: d.priorWarrantyId})
+    FOREACH (_ IN CASE WHEN prior IS NOT NULL THEN [1] ELSE [] END | SET prior.supersededBy = w.id)
+    MERGE (d)-[:RESULTED_IN]->(w)
+    SET d.status = 'approved',
+        d.reviewedAt = datetime(),
+        d.reviewedBy = $reviewedBy,
+        d.reviewNote = $reviewNote
+    WITH d, w
+    OPTIONAL MATCH (p:Person {id: $reviewedBy})
+    FOREACH (_ IN CASE WHEN p IS NOT NULL THEN [1] ELSE [] END | MERGE (d)-[:REVIEWED_BY]->(p))
+    RETURN properties(d) AS decision, properties(w) AS warranty
+`;
+
+// Creates the real Permit on approval (domain-extension.md §7.4(c), graph.md's
+// 2026-10-03 Permit entry) — same append-and-supersede, Decision-gated shape as
+// APPROVE_CONTRACT_PROPOSAL/APPROVE_WARRANTY_PROPOSAL, sibling by design.
+// ISSUED_BY reuses the name already used for Regulation -> Authority (the first
+// reuse of Authority outside the Knowledge graph); COVERS reuses Contract/
+// Warranty's site/asset-scope idiom. COVERED_BY_CONSENT is deliberately
+// Asset -> Permit (reversed from the Permit's own outbound edges) per graph.md's
+// explicit justification: a renewal/amendment needs to ask "which Assets does
+// this cover," so the edge must originate from the covered Asset, not the Permit.
+// Validated non-empty at proposal time (spec.ts's isValidPermitProposal), so the
+// UNWIND here always resolves at least one Asset — same UNWIND-can't-live-in-
+// FOREACH shape as APPROVE_BLUEPRINT_PROPOSAL's role/asset resolution, not because
+// these ids might be missing. A renewal's only write to the prior Permit is
+// supersededBy — its instrumentType/dates are never touched, forever.
+const APPROVE_PERMIT_PROPOSAL = `
+    MATCH (d:Decision {id: $id})
+    MATCH (auth:Authority {id: d.proposedAuthorityId})
+    MATCH (f:Facility {id: d.proposedFacilityId})
+    MERGE (p:Permit:HumanProposed {id: $permitId})
+    ON CREATE SET
+        p.name = d.proposedInstrumentType + ' - ' + f.name,
+        p.instrumentType = d.proposedInstrumentType,
+        p.authorityId = auth.id,
+        p.facilityId = f.id,
+        p.issuedDate = d.proposedIssuedDate,
+        p.expiryDate = d.proposedExpiryDate,
+        p.renewalWindowDays = d.proposedRenewalWindowDays,
+        p.effectiveFrom = datetime(),
+        p.supersededBy = '',
+        p.status = 'active',
+        p.createdAt = datetime()
+    MERGE (p)-[:ISSUED_BY]->(auth)
+    MERGE (p)-[:COVERS]->(f)
+    WITH d, p
+    UNWIND coalesce(d.proposedAssetIds, [null]) AS assetId
+    OPTIONAL MATCH (a:Asset {id: assetId})
+    FOREACH (_ IN CASE WHEN a IS NOT NULL THEN [1] ELSE [] END | MERGE (a)-[:COVERED_BY_CONSENT]->(p))
+    WITH DISTINCT d, p
+    OPTIONAL MATCH (prior:Permit {id: d.priorPermitId})
+    FOREACH (_ IN CASE WHEN prior IS NOT NULL THEN [1] ELSE [] END | SET prior.supersededBy = p.id)
+    MERGE (d)-[:RESULTED_IN]->(p)
+    SET d.status = 'approved',
+        d.reviewedAt = datetime(),
+        d.reviewedBy = $reviewedBy,
+        d.reviewNote = $reviewNote
+    WITH d, p
+    OPTIONAL MATCH (rp:Person {id: $reviewedBy})
+    FOREACH (_ IN CASE WHEN rp IS NOT NULL THEN [1] ELSE [] END | MERGE (d)-[:REVIEWED_BY]->(rp))
+    RETURN properties(d) AS decision, properties(p) AS permit
+`;
+
 // Obligation:HumanProposed — same fourth-origin idiom as Contract:HumanProposed, for
 // the Manual Entry catalog-ingestion channel (foundation.md §1's channel-uniformity
 // requirement). The proposing Decision carries an ABOUT edge to the Clause it's
@@ -557,6 +646,18 @@ export const resolveDecision = async (
             const row = Array.isArray(raw) ? raw[0] : raw;
             if (!row?.decision) throw new Error(`Decision ${id} has no linked Vendor to approve`);
             return { decision: row.decision, contract: row.contract };
+        }
+        if (type === 'warranty-proposal') {
+            const raw: any = await db().exec(APPROVE_WARRANTY_PROPOSAL, { ...params, warrantyId: `WAR-${id}` });
+            const row = Array.isArray(raw) ? raw[0] : raw;
+            if (!row?.decision) throw new Error(`Decision ${id} has no linked Asset/Vendor to approve`);
+            return { decision: row.decision, warranty: row.warranty };
+        }
+        if (type === 'permit-proposal') {
+            const raw: any = await db().exec(APPROVE_PERMIT_PROPOSAL, { ...params, permitId: `PMT-${id}` });
+            const row = Array.isArray(raw) ? raw[0] : raw;
+            if (!row?.decision) throw new Error(`Decision ${id} has no linked Authority/Facility to approve`);
+            return { decision: row.decision, permit: row.permit };
         }
         if (type === 'catalog-obligation-proposal') {
             const raw: any = await db().exec(APPROVE_CATALOG_OBLIGATION_PROPOSAL, { ...params, obligationId: `OBL-${id}` });

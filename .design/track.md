@@ -8,9 +8,8 @@
 
 ## Open Items
 
-1. [WINAIM concept-tree content gaps](#gap-18) — 🟡 partial
-2. [Obligation Cockpit foundations](#gap-19) — 🔴 gap
-3. [Fire/Hazard domain cluster has no graph home](#gap-21) — 🟡 partial
+1. [Obligation Cockpit foundations](#gap-19) — 🔴 gap
+2. [Fire/Hazard domain cluster has no graph home](#gap-21) — 🟡 partial
 
 **On hold (2026-10-04, by request)** — tracked in full in `track-platform.md`, not repeated here:
 - Scenario Simulation (#7)
@@ -18,26 +17,7 @@
 - Domain model is anemic vs. `domain.md` (#9)
 - First-customer (tenant) onboarding readiness (#22)
 
----
-
-<a id="gap-18"></a>
-
-### 18. WINAIM concept-tree content gaps (Enterprise graph) — 🟡 partial, code-only
-
-**Requirement:** WINAIM white-labels Vyra; its 535-concept domain/industry vocabulary (FM/EHS/Food Safety) is a specification of general content the Catalog and Enterprise graph must be able to represent for any vertical run on the platform, not an optional nice-to-have (`foundation.md` §4's "ecosystem extends without forking" — a white-label brand is exactly this kind of extension).
-
-**Implementation:** A concept-by-concept comparison (`.design/domain-extension.md` §7) found Knowledge and Intelligence already cover the equivalent WINAIM groups (`Control.controlType` already matches Preventive/Detective/Corrective; `CAPA` already matches Corrective-and-Preventive-Action). The real gaps cluster entirely in the Operational (Enterprise) graph.
-
-**Gap:** Three remaining decided-but-unbuilt items, all in `.design/domain-extension.md` §7.4:
-- (c) No `Permit`/`License` nodes — WINAIM's Authorization cluster has no Vyra home.
-- (d) No `Warranty` node.
-- (f) `Role` has no `Responsibility`/`Competency`, and its `approvalAuthority` flag is a cruder version of WINAIM's Role-scoped `Authority` concept, with an unresolved homonym risk against the existing `Authority` (regulatory body) node.
-
-(`Jurisdiction`/`assetType` — the other two §7.4 items — are already built; see `track-platform.md` Gap #18 for the full write-up. §7.4(e), `InsurancePolicy`/`Coverage`/`Exclusion`/`Claim`, already has a decided home in the Assurance graph per `graph.md`'s 2026-08-22 entry, just not yet built — tracked separately, not here.)
-
-**Feed Datum Missing:** N/A — these are schema/code gaps, not data-completeness issues; each would need its own seed/backfill once built.
-
-**Resolution:** (c) and (d) are new node types reusing the existing `Contract`/Decision-gate pattern; (f) needs a short design pass first (see `domain-extension.md` §7.5) before it's even fully specified. Take independently, cheapest first: (d) → (c) → (f).
+**Not an onboarding gate (2026-10-04, reclassified)** — Gap #18's last open item, `Role` enrichment (`Responsibility`/`Competency`/decision `Authority`), was WINAIM-parity/white-label content (`foundation.md` §4), not an onboarding-transition requirement (§0) — nothing in `Blueprint`/`CutoverCriterion`'s proposal or approval path reads it. Moved to `track-platform.md`'s general **Domain Model Gaps** section; Gap #18 itself is now fully ✅ closed for onboarding purposes (all of (a)/(b)/(c)/(d) built) and dropped from this checklist entirely.
 
 ---
 

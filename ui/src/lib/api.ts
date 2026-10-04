@@ -145,6 +145,28 @@ export type ProposeContractInput = {
     priorContractId?: string;
 };
 
+export type ProposeWarrantyInput = {
+    proposedBy: string;
+    proposedCoverageTerms: string;
+    proposedAssetId: string;
+    proposedVendorId: string;
+    proposedStartDate?: string;
+    proposedExpiryDate?: string;
+    priorWarrantyId?: string;
+};
+
+export type ProposePermitInput = {
+    proposedBy: string;
+    proposedInstrumentType: string;
+    proposedAuthorityId: string;
+    proposedFacilityId: string;
+    proposedAssetIds: string[];
+    proposedIssuedDate?: string;
+    proposedExpiryDate?: string;
+    proposedRenewalWindowDays?: number;
+    priorPermitId?: string;
+};
+
 export const enterprise = {
     organizations: () => get<{ organizations: any[] }>('/enterprise/organizations'),
     roles:         () => get<{ roles: any[] }>('/enterprise/roles'),
@@ -152,6 +174,10 @@ export const enterprise = {
     vendors:       () => get<{ vendors: any[] }>('/enterprise/vendors'),
     contracts:     () => get<{ contracts: any[] }>('/enterprise/contracts'),
     proposeContract: (input: ProposeContractInput) => post<{ decision: any }>('/enterprise/contracts', input),
+    warranties:    () => get<{ warranties: any[] }>('/enterprise/warranties'),
+    proposeWarranty: (input: ProposeWarrantyInput) => post<{ decision: any }>('/enterprise/warranties', input),
+    permits:       () => get<{ permits: any[] }>('/enterprise/permits'),
+    proposePermit: (input: ProposePermitInput) => post<{ decision: any }>('/enterprise/permits', input),
 };
 
 export type ProposeCutoverCriterionInput = {

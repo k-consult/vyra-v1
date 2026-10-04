@@ -59,10 +59,9 @@ Status tags used below: 🟡 **partial** = real but incomplete · 🔴 **gap** =
 **Open**
 1. [Scenario Simulation](#gap-7) *(⏸️ on hold, 2026-10-04)*
 2. [Domain model is anemic vs. `domain.md`](#gap-9) *(⏸️ on hold, 2026-10-04)*
-3. [WINAIM concept-tree content gaps](#gap-18)
-4. [Obligation Cockpit foundations](#gap-19)
-5. [Fire/Hazard domain cluster has no graph home](#gap-21) *(partial — decided, first slice live)*
-6. [First-customer (tenant) onboarding readiness](#gap-22) *(⏸️ on hold, 2026-10-04)*
+3. [Obligation Cockpit foundations](#gap-19)
+4. [Fire/Hazard domain cluster has no graph home](#gap-21) *(partial — decided, first slice live)*
+5. [First-customer (tenant) onboarding readiness](#gap-22) *(⏸️ on hold, 2026-10-04)*
 
 **Closed**
 1. [SOPs](#gap-1)
@@ -80,7 +79,11 @@ Status tags used below: 🟡 **partial** = real but incomplete · 🔴 **gap** =
 13. [`COVERED_BY` edges carry no provenance](#gap-15)
 14. [Agent reasoning is single-shot, not multi-turn/tool-using](#gap-16)
 15. [No learning-from-overrides feedback loop](#gap-17)
-16. [`ReportSubmission` designed, not yet active](#gap-20) *(closed 2026-10-04)*
+16. [WINAIM concept-tree content gaps](#gap-18) *(closed 2026-10-04 for onboarding purposes — see note below)*
+17. [`ReportSubmission` designed, not yet active](#gap-20) *(closed 2026-10-04)*
+
+**Not onboarding-gating** — tracked separately, not numbered in this inventory:
+- [Role enrichment](#domain-gap-role-enrichment) (`Responsibility`/`Competency`/decision `Authority`) — see **Domain Model Gaps** below
 
 <a id="gap-1"></a>
 
@@ -276,24 +279,25 @@ Status tags used below: 🟡 **partial** = real but incomplete · 🔴 **gap** =
 
 <a id="gap-18"></a>
 
-### 18. WINAIM concept-tree content gaps (Enterprise graph) — 🟡 partial, code-only
+### 18. WINAIM concept-tree content gaps (Enterprise graph) — ✅ closed 2026-10-04 for onboarding purposes
 
 **Requirement:** WINAIM white-labels Vyra; its 535-concept domain/industry vocabulary (FM/EHS/Food Safety) is a specification of general content the Catalog and Enterprise graph must be able to represent for any vertical run on the platform, not an optional nice-to-have (`foundation.md` §4's "ecosystem extends without forking" — a white-label brand is exactly this kind of extension).
 
 **Implementation:** A concept-by-concept comparison (`.design/domain-extension.md` §7) found Knowledge and Intelligence already cover the equivalent WINAIM groups (`Control.controlType` already matches Preventive/Detective/Corrective; `CAPA` already matches Corrective-and-Preventive-Action). The real gaps cluster entirely in the Operational (Enterprise) graph.
 
-**Gap:** Three remaining decided-but-unbuilt items, all in `.design/domain-extension.md` §7.4:
+**Gap:** All four items in `.design/domain-extension.md` §7.4 that this gap originally tracked are now built:
 - ~~(a) `Facility` has no relationship to `Jurisdiction`~~ — ✅ built: `v2.ts`'s `IN_JURISDICTION` rel (`Facility.jurisdictionId` → `Jurisdiction`), fed from `cli/feeds/csv/catalog/jurisdictions.csv`. Landed in `36325e7`, predating this gap's own write-up — this entry was stale from the day it was written.
 - ~~(b) `Asset` has no structured subtype (`assetType`)~~ — ✅ built: `v2.ts`'s `Asset.assetType` prop, fed from `convert-enterprise-seed.ts`'s `Type` column. Same `36325e7` landing, same staleness.
-- (c) No `Permit`/`License` nodes — WINAIM's Authorization cluster has no Vyra home.
-- (d) No `Warranty` node.
-- (f) `Role` has no `Responsibility`/`Competency`, and its `approvalAuthority` flag is a cruder version of WINAIM's Role-scoped `Authority` concept, with an unresolved homonym risk against the existing `Authority` (regulatory body) node.
+- ~~(c) No `Permit`/`License` write path~~ — ✅ built 2026-10-04: live in `api/modules/enterprise/{repo,spec,index}.ts`, same module as `Contract`/`Warranty`, single `permit-proposal` Decision type (`instrumentType` discriminator, not six node labels — `graph.md`'s 2026-10-03 collapse decision). See `graph.md`'s `Permit` entry.
+- ~~(d) No `Warranty` node~~ — ✅ built 2026-10-04: live in `api/modules/enterprise/{repo,spec,index}.ts`, same propose/approve shape as `Contract`. See `graph.md`'s `Warranty` entry.
 
-(§7.4(e), `InsurancePolicy`/`Coverage`/`Exclusion`/`Claim`, is excluded from this gap — already has a decided home in the Assurance graph per `graph.md`'s 2026-08-22 entry, just not yet built; track under a future Assurance-graph gap, not here.)
+(§7.4(e), `InsurancePolicy`/`Coverage`/`Exclusion`/`Claim`, was always excluded from this gap — already has a decided home in the Assurance graph per `graph.md`'s 2026-08-22 entry, just not yet built; track under a future Assurance-graph gap, not here.)
 
-**Feed Datum Missing:** N/A — these are schema/code gaps, not data-completeness issues; each would need its own seed/backfill once built.
+**Reclassified, not closed (2026-10-04):** §7.4(f) `Role` enrichment (`Responsibility`/`Competency`/decision `Authority`) was the fifth item this gap originally tracked. On review it's WINAIM-parity/white-label content (`foundation.md` §4), not an onboarding-transition requirement (§0) — `Blueprint`/`CutoverCriterion`'s proposal and approval paths never read `Role.Responsibility`/`Competency`/`decisionAuthority`. Moved out of the Onboarding Readiness inventory entirely, into **Domain Model Gaps** below, so it isn't miscounted as blocking a customer onboarding.
 
-**Resolution:** (a) and (b) are done (see above, discovered already-live during a 2026-10-02 doc-reconciliation pass). (c) and (d) are new node types reusing the existing `Contract`/Decision-gate pattern; (f) needs a short design pass first (see `domain-extension.md` §7.5) before it's even fully specified. Take independently, cheapest first: (d) → (c) → (f).
+**Feed Datum Missing:** N/A — these were schema/code gaps, not data-completeness issues.
+
+**Resolution:** Closed. (a)/(b)/(c)/(d) built; (f) relocated, not resolved — see **Domain Model Gaps** below.
 
 ---
 
@@ -361,7 +365,29 @@ Status tags used below: 🟡 **partial** = real but incomplete · 🔴 **gap** =
 
 **Net**: rows 1–7 are the existing JTBD partial/gap set, restated in Requirement/Implementation/Gap/Feed-Datum/Resolution form. Rows 8–17 are net-new, from a requirement-by-requirement audit of every `foundation.md` §0–§4 table row against the codebase. **Two rows were reclassified on this pass**: #2 (Applicability Scoping) and #6 (Audit-Ready Export) are **not gaps** — both are `foundation.md` requirements already correctly implemented (documented absence, honest provenance tagging respectively) and are listed for traceability only.
 
-**2026-09-22: 12 of the remaining 15 gaps closed in one batch** — #1, #3, #4, #5, #10, #11, #12, #13, #14, #15, #16, #17 (the last two scoped to `control-intelligence` only; #5, #10, #16 closed partially/scoped by design, documented above; every other one fully closed). **#8 (Onboarding-as-a-phase), #9 (anemic domain model), and #7 (Scenario Simulation)** remained open, excluded from this batch by explicit decision — each is Phase-11-class work needing its own dedicated design pass, not a batch fix. **2026-09-25: #8 gets its first real slice** (`CutoverCriterion`, above) — partial, not closed. **2026-09-26: #8 gets a second slice** (`Blueprint`, above) — still partial; `ContinuityBaseline`/shadow-mode/decommissioning still need their own passes. **2026-09-26: new #18** (WINAIM concept-tree content gaps) added from `.design/domain-extension.md`'s comparison — five decided-but-unbuilt Enterprise-graph items. **2026-09-27: new #19** (Obligation Cockpit foundations) added from the `.design/journey/` mockup exercise, with `.design/journey/v1-plan.md` as its build sequence. **2026-10-02 doc-reconciliation pass: #18(a)/(b) found already built** (`Jurisdiction`/`assetType`, landed in `36325e7`, predating gap #18's own write-up) — #18 downgraded from 🔴 gap to 🟡 partial, (c)/(d)/(f) still open; same pass also recorded the `691cb7d journey-first:catalog-view` commit (Phase J1 catalog-UI parity, plus a new Obligation manual-entry write channel) in the Phase rollup above, previously undocumented. **#9 (anemic domain model), #7 (Scenario Simulation), #18 (WINAIM content gaps, partial), #19 (Obligation Cockpit foundations), #21 (Fire/Hazard domain cluster, new 2026-10-04), and #22 (first-customer onboarding readiness, new 2026-10-04)** remain open. **2026-10-04: #20 (`ReportSubmission`, opened 2026-10-03) closed same day** — write path + acknowledgment endpoint built and verified live, the smallest and newest gap resolved fastest since its schema was already fully decided. Of the rest still open, **#7 Scenario Simulation is the one true ground-zero JTBD gap** (see the JTBD Layer Status table above); #9 is an architecture/subsystem decision; #18's remaining items ((c)/(d)/(f)) are schema-extension work with their design already decided, just not built; #19 is the largest — its own foundational schema doesn't exist yet, and part of it (Demography/vocab) isn't even decided; **#21 got its decision pass and first slice built the same day (2026-10-04)** — `Hazard`/`HazardAssessment`/`EmergencyPlan` are live, the execution-capture layer and Drill-task generation remain deferred; #22 is the integration gap — it needs no new schema decisions, only assembling #21-adjacent document handling and tenant provisioning into one onboarding path (its `ReportSubmission` piece is now just a routing problem, not a missing write path). **2026-10-04: #7, #8, #9, and #22 put on hold by request** — not a status change on the work itself (still 🔴/🟡 as above), just deprioritized for now; dropped from `track.md`'s trimmed view accordingly, full history kept here.
+**2026-09-22: 12 of the remaining 15 gaps closed in one batch** — #1, #3, #4, #5, #10, #11, #12, #13, #14, #15, #16, #17 (the last two scoped to `control-intelligence` only; #5, #10, #16 closed partially/scoped by design, documented above; every other one fully closed). **#8 (Onboarding-as-a-phase), #9 (anemic domain model), and #7 (Scenario Simulation)** remained open, excluded from this batch by explicit decision — each is Phase-11-class work needing its own dedicated design pass, not a batch fix. **2026-09-25: #8 gets its first real slice** (`CutoverCriterion`, above) — partial, not closed. **2026-09-26: #8 gets a second slice** (`Blueprint`, above) — still partial; `ContinuityBaseline`/shadow-mode/decommissioning still need their own passes. **2026-09-26: new #18** (WINAIM concept-tree content gaps) added from `.design/domain-extension.md`'s comparison — five decided-but-unbuilt Enterprise-graph items. **2026-09-27: new #19** (Obligation Cockpit foundations) added from the `.design/journey/` mockup exercise, with `.design/journey/v1-plan.md` as its build sequence. **2026-10-02 doc-reconciliation pass: #18(a)/(b) found already built** (`Jurisdiction`/`assetType`, landed in `36325e7`, predating gap #18's own write-up) — #18 downgraded from 🔴 gap to 🟡 partial, (c)/(d)/(f) still open; same pass also recorded the `691cb7d journey-first:catalog-view` commit (Phase J1 catalog-UI parity, plus a new Obligation manual-entry write channel) in the Phase rollup above, previously undocumented. **#9 (anemic domain model), #7 (Scenario Simulation), #18 (WINAIM content gaps, partial), #19 (Obligation Cockpit foundations), #21 (Fire/Hazard domain cluster, new 2026-10-04), and #22 (first-customer onboarding readiness, new 2026-10-04)** remain open. **2026-10-04: #20 (`ReportSubmission`, opened 2026-10-03) closed same day** — write path + acknowledgment endpoint built and verified live, the smallest and newest gap resolved fastest since its schema was already fully decided. Of the rest still open, **#7 Scenario Simulation is the one true ground-zero JTBD gap** (see the JTBD Layer Status table above); #9 is an architecture/subsystem decision; #18's remaining items ((c)/(d)/(f)) are schema-extension work with their design already decided, just not built; #19 is the largest — its own foundational schema doesn't exist yet, and part of it (Demography/vocab) isn't even decided; **#21 got its decision pass and first slice built the same day (2026-10-04)** — `Hazard`/`HazardAssessment`/`EmergencyPlan` are live, the execution-capture layer and Drill-task generation remain deferred; #22 is the integration gap — it needs no new schema decisions, only assembling #21-adjacent document handling and tenant provisioning into one onboarding path (its `ReportSubmission` piece is now just a routing problem, not a missing write path). **2026-10-04: #7, #8, #9, and #22 put on hold by request** — not a status change on the work itself (still 🔴/🟡 as above), just deprioritized for now; dropped from `track.md`'s trimmed view accordingly, full history kept here. **2026-10-04: #18(d) `Warranty` built** — live in `api/modules/enterprise/{repo,spec,index}.ts`, same propose/approve shape as `Contract`; verified against real seeded `AST-029`/`VEN-002`. **2026-10-04: #18(c) `Permit`/License write path built**, same session — `Permit` promoted from "designed, not yet active" to live, same module, single `permit-proposal` Decision type; verified against real seeded `AUTH-012`/`LOC-001`/`AST-029`. **2026-10-04: #18 fully closed for onboarding purposes** — its last open item, (f) `Role` enrichment, was reclassified as WINAIM-parity/white-label content (`foundation.md` §4), not an onboarding-transition requirement (§0), and moved to the new **Domain Model Gaps** section below rather than counted as an open onboarding gap.
+
+---
+
+## Domain Model Gaps
+
+**Distinct from the Onboarding Readiness inventory above.** That section scores whether the platform could onboard a new enterprise end-to-end (`foundation.md` §0). This section tracks domain-model/content gaps that don't gate onboarding — richness the graph could have but that no onboarding proposal, approval, or cutover path depends on. Not numbered against the Onboarding Readiness gap list; cross-referenced by name instead.
+
+<a id="domain-gap-role-enrichment"></a>
+
+### Role enrichment (`Responsibility`/`Competency`/decision `Authority`) — 🔴 gap, needs a design pass
+
+**Requirement:** WINAIM's People-and-Roles concept cluster names `Responsibility`, `Competency`, and a Role-scoped `Authority` (decision-making power) that `domain.md` doesn't represent today — content the Enterprise graph should be able to carry for any vertical run on the platform (`foundation.md` §4's "ecosystem extends without forking"), the same white-label-parity reasoning that drove Gap #18's other items.
+
+**Implementation:** `Role` has `approvalAuthority: Y/N` today — a crude boolean standing in for what WINAIM models as a scoped decision authority (e.g. "approve up to $X", "site-level"). No `Responsibility` or `Competency` representation exists at all.
+
+**Gap:** Per `domain-extension.md` §7.4(f): `Responsibility`/`Competency` are decided to be Value Objects attached to the `Person`↔`Role` assignment (the `HAS_ROLE` edge) or to `Role` itself — not independently-identified entities, so no new node type. The `Authority` naming carries an explicit **homonym risk**: it must not reuse the existing `Authority` node, which already means "regulatory body" and is Knowledge-graph-only (zero relationships into it from outside Knowledge today). Recommended direction is `Role.decisionAuthority` as a string/enum property, not a relationship — but this needs its own short design pass (`domain-extension.md` §7.5) before `domain.md`/`graph.md` are actually edited; it is not yet fully specified.
+
+**Not onboarding-gating (2026-10-04):** confirmed neither `Blueprint`'s nor `CutoverCriterion`'s proposal/approval Cypher reads `Role.Responsibility`/`Competency`/`decisionAuthority` — this was originally tracked as part of Gap #18 in the Onboarding Readiness inventory and has been moved here because it doesn't belong in a "can this enterprise onboard" scorecard.
+
+**Feed Datum Missing:** N/A — schema/design gap, not a data-completeness issue; would need its own seed/backfill once built.
+
+**Resolution:** Not started. Needs the `domain-extension.md` §7.5 design pass (naming/shape for `Role.decisionAuthority`, confirming the Value Object placement for `Responsibility`/`Competency`) before any schema or code change.
 
 ---
 

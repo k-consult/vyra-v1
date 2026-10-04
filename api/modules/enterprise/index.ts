@@ -1,6 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { Module } from '../../types';
-import { listOrganizations, listRoles, listVendors, listContracts, traceOrgChart, proposeContractChange } from './repo';
+import {
+    listOrganizations, listRoles, listVendors, listContracts, traceOrgChart, proposeContractChange,
+    listWarranties, proposeWarrantyChange, listPermits, proposePermitChange,
+} from './repo';
 import * as spec from './spec';
 
 const enterprise: any = async (fastify: FastifyInstance) => {
@@ -30,6 +33,42 @@ const enterprise: any = async (fastify: FastifyInstance) => {
             return reply.code(400).send({ error: err.message });
         }
         const result = await proposeContractChange(req.body);
+        reply.code(201).send(result);
+    });
+
+    fastify.get('/warranties', async (_req, reply) => {
+        reply.send({ warranties: await listWarranties() });
+    });
+
+    // Never writes a Warranty — creates a pending Decision only. Approving it via
+    // POST /intelligence/decisions/:id/approve is what actually creates the
+    // Warranty (or its successor version, for a renewal) — see
+    // intelligence/repo.ts's warranty-proposal branch.
+    fastify.post('/warranties', async (req: any, reply) => {
+        try {
+            await spec.isValidWarrantyProposal(req.body ?? {});
+        } catch (err: any) {
+            return reply.code(400).send({ error: err.message });
+        }
+        const result = await proposeWarrantyChange(req.body);
+        reply.code(201).send(result);
+    });
+
+    fastify.get('/permits', async (_req, reply) => {
+        reply.send({ permits: await listPermits() });
+    });
+
+    // Never writes a Permit — creates a pending Decision only. Approving it via
+    // POST /intelligence/decisions/:id/approve is what actually creates the Permit
+    // (or its successor version, for a renewal) — see intelligence/repo.ts's
+    // permit-proposal branch.
+    fastify.post('/permits', async (req: any, reply) => {
+        try {
+            await spec.isValidPermitProposal(req.body ?? {});
+        } catch (err: any) {
+            return reply.code(400).send({ error: err.message });
+        }
+        const result = await proposePermitChange(req.body);
         reply.code(201).send(result);
     });
 
