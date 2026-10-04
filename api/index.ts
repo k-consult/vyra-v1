@@ -13,8 +13,9 @@ import dashboard from './modules/dashboard';
 import catalog from './modules/catalog';
 import enterprise from './modules/enterprise';
 import onboarding from './modules/onboarding';
+import tenants from './modules/tenants';
 
-const modules = [execution, operational, intelligence, assurance, dashboard, catalog, enterprise, onboarding];
+const modules = [execution, operational, intelligence, assurance, dashboard, catalog, enterprise, onboarding, tenants];
 
 async function start() {
     try {

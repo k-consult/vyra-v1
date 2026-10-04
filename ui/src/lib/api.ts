@@ -205,3 +205,19 @@ export const onboarding = {
     proposeBlueprint: (input: ProposeBlueprintInput) =>
         post<{ decision: any }>('/onboarding/blueprints', input),
 };
+
+export type Tenant = {
+    name: string;
+    database: string;
+    uri: string;
+    host: string;
+    port: number;
+    status: string;
+    authoritiesLoaded: string[];
+    createdAt: string;
+};
+
+export const tenants = {
+    list:     () => get<{ tenants: Tenant[] }>('/tenants'),
+    provision: (input: { name: string }) => post<{ tenant: Tenant }>('/tenants', input),
+};

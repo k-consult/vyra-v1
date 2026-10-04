@@ -10,12 +10,12 @@
 
 1. [Obligation Cockpit foundations](#gap-19) — 🔴 gap
 2. [Fire/Hazard domain cluster has no graph home](#gap-21) — 🟡 partial
+3. [First-customer (tenant) onboarding readiness](#gap-22) — 🟡 partial, resumed off hold (2026-10-04)
 
 **On hold (2026-10-04, by request)** — tracked in full in `track-platform.md`, not repeated here:
 - Scenario Simulation (#7)
 - Onboarding-as-a-phase (#8)
 - Domain model is anemic vs. `domain.md` (#9)
-- First-customer (tenant) onboarding readiness (#22)
 
 **Not an onboarding gate (2026-10-04, reclassified)** — Gap #18's last open item, `Role` enrichment (`Responsibility`/`Competency`/decision `Authority`), was WINAIM-parity/white-label content (`foundation.md` §4), not an onboarding-transition requirement (§0) — nothing in `Blueprint`/`CutoverCriterion`'s proposal or approval path reads it. Moved to `track-platform.md`'s general **Domain Model Gaps** section; Gap #18 itself is now fully ✅ closed for onboarding purposes (all of (a)/(b)/(c)/(d) built) and dropped from this checklist entirely.
 
@@ -52,6 +52,22 @@
 **Feed Datum Missing:** N/A for the built slice (live-write-only, no seed). The deferred execution-capture layer is a schema/design gap, not a data-completeness issue, same category as #9 and #19.
 
 **Resolution:** Built: `Hazard`/`HazardAssessment`/`EmergencyPlan` write paths (above). Still needed, each its own future slice: a live Drill-task generator off `EmergencyPlan.drillFrequency`; a UI screen (propose + list, same as `Blueprint`'s `/onboarding` form); the deferred execution-capture layer decision (`Form`/`Question`/`InspectionEvent`/`Observation` — own subdomain vs. folded into `Signal`) before anything in that space gets built.
+
+---
+
+<a id="gap-22"></a>
+
+### 22. First-customer (tenant) onboarding readiness — 🟡 partial, first slice live (2026-10-04) — resumed off hold
+
+**Requirement:** Per `foundation.md` §0, onboarding a real enterprise should run as a measured, agent-run transition, not a services engagement; per §1, "every input channel resolves to the same target shape" — a customer's own document collection should land in the same graph shape as any other catalog/enterprise input.
+
+**Implementation:** Previously there was exactly one tenant graph (`agentic-grc`), seeded entirely with synthetic CPCB/WINAIM data, with no mechanism to provision a second, isolated tenant database. **That first piece is now built:** new `api/modules/tenants/{repo,spec,index}.ts` — `POST /tenants` creates a dedicated `grc-tenant-<name>` Neo4j database (`lib/graph-db`'s existing `DB.createDB`), scaffolds `cli/feeds/csv/tenants/<name>/enterprise/` on disk, and replays every catalog authority board (`catalog-sync.ts --authority=<board>`, spawned as a child process against the new database — the existing, already-idempotent ingestion script reused untouched, not re-implemented) into it. A `GET /tenants` lists what's provisioned. Both are backed by a new `tenants` registry database (same connection credentials as `config.db.twin`, hardcoded database name, not env-configurable) holding `Tenant` nodes (`name`, `database`, `uri`/`host`/`port`, `status`, `authoritiesLoaded`, `createdAt` — deliberately no password) as the source of truth, rather than relying on `SHOW DATABASES` at read time. `setup.sh` now also bootstraps the `tenants` database explicitly, alongside `agentic-grc`. A small UI entry point (`ui/src/features/tenants/tenants.tsx`, wired into `nav-shell.tsx` as a persistent top-right "+") lets a user name a tenant, provision it, and see the provisioned-tenants list — all synchronous, single request/response (no job queue exists anywhere in this codebase, so provisioning waits for every authority board to finish before responding). Deliberately out of scope for this slice: the running API still serves exactly one tenant per process (`DB_NAME` from its own `.env`) — viewing a newly provisioned tenant means starting a separate process pointed at its database, not switching tenants live in one running app. The customer document-collection pieces below remain exactly as before: a typical customer pattern — a spreadsheet tracking Received/Not Applicable per site against a six-category folder structure (consents/NOCs, filings, asset register, vendor AMC, historic logs, tickets & CAPA) and a structured filename convention (site/category/agency/asset/doc-type/year) — still has no corresponding ingestion path: `Permit` (consents/NOCs) write path went live 2026-10-04 (Gap #18(c)) but nothing yet routes a customer's own filing documents into it or into the now-live `ReportSubmission` path (Gap #20); historic logs (lab reports, inspection logs) have no document-evidence or `LabReport` subtype; `Asset`/`Vendor` onboarding is CSV-batch only, with no propose-and-approve path for a customer submitting its own asset/vendor list; no facet-intake step exists to capture a tenant's site type, applicable regulations, or asset landscape.
+
+**Gap:** Tenant database provisioning is done. No path yet exists end-to-end from "customer sends a filled document catalog" to "that customer's compliance calendar goes live" — even though most of the individual pieces (`Contract`, `Permit`, `Blueprint`, the Decision gate, `CutoverCriterion`) already exist for other purposes.
+
+**Feed Datum Missing:** N/A — this is an onboarding-mechanics gap, not a data-completeness issue; it's assembling existing and missing pieces into one tenant-onboarding path.
+
+**Resolution:** ~~(1) tenant database provisioning (one Neo4j database per customer, per `foundation.md`'s isolation principle)~~ — ✅ built 2026-10-04, see above. Still needed, in order: (2) a semantic-contract mapping for a customer's document-tracking spreadsheet; (3) a filename-convention parser to route each received document without needing full content interpretation; (4) routing a customer's own filing documents into the now-live `Permit`/`ReportSubmission` paths; (5) a document-evidence path for historic logs; (6) a propose-and-approve path for customer-submitted `Asset`/`Vendor` data; (7) a facet-intake step feeding each site's `Blueprint` proposal; (8) a `CutoverCriterion` per site so "folder complete → live calendar" is a queryable exit condition. This would be the first real exercise of `foundation.md` §0's onboarding guarantees end-to-end — everything built so far, including the new tenant databases, has been exercised only against synthetic/test data, not a real customer's.
 
 ---
 

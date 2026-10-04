@@ -19,4 +19,12 @@ const creds = { uri: process.env.DB_URI, user: process.env.DB_USER, password: pr
 DB.createDB(creds, 'agentic-grc').then(() => { console.log('agentic-grc ready'); process.exit(0); }).catch(e => { console.error(e); process.exit(1); });
 "
 
+echo "==> Creating Neo4j database 'tenants' (tenant registry)..."
+node -e "
+require('dotenv').config();
+const { DB } = require('./lib/dist/graph-db');
+const creds = { uri: process.env.DB_URI, user: process.env.DB_USER, password: process.env.DB_PASSWORD };
+DB.createDB(creds, 'tenants').then(() => { console.log('tenants ready'); process.exit(0); }).catch(e => { console.error(e); process.exit(1); });
+"
+
 echo "==> Setup complete."

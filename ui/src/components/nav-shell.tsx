@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ShieldCheck, BookOpen } from 'lucide-react';
+import { TenantProvisionEntryPoint } from '@/features/tenants/tenants';
 
 // Trimmed to a single entry point (2026-10-03, go-live customer track) — every
 // other screen this nav used to list (Landscape, Calendar, Decision Gate,
@@ -18,6 +19,7 @@ export function NavShell({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="flex h-screen bg-zinc-950 text-zinc-100">
+            <TenantProvisionEntryPoint />
             <aside className="w-64 shrink-0 border-r border-zinc-800/60 flex flex-col overflow-y-auto">
                 <div className="flex items-center gap-2.5 px-4 py-4 border-b border-zinc-800/60 shrink-0">
                     <div className="w-7 h-7 rounded-md bg-emerald-500 flex items-center justify-center shrink-0">
