@@ -32,6 +32,25 @@ export const listVendors = async () => {
     return rows.map((r: any) => r.vendor).filter(Boolean);
 };
 
+// facilityName/authorityName are resolved here (not left for the UI to join) since
+// every caller of this list wants to display them — same "resolve at the read" shape
+// as listPeople's facilityIds above, just inlined onto the node instead of collected.
+const LIST_DOCUMENT_OBLIGATIONS = `
+    MATCH (d:DocumentObligation)
+    OPTIONAL MATCH (d)-[:LOCATED_AT]->(fac:Facility)
+    OPTIONAL MATCH (d)-[:ISSUED_BY]->(auth:Authority)
+    RETURN properties(d) AS documentObligation, fac.name AS facilityName, auth.name AS authorityName
+    ORDER BY d.category, d.documentType
+`;
+
+export const listDocumentObligations = async () => {
+    const raw: any = await db().fetch(LIST_DOCUMENT_OBLIGATIONS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows
+        .filter((r: any) => r?.documentObligation)
+        .map((r: any) => ({ ...r.documentObligation, facilityName: r.facilityName ?? null, authorityName: r.authorityName ?? null }));
+};
+
 const LIST_PEOPLE = `
     MATCH (p:Person)
     OPTIONAL MATCH (p)-[:WORKS_AT]->(fac:Facility)

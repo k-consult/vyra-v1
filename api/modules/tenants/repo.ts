@@ -35,6 +35,7 @@ const REPO_ROOT = path.resolve(__dirname, '../../../');
 const CATALOG_FEEDS_DIR = path.join(REPO_ROOT, 'cli/feeds/csv/catalog');
 const TENANT_FEEDS_ROOT = path.join(REPO_ROOT, 'cli/feeds/csv/tenants');
 const CATALOG_SYNC_SCRIPT = path.join(REPO_ROOT, 'cli/orchestration/catalog-sync.ts');
+const DOCUMENT_CATALOG_SYNC_SCRIPT = path.join(REPO_ROOT, 'cli/orchestration/document-catalog-sync.ts');
 const CLI_TSCONFIG = path.join(REPO_ROOT, 'cli/tsconfig.json');
 const TS_NODE_BIN = path.join(REPO_ROOT, 'node_modules/.bin/ts-node');
 
@@ -49,6 +50,18 @@ export const listTenants = async () => {
     const raw: any = await registryDb().fetch(LIST_TENANTS, {});
     const rows = Array.isArray(raw) ? raw : [raw];
     return rows.map((r: any) => r.tenant).filter(Boolean);
+};
+
+const GET_TENANT_BY_NAME = `
+    MATCH (t:Tenant {id: $name})
+    RETURN properties(t) AS tenant
+`;
+
+export const getTenant = async (name: string) => {
+    await ensureRegistryDb();
+    const raw: any = await registryDb().fetch(GET_TENANT_BY_NAME, { name });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    return row?.tenant ?? null;
 };
 
 // Registers (or refreshes, on re-provision) the tenant's entry — never a password or
@@ -152,4 +165,49 @@ export const provisionTenant = async (input: ProvisionTenantInput) => {
 
     log.info(`tenants.repo: provisioned '${databaseName}', loaded authorities: ${authoritiesLoaded.join(', ') || 'none'}`);
     return tenant;
+};
+
+// Spawns document-catalog-sync.ts the same way runCatalogSync spawns catalog-sync.ts
+// above — same ts-node child-process pattern, DB_NAME still the only thing that
+// changes per tenant. --file replaces --authority since this feed is one customer's
+// own upload, not a standard board under cli/feeds/csv/catalog/.
+const runDocumentCatalogSync = (filePath: string, databaseName: string): Promise<void> =>
+    new Promise((resolve, reject) => {
+        const child = spawn(TS_NODE_BIN, ['--project', CLI_TSCONFIG, DOCUMENT_CATALOG_SYNC_SCRIPT, `--file=${filePath}`], {
+            cwd: REPO_ROOT,
+            env: { ...process.env, DB_NAME: databaseName },
+        });
+        let stderr = '';
+        child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
+        child.on('error', reject);
+        child.on('exit', (code) => {
+            if (code === 0) resolve();
+            else reject(new Error(`document-catalog-sync --file=${filePath} exited ${code}: ${stderr.slice(-2000)}`));
+        });
+    });
+
+export interface IngestDocumentCatalogInput {
+    name: string;
+    originalFilename: string;
+    content: Buffer;
+}
+
+// Owns the whole upload: write the customer's CSV under its tenant's feeds folder
+// (same TENANT_FEEDS_ROOT scaffold provisionTenant already creates), hand it to
+// document-catalog-sync.ts, then read back the sync script's JSON summary sidecar
+// so the caller sees what landed (counts, unmapped agencies) without scraping logs.
+export const ingestDocumentCatalog = async (input: IngestDocumentCatalogInput) => {
+    const tenant = await getTenant(input.name);
+    if (!tenant) throw new Error(`no tenant named "${input.name}" — provision it first via POST /tenants`);
+
+    const uploadsDir = path.join(TENANT_FEEDS_ROOT, input.name, 'document-catalog');
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    const filePath = path.join(uploadsDir, `${Date.now()}-${path.basename(input.originalFilename)}`);
+    fs.writeFileSync(filePath, input.content);
+
+    await runDocumentCatalogSync(filePath, tenant.database);
+
+    const summary = JSON.parse(fs.readFileSync(`${filePath}.summary.json`, 'utf-8'));
+    log.info(`tenants.repo: ingested document catalog for '${tenant.database}' — ${summary.facilitiesCreated} facilities, ${summary.documentObligationsCreated} document obligations`);
+    return summary;
 };

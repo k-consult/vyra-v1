@@ -1,0 +1,10 @@
+{
+  "facilitiesCreated": 3,
+  "assetsCreated": 18,
+  "documentObligationsCreated": 93,
+  "unmappedAgencies": [
+    "FireDept",
+    "FSSAI"
+  ],
+  "rowsSkipped": 0
+}

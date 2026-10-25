@@ -390,6 +390,42 @@ export const v2: Contract = {
             rels: [],
         },
 
+        // The tenant's per-site, per-year tracking record for a document a customer's
+        // own catalog names (e.g. "Fire-NOC for ROH-BLR-01, 2026") — distinct from the
+        // Knowledge Graph's Obligation (a catalog-wide, regulation-derived requirement;
+        // one Obligation would otherwise get wrongly duplicated per site). No CSV feed
+        // under cli/feeds/csv/catalog/ — ingested per-tenant by
+        // cli/orchestration/document-catalog-sync.ts from a customer's own upload, not
+        // a standard authority board. Routing a row into a more specific existing type
+        // (Permit/Report/Contract/CAPA) is a later gap-#22 step, not this one — see
+        // .design/track.md gap #22. asset/agency raw strings are kept alongside the
+        // resolved assetId/authorityId edges for display/debug.
+        // status reuses baseProps' mapping (CSV "Status": Pending/Received/Not Applicable).
+        DocumentObligation: {
+            label: 'DocumentObligation',
+            graph: Graph.Operational,
+            props: {
+                ...baseProps,
+                category: 'category',
+                documentType: 'documentType',
+                year: 'year',
+                agency: 'agency',
+                asset: 'asset',
+                expectedFileName: 'expectedFileName',
+                actualFileName: 'actualFileName',
+                notes: 'notes',
+                facilityId: 'facilityId',
+                authorityId: 'authorityId',
+                assetId: 'assetId',
+            },
+            axes: [Axis.Enterprise, Axis.Assurance],
+            rels: [
+                { type: 'LOCATED_AT', targetLabel: 'Facility', sourceField: 'facilityId' },
+                { type: 'ISSUED_BY', targetLabel: 'Authority', sourceField: 'authorityId' },
+                { type: 'ABOUT', targetLabel: 'Asset', sourceField: 'assetId' },
+            ],
+        },
+
         Role: {
             label: 'Role',
             graph: Graph.Operational,

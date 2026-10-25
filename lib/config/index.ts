@@ -1,3 +1,5 @@
+import * as tenantContext from '../tenant-context';
+
 export interface Neo4jConfig {
     host: string;
     port: number;
@@ -30,7 +32,13 @@ export const config: Config = {
             port,
             user: process.env.DB_USER || 'neo4j',
             password: process.env.DB_PASSWORD || 'vyra-ai@2025',
-            database: process.env.DB_NAME || 'agentic-grc',
+            // A getter, not a plain value: api/API.ts's onRequest hook sets a
+            // per-request override (lib/tenant-context) when a request names a
+            // tenant, scoped to that request's async call graph only — every
+            // existing `config.db.twin.database` read (every repo.ts's db()) picks
+            // it up automatically, with no caller-side change, and falls back to
+            // the env default otherwise.
+            get database(): string { return tenantContext.getOverride() ?? (process.env.DB_NAME || 'agentic-grc'); },
             uri: process.env.DB_URI || `bolt://${host}:${port}`,
             importDir: process.env.NEO4J_IMPORT_DIR,
         },

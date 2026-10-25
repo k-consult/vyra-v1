@@ -2,16 +2,26 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, BookOpen } from 'lucide-react';
+import { ShieldCheck, BookOpen, Building2, FileText, Scale } from 'lucide-react';
 import { TenantProvisionEntryPoint } from '@/features/tenants/tenants';
 
 // Trimmed to a single entry point (2026-10-03, go-live customer track) — every
 // other screen this nav used to list (Landscape, Calendar, Decision Gate,
 // Assurance, Onboarding, ...) is still live and reachable by its own URL; this
 // only removes the sidebar links, it deletes no routes and no pages.
+//
+// "Tenant" (added for the per-tenant Structure/Documents/Obligations views) is the
+// first entry with sub-items — a plain non-collapsing section, not a generic
+// nav-config structure, since exactly one item needs this shape.
 
 const isActive = (pathname: string): boolean =>
     pathname === '/catalog' || pathname.startsWith('/catalog/');
+
+const TENANT_SUB_LINKS = [
+    { href: '/tenant/structure',   label: 'Structure',   icon: Building2 },
+    { href: '/tenant/documents',   label: 'Documents',   icon: FileText },
+    { href: '/tenant/obligations', label: 'Obligations', icon: Scale },
+];
 
 export function NavShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -43,6 +53,27 @@ export function NavShell({ children }: { children: React.ReactNode }) {
                         <BookOpen size={13} className={active ? 'text-sky-400' : 'text-emerald-500'} />
                         Catalog
                     </Link>
+
+                    <p className="px-2.5 pt-4 pb-1 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">Tenant</p>
+                    <div className="flex flex-col gap-1">
+                        {TENANT_SUB_LINKS.map(({ href, label, icon: Icon }) => {
+                            const linkActive = pathname === href || pathname.startsWith(`${href}/`);
+                            return (
+                                <Link
+                                    key={href}
+                                    href={href}
+                                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs border transition-colors ${
+                                        linkActive
+                                            ? 'bg-sky-500/10 text-sky-300 border-sky-500/30'
+                                            : 'text-zinc-400 border-transparent hover:bg-zinc-900 hover:text-zinc-100'
+                                    }`}
+                                >
+                                    <Icon size={13} className={linkActive ? 'text-sky-400' : 'text-zinc-500'} />
+                                    {label}
+                                </Link>
+                            );
+                        })}
+                    </div>
                 </nav>
             </aside>
 

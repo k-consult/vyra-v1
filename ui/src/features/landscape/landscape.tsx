@@ -35,6 +35,7 @@ type LandscapeData = {
     roles:           { total: number };
     complianceAreas: { total: number };
     signals:         { total: number };
+    documentObligations: { total: number; pending: number };
     posture:       Posture;
     updatedAt:     string;
 };
@@ -43,7 +44,8 @@ type DrillKey =
     | 'incidents' | 'regulations' | 'facilities' | 'assets' | 'vendors'
     | 'controls' | 'tasks' | 'evidence' | 'risks' | 'findings'
     | 'rcas' | 'decisions' | 'capas' | 'verifications'
-    | 'organizations' | 'roles' | 'complianceAreas' | 'signals';
+    | 'organizations' | 'roles' | 'complianceAreas' | 'signals'
+    | 'documentObligations';
 
 type Health = 'critical' | 'warn' | 'ok' | 'neutral';
 
@@ -75,6 +77,7 @@ const DRILL_FETCHERS: Record<DrillKey, () => Promise<any[]>> = {
     roles:           () => enterprise.roles().then(r => extractList(r, 'roles')),
     complianceAreas: () => catalog.complianceAreas().then(r => extractList(r, 'complianceAreas')),
     signals:         () => operational.signals().then(r => extractList(r, 'signals', 'signal')),
+    documentObligations: () => operational.documentObligations().then(r => extractList(r, 'documentObligations')),
 };
 
 // ── Config ─────────────────────────────────────────────────────────────────────
@@ -104,6 +107,9 @@ export const BADGE_COLORS: Record<string, string> = {
     active:   'bg-sky-900 text-sky-300 border-sky-700',
     inactive: 'bg-zinc-800 text-zinc-400 border-zinc-600',
     'under-review': 'bg-amber-900 text-amber-300 border-amber-700',
+    Pending:  'bg-amber-900 text-amber-300 border-amber-700',
+    Received: 'bg-emerald-900 text-emerald-300 border-emerald-700',
+    'Not Applicable': 'bg-zinc-800 text-zinc-400 border-zinc-600',
 };
 
 const BADGE_FIELDS = new Set(['status', 'riskRating', 'severity', 'priority', 'inherentRating', 'residualRating', 'riskTier']);
@@ -380,6 +386,11 @@ export function LandscapeView() {
                     {nc('assets',      Server,    'Assets',      data.assets.total)}
                     <RowArrow />
                     {nc('vendors',     Package,   'Vendors',     data.vendors.total)}
+                    <RowArrow />
+                    {nc('documentObligations', FileText, 'Doc Obligations', data.documentObligations.total, {
+                        sub: data.documentObligations.pending > 0 ? `${data.documentObligations.pending} pending` : 'all tracked',
+                        health: data.documentObligations.pending > 0 ? 'warn' : 'ok',
+                    })}
                 </LayerRow>
 
                 <LayerRow n="L3" label="Enterprise Context" desc="Who is responsible">

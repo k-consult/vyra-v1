@@ -55,6 +55,11 @@ const COUNT_ORGANIZATIONS     = `MATCH (n:Organization)     RETURN count(n) AS t
 const COUNT_ROLES             = `MATCH (n:Role)             RETURN count(n) AS total`;
 const COUNT_COMPLIANCE_AREAS  = `MATCH (n:ComplianceArea)   RETURN count(n) AS total`;
 const COUNT_SIGNALS           = `MATCH (n:Signal)           RETURN count(n) AS total`;
+const COUNT_DOCUMENT_OBLIGATIONS = `
+    MATCH (n:DocumentObligation)
+    RETURN count(n) AS total,
+        sum(CASE WHEN n.status = 'Pending' THEN 1 ELSE 0 END) AS pending
+`;
 
 const posture = (
     risks: Record<string, number>,
@@ -72,7 +77,7 @@ export const getLandscape = async () => {
     const [
         incRaw, regRaw, facRaw, astRaw, vndRaw, ctlRaw,
         tskRaw, evdRaw, rskRaw, fndRaw, rcaRaw, decRaw, capRaw, verRaw,
-        orgRaw, roleRaw, caRaw, sigRaw,
+        orgRaw, roleRaw, caRaw, sigRaw, docRaw,
     ] = await Promise.all([
         db().fetch(COUNT_INCIDENTS,    {}),
         db().fetch(COUNT_REGULATIONS,  {}),
@@ -92,6 +97,7 @@ export const getLandscape = async () => {
         db().fetch(COUNT_ROLES,        {}),
         db().fetch(COUNT_COMPLIANCE_AREAS, {}),
         db().fetch(COUNT_SIGNALS,      {}),
+        db().fetch(COUNT_DOCUMENT_OBLIGATIONS, {}),
     ]);
 
     const inc = toRow(incRaw);
@@ -118,6 +124,7 @@ export const getLandscape = async () => {
         roles:         { total: toRow(roleRaw).total ?? 0 },
         complianceAreas: { total: toRow(caRaw).total ?? 0 },
         signals:       { total: toRow(sigRaw).total ?? 0 },
+        documentObligations: { total: toRow(docRaw).total ?? 0, pending: toRow(docRaw).pending ?? 0 },
         posture:       posture(rsk, fnd, cap, inc),
         updatedAt:     new Date().toISOString(),
     };

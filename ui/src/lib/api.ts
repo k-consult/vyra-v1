@@ -1,7 +1,17 @@
+import { getActiveTenant } from './active-tenant';
+
 const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
 
+// Read by api/API.ts's onRequest hook — switches which Neo4j database the request
+// hits at runtime (no API restart), scoped to just this request. Absent entirely
+// when no tenant is active, so the server falls back to its default tenant.
+const tenantHeaders = (): Record<string, string> => {
+    const tenant = getActiveTenant();
+    return tenant ? { 'X-Tenant': tenant } : {};
+};
+
 const get = async <T>(path: string): Promise<T> => {
-    const res = await fetch(`${BASE}${path}`);
+    const res = await fetch(`${BASE}${path}`, { headers: { ...tenantHeaders() } });
     if (!res.ok) throw new Error(`API ${path} ${res.status}`);
     return res.json();
 };
@@ -9,7 +19,7 @@ const get = async <T>(path: string): Promise<T> => {
 const post = async <T>(path: string, body?: any): Promise<T> => {
     const res = await fetch(`${BASE}${path}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...tenantHeaders() },
         body: JSON.stringify(body ?? {}),
     });
     if (!res.ok) {
@@ -22,7 +32,7 @@ const post = async <T>(path: string, body?: any): Promise<T> => {
 const patch = async <T>(path: string, body?: any): Promise<T> => {
     const res = await fetch(`${BASE}${path}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...tenantHeaders() },
         body: JSON.stringify(body ?? {}),
     });
     if (!res.ok) {
@@ -58,6 +68,7 @@ export const operational = {
     facilities:() => get<{ facilities: any[] }>('/operational/facilities'),
     vendors:   () => get<{ vendors: any[] }>('/operational/vendors'),
     people:    () => get<{ people: any[] }>('/operational/people'),
+    documentObligations: () => get<{ documentObligations: any[] }>('/operational/document-obligations'),
     lifecycle: (id: string) => get<any>(`/operational/incidents/${id}/lifecycle`),
     createSignal: (input: CreateSignalInput) => post<{ signal: any; task: any }>('/operational/signals', input),
 };
@@ -217,7 +228,26 @@ export type Tenant = {
     createdAt: string;
 };
 
+export type DocumentCatalogSummary = {
+    facilitiesCreated: number;
+    assetsCreated: number;
+    documentObligationsCreated: number;
+    unmappedAgencies: string[];
+    rowsSkipped: number;
+};
+
 export const tenants = {
     list:     () => get<{ tenants: Tenant[] }>('/tenants'),
     provision: (input: { name: string }) => post<{ tenant: Tenant }>('/tenants', input),
+    // Multipart, not JSON — can't go through the post() helper above.
+    uploadDocumentCatalog: async (name: string, file: File): Promise<{ summary: DocumentCatalogSummary }> => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch(`${BASE}/tenants/${name}/document-catalog`, { method: 'POST', body: formData });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || `API /tenants/${name}/document-catalog ${res.status}`);
+        }
+        return res.json();
+    },
 };

@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { listAssets, listSignals, listIncidents, listFacilities, listVendors, listPeople, getLifecycle, createSignal } from './repo';
+import { listAssets, listSignals, listIncidents, listFacilities, listVendors, listPeople, listDocumentObligations, getLifecycle, createSignal } from './repo';
 import * as spec from './spec';
 
 const operational: any = async (fastify: FastifyInstance) => {
@@ -21,6 +21,10 @@ const operational: any = async (fastify: FastifyInstance) => {
 
     fastify.get('/assets', async (_req, reply) => {
         reply.send({ assets: await listAssets() });
+    });
+
+    fastify.get('/document-obligations', async (_req, reply) => {
+        reply.send({ documentObligations: await listDocumentObligations() });
     });
 
     fastify.get('/signals', async (req: any, reply) => {

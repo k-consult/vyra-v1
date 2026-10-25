@@ -16,7 +16,11 @@ export const parseCSV = (feedPath: string, validateNodeColumns = true): ParseRes
     }
 
     try {
-        const rows = parse(fs.readFileSync(feedPath, 'utf-8'), {
+        // Strip a leading UTF-8 BOM (common in Excel/Numbers-exported CSVs) — left in,
+        // it attaches to the first header's key (e.g. "﻿Site Code"), silently
+        // breaking every row[firstColumn] lookup with no parse error to signal it.
+        const content = fs.readFileSync(feedPath, 'utf-8').replace(/^﻿/, '');
+        const rows = parse(content, {
             columns: true,
             skip_empty_lines: true,
             trim: true,
