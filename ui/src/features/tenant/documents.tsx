@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FileText } from 'lucide-react';
+import { ArrowLeft, FileText, Upload } from 'lucide-react';
 import { operational } from '@/lib/api';
 import { PageHeader } from '@/components/page-header';
-import { LoadingState, ErrorState, RefreshButton } from './shared';
+import { LoadingState, ErrorState, RefreshButton, UploadDocumentTrigger } from './shared';
 
 type DocRow = {
     id: string; category: string; documentType: string; year: string; agency: string; asset: string;
@@ -87,24 +87,62 @@ function CategorySection({ category, rows }: { category: string; rows: DocRow[] 
     );
 }
 
-function SiteSection({ siteLabel, rows }: { siteLabel: string; rows: DocRow[] }) {
+// Landing grid — one tile per document type, independent of how many sites
+// contribute rows to it. Clicking the tile drills into CategoryDetailView;
+// the per-tile upload trigger is a separate element so it never fires that
+// navigation (see UploadDocumentTrigger usage below).
+function CategoryGrid({ rows, onSelect, onUploaded }: { rows: DocRow[]; onSelect: (category: string) => void; onUploaded: () => void }) {
     const byCategory = groupBy(rows, r => r.category || 'Uncategorized');
-    const extraCategories = [...byCategory.keys()].filter(c => !CATEGORY_ORDER.includes(c)).sort();
-    const categories = [...CATEGORY_ORDER.filter(c => byCategory.has(c)), ...extraCategories];
+    const known = CATEGORY_ORDER.filter(c => !EXCLUDED_CATEGORIES.has(c));
+    const extra = [...byCategory.keys()].filter(c => !CATEGORY_ORDER.includes(c) && !EXCLUDED_CATEGORIES.has(c)).sort();
+    const categories = [...known, ...extra];
 
     return (
-        <div className="flex flex-col gap-3">
-            <p className="text-xs font-semibold text-zinc-200">{siteLabel} <span className="text-zinc-600 font-normal">({rows.length})</span></p>
-            <div className="flex flex-col gap-4 pl-1">
-                {categories.map(category => (
-                    <div key={category} className="flex flex-col gap-2">
-                        <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
-                            {category} ({byCategory.get(category)!.length})
-                        </p>
-                        <CategorySection category={category} rows={byCategory.get(category)!} />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {categories.map(category => {
+                const count = byCategory.get(category)?.length ?? 0;
+                return (
+                    <div key={category} className="rounded-lg border border-zinc-800 bg-zinc-900/40 flex flex-col overflow-hidden">
+                        <button
+                            onClick={() => onSelect(category)}
+                            className="flex-1 flex flex-col items-start gap-1.5 px-3.5 py-3 text-left hover:bg-zinc-900 transition-colors"
+                        >
+                            <FileText size={14} className="text-sky-400" />
+                            <span className="text-sm text-zinc-200">{category}</span>
+                            <span className="text-[11px] text-zinc-500">{count} document{count !== 1 ? 's' : ''}</span>
+                        </button>
+                        <div className="border-t border-zinc-800 px-3.5 py-2">
+                            <UploadDocumentTrigger
+                                className="flex items-center gap-1.5 text-[11px] text-sky-400 hover:text-sky-300 cursor-pointer w-fit"
+                                onUploaded={onUploaded}
+                            >
+                                <Upload size={11} /> Upload
+                            </UploadDocumentTrigger>
+                        </div>
                     </div>
-                ))}
-            </div>
+                );
+            })}
+        </div>
+    );
+}
+
+function SiteCategoryBlock({ siteLabel, category, rows }: { siteLabel: string; category: string; rows: DocRow[] }) {
+    return (
+        <div className="flex flex-col gap-2">
+            <p className="text-xs font-semibold text-zinc-200">{siteLabel} <span className="text-zinc-600 font-normal">({rows.length})</span></p>
+            <CategorySection category={category} rows={rows} />
+        </div>
+    );
+}
+
+function CategoryDetailView({ category, rows }: { category: string; rows: DocRow[] }) {
+    const bySite = groupBy(rows, r => r.facilityName ?? r.facilityId ?? 'Unknown site');
+    const sites = [...bySite.keys()].sort();
+
+    return (
+        <div className="flex flex-col gap-5">
+            {rows.length === 0 && <p className="text-sm text-zinc-500 italic">No documents uploaded for this type yet.</p>}
+            {sites.map(site => <SiteCategoryBlock key={site} siteLabel={site} category={category} rows={bySite.get(site)!} />)}
         </div>
     );
 }
@@ -113,6 +151,7 @@ export function TenantDocumentsView() {
     const [rows, setRows] = useState<DocRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
     const load = () => {
         setLoading(true);
@@ -128,17 +167,27 @@ export function TenantDocumentsView() {
     if (loading) return <LoadingState label="Loading documents…" />;
     if (error) return <ErrorState onRetry={load} />;
 
-    const bySite = groupBy(rows, r => r.facilityName ?? r.facilityId ?? 'Unknown site');
-    const sites = [...bySite.keys()].sort();
+    const categoryRows = selectedCategory ? rows.filter(r => r.category === selectedCategory) : [];
 
     return (
         <div className="h-full flex flex-col overflow-hidden bg-zinc-950 text-zinc-100">
-            <PageHeader icon={FileText} iconClassName="text-sky-400" title="Documents" subtitle={`${rows.length} tracked documents for the active tenant`}>
+            <PageHeader
+                icon={FileText}
+                iconClassName="text-sky-400"
+                title={selectedCategory ?? 'Documents'}
+                subtitle={selectedCategory ? `${categoryRows.length} tracked documents` : `${rows.length} tracked documents for the active tenant`}
+            >
+                {selectedCategory && (
+                    <button onClick={() => setSelectedCategory(null)} className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-200">
+                        <ArrowLeft size={13} /> All document types
+                    </button>
+                )}
                 <RefreshButton onClick={load} />
             </PageHeader>
-            <div className="flex-1 overflow-auto px-6 py-4 flex flex-col gap-6">
-                {rows.length === 0 && <p className="text-sm text-zinc-500 italic">No documents uploaded for this tenant yet.</p>}
-                {sites.map(site => <SiteSection key={site} siteLabel={site} rows={bySite.get(site)!} />)}
+            <div className="flex-1 overflow-auto px-6 py-4">
+                {selectedCategory
+                    ? <CategoryDetailView category={selectedCategory} rows={categoryRows} />
+                    : <CategoryGrid rows={rows} onSelect={setSelectedCategory} onUploaded={load} />}
             </div>
         </div>
     );
