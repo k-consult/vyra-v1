@@ -350,6 +350,12 @@ export function CatalogView() {
     const [jurisdictionFilter, setJurisdictionFilter] = useState<Set<string>>(new Set());
     const [mechanismFilter, setMechanismFilter] = useState<Set<string>>(new Set());
     const [yearFilter, setYearFilter] = useState<Set<string>>(new Set());
+    const [complianceAreaFilter, setComplianceAreaFilter] = useState<Set<string>>(new Set());
+    const [docTypeFilter, setDocTypeFilter] = useState<Set<string>>(new Set());
+    const [obligationStatusFilter, setObligationStatusFilter] = useState<Set<string>>(new Set());
+    const [coverageFilter, setCoverageFilter] = useState<Set<string>>(new Set());
+    const [filingFilter, setFilingFilter] = useState<Set<string>>(new Set());
+    const [versionStatusFilter, setVersionStatusFilter] = useState<Set<string>>(new Set());
 
     const [lastSyncedAt, setLastSyncedAt] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -468,11 +474,141 @@ export function CatalogView() {
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [regulations, mechanismsByRegulation]);
 
+    // Same flat Control.complianceAreaId/.docType reached via regulationId as the
+    // mechanism facet above — one more hop (Control -> ComplianceArea) resolved to
+    // a display name through the complianceAreaName lookup already built for ChainRow.
+    const complianceAreasByRegulation = useMemo(() => {
+        const byReg = new Map<string, Set<string>>();
+        controls.forEach((c: any) => {
+            if (!c.regulationId || !c.complianceAreaId) return;
+            if (!byReg.has(c.regulationId)) byReg.set(c.regulationId, new Set());
+            byReg.get(c.regulationId)!.add(complianceAreaName(c.complianceAreaId));
+        });
+        return byReg;
+    }, [controls, complianceAreaName]);
+
+    const complianceAreaOptions = useMemo(() => {
+        const counts = new Map<string, number>();
+        regulations.forEach((r: any) => {
+            (complianceAreasByRegulation.get(r.id) ?? new Set()).forEach((v: string) => counts.set(v, (counts.get(v) ?? 0) + 1));
+        });
+        return Array.from(counts.entries())
+            .map(([value, count]) => ({ value, label: value, count }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [regulations, complianceAreasByRegulation]);
+
+    // docType is legacy-controls-only (graph.md) — a regulation whose only controls
+    // are :Catalog rows legitimately has no entry here; that's the real data, not a bug.
+    const docTypesByRegulation = useMemo(() => {
+        const byReg = new Map<string, Set<string>>();
+        controls.forEach((c: any) => {
+            if (!c.regulationId || !c.docType) return;
+            if (!byReg.has(c.regulationId)) byReg.set(c.regulationId, new Set());
+            byReg.get(c.regulationId)!.add(c.docType);
+        });
+        return byReg;
+    }, [controls]);
+
+    const docTypeOptions = useMemo(() => {
+        const counts = new Map<string, number>();
+        regulations.forEach((r: any) => {
+            (docTypesByRegulation.get(r.id) ?? new Set()).forEach((v: string) => counts.set(v, (counts.get(v) ?? 0) + 1));
+        });
+        return Array.from(counts.entries())
+            .map(([value, count]) => ({ value, label: value, count }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [regulations, docTypesByRegulation]);
+
+    // Obligation carries no flat regulationId (unlike Control) — reached the only way
+    // the schema allows: Obligation.clauseId -> Clause.regulationId.
+    const clauseToRegulation = useMemo(() => {
+        const byClause = new Map<string, string>();
+        clauses.forEach((c: any) => { if (c.regulationId) byClause.set(c.id, c.regulationId); });
+        return byClause;
+    }, [clauses]);
+
+    const obligationsByRegulation = useMemo(() => {
+        const byReg = new Map<string, any[]>();
+        obligations.forEach((o: any) => {
+            const regId = clauseToRegulation.get(o.clauseId);
+            if (!regId) return;
+            if (!byReg.has(regId)) byReg.set(regId, []);
+            byReg.get(regId)!.push(o);
+        });
+        return byReg;
+    }, [obligations, clauseToRegulation]);
+
+    const obligationStatusOptions = useMemo(() => {
+        const counts = new Map<string, number>();
+        regulations.forEach((r: any) => {
+            const statuses = new Set((obligationsByRegulation.get(r.id) ?? []).map((o: any) =>
+                (o.mandatory === 'Y' || o.mandatory === true) ? 'Mandatory' : 'Voluntary'));
+            statuses.forEach((s) => counts.set(s, (counts.get(s) ?? 0) + 1));
+        });
+        return Array.from(counts.entries())
+            .map(([value, count]) => ({ value, label: value, count }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [regulations, obligationsByRegulation]);
+
+    // Same coverage test domain.ts's hasImplementingControl runs server-side
+    // (control.obligationId === obligation.id), applied per regulation.
+    const coverageByRegulation = useMemo(() => {
+        const byReg = new Map<string, boolean>();
+        regulations.forEach((r: any) => {
+            const obls = obligationsByRegulation.get(r.id) ?? [];
+            byReg.set(r.id, obls.some((o: any) => !controls.some((c: any) => c.obligationId === o.id)));
+        });
+        return byReg;
+    }, [regulations, obligationsByRegulation, controls]);
+
+    const coverageOptions = useMemo(() => {
+        const counts = new Map<string, number>();
+        regulations.forEach((r: any) => {
+            const label = coverageByRegulation.get(r.id) ? 'Has coverage gap' : 'Fully covered';
+            counts.set(label, (counts.get(label) ?? 0) + 1);
+        });
+        return Array.from(counts.entries()).map(([value, count]) => ({ value, label: value, count }));
+    }, [regulations, coverageByRegulation]);
+
+    const filingByRegulation = useMemo(() => {
+        const byReg = new Map<string, boolean>();
+        regulations.forEach((r: any) => {
+            const obls = obligationsByRegulation.get(r.id) ?? [];
+            byReg.set(r.id, obls.some((o: any) => Boolean(o.reportId)));
+        });
+        return byReg;
+    }, [regulations, obligationsByRegulation]);
+
+    const filingOptions = useMemo(() => {
+        const counts = new Map<string, number>();
+        regulations.forEach((r: any) => {
+            const label = filingByRegulation.get(r.id) ? 'Requires filing' : 'Internal only';
+            counts.set(label, (counts.get(label) ?? 0) + 1);
+        });
+        return Array.from(counts.entries()).map(([value, count]) => ({ value, label: value, count }));
+    }, [regulations, filingByRegulation]);
+
+    const versionStatusOptions = useMemo(() => {
+        const counts = new Map<string, number>();
+        regulations.forEach((r: any) => {
+            const label = r.supersededBy ? 'Superseded' : 'Current';
+            counts.set(label, (counts.get(label) ?? 0) + 1);
+        });
+        return Array.from(counts.entries()).map(([value, count]) => ({ value, label: value, count }));
+    }, [regulations]);
+
     const visibleRegulations = regulations.filter((r: any) =>
         (authorityFilter.size === 0 || authorityFilter.has(r.authorityId)) &&
         (jurisdictionFilter.size === 0 || jurisdictionFilter.has(r.jurisdictionId)) &&
         (yearFilter.size === 0 || yearFilter.has(yearOf(r))) &&
-        (mechanismFilter.size === 0 || Array.from(mechanismsByRegulation.get(r.id) ?? []).some(m => mechanismFilter.has(m)))
+        (mechanismFilter.size === 0 || Array.from(mechanismsByRegulation.get(r.id) ?? []).some(m => mechanismFilter.has(m))) &&
+        (complianceAreaFilter.size === 0 || Array.from(complianceAreasByRegulation.get(r.id) ?? []).some(v => complianceAreaFilter.has(v))) &&
+        (docTypeFilter.size === 0 || Array.from(docTypesByRegulation.get(r.id) ?? []).some(v => docTypeFilter.has(v))) &&
+        (obligationStatusFilter.size === 0 || (obligationsByRegulation.get(r.id) ?? []).some((o: any) =>
+            obligationStatusFilter.has((o.mandatory === 'Y' || o.mandatory === true) ? 'Mandatory' : 'Voluntary'))) &&
+        (coverageFilter.size === 0 || coverageFilter.has(coverageByRegulation.get(r.id) ? 'Has coverage gap' : 'Fully covered')) &&
+        (filingFilter.size === 0 || filingFilter.has(filingByRegulation.get(r.id) ? 'Requires filing' : 'Internal only')) &&
+        (versionStatusFilter.size === 0 || versionStatusFilter.has(r.supersededBy ? 'Superseded' : 'Current'))
     );
 
     // Same facet set drives the Calendar — narrow its tasks to the controls
@@ -567,6 +703,42 @@ export function CatalogView() {
                                 options={mechanismOptions}
                                 selected={mechanismFilter}
                                 onToggle={v => toggleInSet(mechanismFilter, setMechanismFilter, v)}
+                            />
+                            <FacetGroup
+                                title="Compliance Area"
+                                options={complianceAreaOptions}
+                                selected={complianceAreaFilter}
+                                onToggle={v => toggleInSet(complianceAreaFilter, setComplianceAreaFilter, v)}
+                            />
+                            <FacetGroup
+                                title="Document Type"
+                                options={docTypeOptions}
+                                selected={docTypeFilter}
+                                onToggle={v => toggleInSet(docTypeFilter, setDocTypeFilter, v)}
+                            />
+                            <FacetGroup
+                                title="Obligation Status"
+                                options={obligationStatusOptions}
+                                selected={obligationStatusFilter}
+                                onToggle={v => toggleInSet(obligationStatusFilter, setObligationStatusFilter, v)}
+                            />
+                            <FacetGroup
+                                title="Coverage"
+                                options={coverageOptions}
+                                selected={coverageFilter}
+                                onToggle={v => toggleInSet(coverageFilter, setCoverageFilter, v)}
+                            />
+                            <FacetGroup
+                                title="Filing Requirement"
+                                options={filingOptions}
+                                selected={filingFilter}
+                                onToggle={v => toggleInSet(filingFilter, setFilingFilter, v)}
+                            />
+                            <FacetGroup
+                                title="Version Status"
+                                options={versionStatusOptions}
+                                selected={versionStatusFilter}
+                                onToggle={v => toggleInSet(versionStatusFilter, setVersionStatusFilter, v)}
                             />
                         </>
                     ) : (

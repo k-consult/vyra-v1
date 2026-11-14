@@ -16,13 +16,9 @@ ensure_db() {
 case "$MODE" in
   ingest)
     ensure_db
-    echo "==> [1/4] Enterprise incident pipeline..."
-    $TS cli/orchestration/index.ts
-    echo "==> [2/4] Catalog sync..."
+    echo "==> [1/2] Catalog sync..."
     $TS cli/orchestration/catalog-sync.ts
-    echo "==> [3/4] Enterprise sync..."
-    $TS cli/orchestration/enterprise-sync.ts
-    echo "==> [4/4] Backfill Asset->Control (COVERED_BY)..."
+    echo "==> [2/2] Backfill Asset->Control (COVERED_BY)..."
     $TS cli/scripts/backfill-asset-control.ts
     echo "==> Ingestion complete."
     ;;

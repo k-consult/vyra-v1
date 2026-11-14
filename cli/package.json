@@ -3,8 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "ingest": "npx ts-node --transpile-only orchestration/index.ts",
-    "ingest:dry": "npx ts-node --transpile-only orchestration/index.ts --dry-run",
     "build": "tsc"
   },
   "dependencies": {
