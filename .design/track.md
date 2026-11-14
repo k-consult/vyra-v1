@@ -10,7 +10,7 @@
 
 1. [Obligation Cockpit foundations](#gap-19) — 🔴 gap
 2. [Fire/Hazard domain cluster has no graph home](#gap-21) — 🟡 partial
-3. [First-customer (tenant) onboarding readiness](#gap-22) — 🟡 partial, second slice live (2026-10-25)
+3. [First-customer (tenant) onboarding readiness](#gap-22) — 🟡 partial, third slice live (2026-11-09)
 
 **On hold (2026-10-04, by request)** — tracked in full in `track-platform.md`, not repeated here:
 - Scenario Simulation (#7)
@@ -57,7 +57,7 @@
 
 <a id="gap-22"></a>
 
-### 22. First-customer (tenant) onboarding readiness — 🟡 partial, second slice live (2026-10-25)
+### 22. First-customer (tenant) onboarding readiness — 🟡 partial, third slice live (2026-11-09)
 
 **Requirement:** Per `foundation.md` §0, onboarding a real enterprise should run as a measured, agent-run transition, not a services engagement; per §1, "every input channel resolves to the same target shape" — a customer's own document collection should land in the same graph shape as any other catalog/enterprise input.
 
@@ -65,7 +65,9 @@
 
 **Second slice, 2026-10-25:** Two more pieces are now built, neither exercised against synthetic data only — against a real customer's actual spreadsheet (`Royal_Orchid_Document_Catalog.csv`, 93 rows / 3 sites) on the `orchid` tenant. First, resolution item (2): a new `DocumentObligation` node type (Operational graph, `cli/semantic-contract/contracts/v2.ts`) plus `cli/orchestration/document-catalog-sync.ts` ingest a customer's own document-tracking spreadsheet directly — the same six-category structure this gap's requirement names (consents/NOCs, filings, asset register, vendor AMC, historic logs, tickets & CAPA) — creating real `Facility` and `Asset` nodes (facility-scoped ids, so same-named equipment at different sites doesn't collide) and one `DocumentObligation` per row with `LOCATED_AT`→`Facility`, `ISSUED_BY`→`Authority` (the spreadsheet's agency abbreviation resolved against the tenant's seeded catalog; an agency that doesn't resolve is surfaced as a warning, not silently dropped) and `ABOUT`→`Asset` edges. Reachable via `POST /tenants/:name/document-catalog` (multipart upload) and a per-tenant upload control in `ui/src/features/tenants/tenants.tsx`. Second, and not originally on this gap's resolution list: the single-process-per-tenant limitation noted above is gone — an `X-Tenant` request header now switches which database a request hits at runtime, scoped per-request via `lib/tenant-context/`'s `AsyncLocalStorage` (so concurrent requests for different tenants can't race each other the way a shared mutable global would), resolved against the tenant registry by `api/API.ts`'s `onRequest` hook (404s on an unknown tenant name). A UI tenant selector and three new per-tenant views — `/tenant/structure` (Facility→Asset tree), `/tenant/documents`, `/tenant/obligations` (grouped by authority) — read real data through it, no restart needed.
 
-**Gap:** Tenant database provisioning, the document-catalog ingestion, and runtime tenant switching are done. No path yet exists end-to-end from "customer sends a filled document catalog" to "that customer's compliance calendar goes live" — even though most of the individual pieces (`Contract`, `Permit`, `Blueprint`, the Decision gate, `CutoverCriterion`) already exist for other purposes.
+**Third slice, 2026-11-09:** The document-catalog upload endpoint built in the second slice was only reachable from the central tenant-admin screen (`ui/src/features/tenants/tenants.tsx`); a tenant operator working inside their own `/tenant/*` views had no way to add a document without leaving them. That gap is closed: `ui/src/features/tenant/shared.tsx` gets a reusable `ToolbarMenu` dropdown and an `UploadDocumentTrigger` (wraps the existing `POST /tenants/:name/document-catalog` multipart upload behind any trigger element, resolving the target tenant from `getActiveTenant()` rather than a route param). `ui/src/features/tenant/structure.tsx` surfaces it as a "Manage structure" toolbar action. `ui/src/features/tenant/documents.tsx` is reworked from a flat site-grouped list into a category-tile landing grid (one tile per document type, independent of site count) with drill-down into a per-site breakdown, and each tile carries its own upload trigger. Verified live, not just typechecked: uploaded the `acme` tenant's sample spreadsheet (`cli/feeds/csv/tenants/acme/document-catalog/acme-document-catalog-sample.csv`) through the real `POST /tenants/acme/document-catalog` route — created 23 `DocumentObligation` + 2 `Facility` + 4 `Asset` nodes in `grc-tenant-acme`, confirmed by direct Cypher — and confirmed `GET /operational/document-obligations` returns the exact fields (`category`, `facilityName`, `authorityName`, `asset`, `agency`) the new grid/drill-down consumes. This is a usability improvement on the second slice's already-built ingestion endpoint, not a new Resolution item below — none of (3)–(8) move.
+
+**Gap:** Tenant database provisioning, the document-catalog ingestion (now reachable from both the tenant-admin screen and the tenant's own workspace), and runtime tenant switching are done. No path yet exists end-to-end from "customer sends a filled document catalog" to "that customer's compliance calendar goes live" — even though most of the individual pieces (`Contract`, `Permit`, `Blueprint`, the Decision gate, `CutoverCriterion`) already exist for other purposes.
 
 **Feed Datum Missing:** N/A — this is an onboarding-mechanics gap, not a data-completeness issue; it's assembling existing and missing pieces into one tenant-onboarding path.
 
