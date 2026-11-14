@@ -1,9 +1,11 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, BookOpen, Building2, FileText, Scale } from 'lucide-react';
-import { TenantProvisionEntryPoint } from '@/features/tenants/tenants';
+import { ShieldCheck, BookOpen, Building2, FileText, Scale, Layers } from 'lucide-react';
+import { TenantManagementDialog } from '@/features/tenants/tenants';
+import { getActiveTenant } from '@/lib/active-tenant';
 
 // Trimmed to a single entry point (2026-10-03, go-live customer track) — every
 // other screen this nav used to list (Landscape, Calendar, Decision Gate,
@@ -26,10 +28,15 @@ const TENANT_SUB_LINKS = [
 export function NavShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const active = isActive(pathname);
+    const [tenantsOpen, setTenantsOpen] = useState(false);
+    const [activeTenant, setActiveTenant] = useState<string | null>(null);
+
+    // Read after mount, not during render — localStorage is unavailable during SSR.
+    useEffect(() => { setActiveTenant(getActiveTenant()); }, []);
 
     return (
         <div className="flex h-screen bg-zinc-950 text-zinc-100">
-            <TenantProvisionEntryPoint />
+            <TenantManagementDialog open={tenantsOpen} onClose={() => setTenantsOpen(false)} />
             <aside className="w-64 shrink-0 border-r border-zinc-800/60 flex flex-col overflow-y-auto">
                 <div className="flex items-center gap-2.5 px-4 py-4 border-b border-zinc-800/60 shrink-0">
                     <div className="w-7 h-7 rounded-md bg-emerald-500 flex items-center justify-center shrink-0">
@@ -54,7 +61,21 @@ export function NavShell({ children }: { children: React.ReactNode }) {
                         Catalog
                     </Link>
 
-                    <p className="px-2.5 pt-4 pb-1 text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">Tenant</p>
+                    <button
+                        onClick={() => setTenantsOpen(true)}
+                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs border border-transparent text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100 transition-colors text-left"
+                    >
+                        <Layers size={13} className="text-emerald-500" />
+                        Tenants
+                    </button>
+
+                    <p className="px-2.5 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider">
+                        {activeTenant ? (
+                            <span className="text-sky-400">TENANT: {activeTenant}</span>
+                        ) : (
+                            <span className="text-zinc-600">Tenant</span>
+                        )}
+                    </p>
                     <div className="flex flex-col gap-1">
                         {TENANT_SUB_LINKS.map(({ href, label, icon: Icon }) => {
                             const linkActive = pathname === href || pathname.startsWith(`${href}/`);

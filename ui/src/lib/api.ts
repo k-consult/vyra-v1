@@ -42,6 +42,15 @@ const patch = async <T>(path: string, body?: any): Promise<T> => {
     return res.json();
 };
 
+const del = async <T>(path: string): Promise<T> => {
+    const res = await fetch(`${BASE}${path}`, { method: 'DELETE', headers: { ...tenantHeaders() } });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `API ${path} ${res.status}`);
+    }
+    return res.json();
+};
+
 export const execution = {
     programs:      () => get('/execution/programs'),
     tasks:         (workflowId?: string) => get(`/execution/tasks${workflowId ? `?workflowId=${workflowId}` : ''}`),
@@ -219,6 +228,7 @@ export const onboarding = {
 
 export type Tenant = {
     name: string;
+    description: string;
     database: string;
     uri: string;
     host: string;
@@ -238,7 +248,8 @@ export type DocumentCatalogSummary = {
 
 export const tenants = {
     list:     () => get<{ tenants: Tenant[] }>('/tenants'),
-    provision: (input: { name: string }) => post<{ tenant: Tenant }>('/tenants', input),
+    provision: (input: { name: string; description?: string }) => post<{ tenant: Tenant }>('/tenants', input),
+    remove:   (name: string) => del<{ databaseDropped: boolean }>(`/tenants/${name}`),
     // Multipart, not JSON — can't go through the post() helper above.
     uploadDocumentCatalog: async (name: string, file: File): Promise<{ summary: DocumentCatalogSummary }> => {
         const formData = new FormData();

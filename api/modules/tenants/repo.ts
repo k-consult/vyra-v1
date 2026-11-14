@@ -78,6 +78,7 @@ const REGISTER_TENANT = `
 
 interface TenantRegistration {
     name: string;
+    description: string;
     database: string;
     uri: string;
     host: string;
@@ -126,6 +127,7 @@ const runCatalogSync = (authority: string, databaseName: string): Promise<void> 
 
 export interface ProvisionTenantInput {
     name: string;
+    description?: string;
 }
 
 // Four steps, same order every time: create the database, scaffold its feeds
@@ -155,6 +157,7 @@ export const provisionTenant = async (input: ProvisionTenantInput) => {
 
     const tenant = await registerTenant({
         name: input.name,
+        description: input.description ?? '',
         database: databaseName,
         uri: config.db.twin.uri,
         host: config.db.twin.host,
@@ -185,6 +188,27 @@ const runDocumentCatalogSync = (filePath: string, databaseName: string): Promise
             else reject(new Error(`document-catalog-sync --file=${filePath} exited ${code}: ${stderr.slice(-2000)}`));
         });
     });
+
+const DELETE_TENANT_REGISTRATION = `MATCH (t:Tenant {id: $name}) DETACH DELETE t`;
+
+// Hard delete, the true inverse of provisionTenant: drops the tenant's Neo4j
+// database, then removes its registry node. Registry removal always runs — even
+// when the drop itself silently no-ops (Community Edition, same caveat createDB
+// already documents) — so a tenant a human asked to delete never lingers as
+// selectable in the UI; databaseDropped tells the caller whether the underlying
+// data is actually gone or just unregistered.
+export const deleteTenant = async (name: string) => {
+    const tenant = await getTenant(name);
+    if (!tenant) throw new Error(`no tenant named "${name}"`);
+
+    await DB.dropDB(credentials(), tenant.database);
+    const databaseDropped = !(await tenantDatabaseExists(tenant.database));
+
+    await registryDb().exec(DELETE_TENANT_REGISTRATION, { name });
+
+    log.info(`tenants.repo: deleted '${name}' (database ${databaseDropped ? 'dropped' : 'still present — Community Edition?'})`);
+    return { databaseDropped };
+};
 
 export interface IngestDocumentCatalogInput {
     name: string;

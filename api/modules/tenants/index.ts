@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import multipart from '@fastify/multipart';
-import { ingestDocumentCatalog, listTenants, provisionTenant } from './repo';
+import { deleteTenant, ingestDocumentCatalog, listTenants, provisionTenant } from './repo';
 import * as spec from './spec';
 
 const tenants: any = async (fastify: FastifyInstance) => {
@@ -22,6 +22,15 @@ const tenants: any = async (fastify: FastifyInstance) => {
         }
         const tenant = await provisionTenant(req.body);
         reply.code(201).send({ tenant });
+    });
+
+    // Hard delete — drops the tenant's database and its registry entry (repo.ts's
+    // deleteTenant). Same shape as POST /:name/document-catalog above: an unknown
+    // tenant name propagates untouched to Fastify's default error handler, not
+    // coerced into a 404 here.
+    fastify.delete('/:name', async (req: any, reply) => {
+        const result = await deleteTenant(req.params.name);
+        reply.send(result);
     });
 
     // Separate step from provisioning (upload against an already-active tenant) —

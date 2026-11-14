@@ -137,6 +137,41 @@ class DB {
         }
     }
 
+    // Inverse of createDB — same sanitize/system-session/Community-Edition-no-op
+    // shape, DROP instead of CREATE. Also evicts any cached driver for this database
+    // name so a stale pooled connection can't be reused against a dropped database.
+    public async dropDB(credentials: credentials, databaseName: string): Promise<void> {
+        const sanitized = databaseName.replace(/[^a-zA-Z0-9_.-]/g, '');
+        if (sanitized !== databaseName || !sanitized.length) throw new Error(`Invalid database name: ${databaseName}`);
+        let driver: Driver | null = null;
+        try {
+            driver = credentials.token
+                ? neo4j.driver(credentials.uri, neo4j.auth.bearer(credentials.token), options)
+                : neo4j.driver(credentials.uri, neo4j.auth.basic(credentials.user!, credentials.password!), options);
+            const session = driver.session({ database: 'system', defaultAccessMode: neo4j.session.WRITE });
+            try {
+                await session.run(`DROP DATABASE \`${sanitized}\` IF EXISTS`);
+                log.debug(`graph-db: database '${sanitized}' dropped`);
+            } finally {
+                await session.close();
+            }
+        } catch (err: any) {
+            const msg = err?.message ?? String(err);
+            if (/Unsupported|community|multiple databases/i.test(msg)) {
+                log.debug(`graph-db: drop database skipped (community edition): ${msg}`);
+            } else {
+                log.error(`graph-db: dropDB failed for '${sanitized}'`, err);
+                throw err;
+            }
+        } finally {
+            if (driver) await driver.close();
+        }
+        if (this.drivers.has(databaseName)) {
+            await this.drivers.get(databaseName)!.close();
+            this.drivers.delete(databaseName);
+        }
+    }
+
     public async closeAll(): Promise<void> {
         await Promise.all(Array.from(this.drivers.entries()).map(([, driver]) => driver.close()));
         this.drivers.clear();

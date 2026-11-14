@@ -6,12 +6,17 @@ import { ProvisionTenantInput } from './repo';
 const TENANT_NAME_PATTERN = /^[a-z][a-z0-9-]{0,39}$/;
 const RESERVED_NAMES = new Set(['system', 'neo4j']);
 
+const MAX_DESCRIPTION_LENGTH = 280;
+
 export const isValidTenantProvisionRequest = (input: Partial<ProvisionTenantInput>): void => {
-    const { name } = input;
+    const { name, description } = input;
     if (typeof name !== 'string' || !TENANT_NAME_PATTERN.test(name)) {
         throw new Error(`name must be lowercase letters/digits/hyphens, starting with a letter, 1-40 chars; got ${JSON.stringify(name)}`);
     }
     if (RESERVED_NAMES.has(name)) {
         throw new Error(`name must not be a reserved word [${[...RESERVED_NAMES].join(', ')}]; got "${name}"`);
+    }
+    if (description !== undefined && (typeof description !== 'string' || description.length > MAX_DESCRIPTION_LENGTH)) {
+        throw new Error(`description must be a string of at most ${MAX_DESCRIPTION_LENGTH} chars`);
     }
 };
