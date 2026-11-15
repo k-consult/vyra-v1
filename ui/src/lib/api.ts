@@ -255,8 +255,7 @@ export type DocumentCatalogSummary = {
 };
 
 export type StructureSummary = {
-    facilitiesCreated: number;
-    assetsCreated: number;
+    nodesCreatedByLevel: Record<string, number>;
     rowsSkipped: number;
 };
 
@@ -271,6 +270,47 @@ const uploadMultipart = async <T>(path: string, file: File): Promise<{ summary: 
         throw new Error(err.error || `API ${path} ${res.status}`);
     }
     return res.json();
+};
+
+export type PropertyDataType = 'STRING' | 'NUMBER' | 'DECIMAL';
+export type BlueprintProperty = {
+    id: string;
+    name: string;
+    ingestKey: string;
+    description?: string;
+    dataType?: PropertyDataType;
+    defaultValue?: string;
+    required?: boolean;
+};
+export type BlueprintLevel = {
+    id: string;
+    name: string;
+    alias?: string;
+    description?: string;
+    order: number;
+    properties: BlueprintProperty[];
+};
+export type TenantBlueprint = { id: string; levels: BlueprintLevel[] };
+export type StructureTreeNode = { label: string; node: Record<string, any>; children: StructureTreeNode[] };
+
+// Direct CRUD, no Decision gate — TenantBlueprint is editable config (the
+// hierarchy shape a structure upload must match), not a ratified assertion
+// about enterprise reality. See api/modules/blueprint/ and .design/graph.md's
+// "Tenant Blueprint Graph" section.
+export const blueprint = {
+    get: () => get<{ blueprint: TenantBlueprint }>('/blueprint'),
+    structureTree: () => get<{ tree: StructureTreeNode[] }>('/blueprint/structure-tree'),
+    addLevel: (input: { name: string; alias?: string; description?: string; afterLevelId?: string }) =>
+        post<{ blueprint: TenantBlueprint }>('/blueprint/levels', input),
+    updateLevel: (id: string, input: { name?: string; alias?: string; description?: string }) =>
+        patch<{ blueprint: TenantBlueprint }>(`/blueprint/levels/${id}`, input),
+    removeLevel: (id: string) => del<{ blueprint: TenantBlueprint }>(`/blueprint/levels/${id}`),
+    reorderLevels: (orderedIds: string[]) => patch<{ blueprint: TenantBlueprint }>('/blueprint/levels/reorder', { orderedIds }),
+    addProperty: (levelId: string, input: { name: string; ingestKey: string; description?: string; dataType?: PropertyDataType; defaultValue?: string; required?: boolean }) =>
+        post<{ blueprint: TenantBlueprint }>(`/blueprint/levels/${levelId}/properties`, input),
+    updateProperty: (id: string, input: { name?: string; description?: string; dataType?: PropertyDataType; defaultValue?: string; required?: boolean; ingestKey?: string }) =>
+        patch<{ blueprint: TenantBlueprint }>(`/blueprint/properties/${id}`, input),
+    removeProperty: (id: string) => del<{ blueprint: TenantBlueprint }>(`/blueprint/properties/${id}`),
 };
 
 export const tenants = {

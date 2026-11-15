@@ -4,6 +4,7 @@ import * as path from 'path';
 import { DB } from '../../../lib/graph-db';
 import { config } from '../../../lib/config';
 import log from '../../../lib/log';
+import { seedDefaultBlueprint } from '../blueprint/repo';
 
 const credentials = () => ({
     uri: config.db.twin.uri,
@@ -39,6 +40,34 @@ const DOCUMENT_CATALOG_SYNC_SCRIPT = path.join(REPO_ROOT, 'cli/orchestration/doc
 const STRUCTURE_SYNC_SCRIPT = path.join(REPO_ROOT, 'cli/orchestration/structure-sync.ts');
 const CLI_TSCONFIG = path.join(REPO_ROOT, 'cli/tsconfig.json');
 const TS_NODE_BIN = path.join(REPO_ROOT, 'node_modules/.bin/ts-node');
+
+ 
+const ANSI_PATTERN = /\x1b\[[0-9;]*m/g;
+const stripAnsi = (s: string): string => s.replace(ANSI_PATTERN, '');
+
+// Shared by every runXSync below. lib/log's Console transport has no
+// `stderrLevels` configured, so winston (including log.error) writes to
+// stdout, not stderr — capturing only child.stderr (the previous behaviour)
+// meant every clean validation failure (missing CSV column, required-field
+// violation, ...) surfaced to the API caller as an empty-message 500. Capture
+// both streams and report whichever one actually has content.
+const runScript = (scriptPath: string, args: string[], databaseName: string, label: string): Promise<void> =>
+    new Promise((resolve, reject) => {
+        const child = spawn(TS_NODE_BIN, ['--project', CLI_TSCONFIG, scriptPath, ...args], {
+            cwd: REPO_ROOT,
+            env: { ...process.env, DB_NAME: databaseName },
+        });
+        let stdout = '';
+        let stderr = '';
+        child.stdout.on('data', (chunk) => { stdout += chunk.toString(); });
+        child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
+        child.on('error', reject);
+        child.on('exit', (code) => {
+            if (code === 0) return resolve();
+            const output = stripAnsi(`${stdout}\n${stderr}`).trim();
+            reject(new Error(`${label} exited ${code}: ${output.slice(-2000)}`));
+        });
+    });
 
 const LIST_TENANTS = `
     MATCH (t:Tenant)
@@ -113,20 +142,12 @@ const listAuthorityBoards = (): string[] =>
 // reuses the proven ingestion path rather than re-implementing it in-process.
 // authority omitted (null) syncs every board except ignore/, same as ingest.sh.
 const runCatalogSync = (authority: string | null, databaseName: string): Promise<void> =>
-    new Promise((resolve, reject) => {
-        const args = ['--project', CLI_TSCONFIG, CATALOG_SYNC_SCRIPT, ...(authority ? [`--authority=${authority}`] : [])];
-        const child = spawn(TS_NODE_BIN, args, {
-            cwd: REPO_ROOT,
-            env: { ...process.env, DB_NAME: databaseName },
-        });
-        let stderr = '';
-        child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
-        child.on('error', reject);
-        child.on('exit', (code) => {
-            if (code === 0) resolve();
-            else reject(new Error(`catalog-sync${authority ? ` --authority=${authority}` : ''} exited ${code}: ${stderr.slice(-2000)}`));
-        });
-    });
+    runScript(
+        CATALOG_SYNC_SCRIPT,
+        authority ? [`--authority=${authority}`] : [],
+        databaseName,
+        `catalog-sync${authority ? ` --authority=${authority}` : ''}`,
+    );
 
 export interface ProvisionTenantInput {
     name: string;
@@ -156,6 +177,11 @@ export const provisionTenant = async (input: ProvisionTenantInput) => {
     // omitted, so provisioning no longer drives that loop itself.
     await runCatalogSync(null, databaseName);
     const authoritiesLoaded = listAuthorityBoards();
+
+    // Standard 7-level org/location/asset hierarchy every tenant starts with —
+    // structure-sync.ts reads this back to know what CSV columns to expect and
+    // what real nodes to create (graph.md's Tenant Blueprint Graph).
+    await seedDefaultBlueprint(databaseName);
 
     const tenant = await registerTenant({
         name: input.name,
@@ -200,36 +226,12 @@ export const syncTenantCatalog = async (name: string) => {
 // changes per tenant. --file replaces --authority since this feed is one customer's
 // own upload, not a standard board under cli/feeds/csv/catalog/.
 const runDocumentCatalogSync = (filePath: string, databaseName: string): Promise<void> =>
-    new Promise((resolve, reject) => {
-        const child = spawn(TS_NODE_BIN, ['--project', CLI_TSCONFIG, DOCUMENT_CATALOG_SYNC_SCRIPT, `--file=${filePath}`], {
-            cwd: REPO_ROOT,
-            env: { ...process.env, DB_NAME: databaseName },
-        });
-        let stderr = '';
-        child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
-        child.on('error', reject);
-        child.on('exit', (code) => {
-            if (code === 0) resolve();
-            else reject(new Error(`document-catalog-sync --file=${filePath} exited ${code}: ${stderr.slice(-2000)}`));
-        });
-    });
+    runScript(DOCUMENT_CATALOG_SYNC_SCRIPT, [`--file=${filePath}`], databaseName, `document-catalog-sync --file=${filePath}`);
 
 // Spawns structure-sync.ts the same way runDocumentCatalogSync spawns
 // document-catalog-sync.ts above — same ts-node child-process pattern.
 const runStructureSync = (filePath: string, databaseName: string): Promise<void> =>
-    new Promise((resolve, reject) => {
-        const child = spawn(TS_NODE_BIN, ['--project', CLI_TSCONFIG, STRUCTURE_SYNC_SCRIPT, `--file=${filePath}`], {
-            cwd: REPO_ROOT,
-            env: { ...process.env, DB_NAME: databaseName },
-        });
-        let stderr = '';
-        child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
-        child.on('error', reject);
-        child.on('exit', (code) => {
-            if (code === 0) resolve();
-            else reject(new Error(`structure-sync --file=${filePath} exited ${code}: ${stderr.slice(-2000)}`));
-        });
-    });
+    runScript(STRUCTURE_SYNC_SCRIPT, [`--file=${filePath}`], databaseName, `structure-sync --file=${filePath}`);
 
 export interface IngestStructureInput {
     name: string;
@@ -253,7 +255,8 @@ export const ingestStructure = async (input: IngestStructureInput) => {
     await runStructureSync(filePath, tenant.database);
 
     const summary = JSON.parse(fs.readFileSync(`${filePath}.summary.json`, 'utf-8'));
-    log.info(`tenants.repo: ingested structure for '${tenant.database}' — ${summary.facilitiesCreated} facilities, ${summary.assetsCreated} assets`);
+    const byLevel = Object.entries(summary.nodesCreatedByLevel ?? {}).map(([k, v]) => `${k}:${v}`).join(', ');
+    log.info(`tenants.repo: ingested structure for '${tenant.database}' — ${byLevel || 'no nodes created'}`);
     return summary;
 };
 

@@ -2,21 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { Building2, Settings2, Upload } from 'lucide-react';
-import { operational, tenants } from '@/lib/api';
+import { blueprint, tenants, type StructureTreeNode } from '@/lib/api';
 import { PageHeader } from '@/components/page-header';
-import { LoadingState, ErrorState, RefreshButton, ToolbarMenu, UploadTrigger, FacilityTree, type Facility, type Asset } from './shared';
+import { LoadingState, ErrorState, RefreshButton, ToolbarMenu, UploadTrigger, InstanceTree } from './shared';
 
 export function TenantStructureView() {
-    const [facilities, setFacilities] = useState<Facility[]>([]);
-    const [assets, setAssets] = useState<Asset[]>([]);
+    const [tree, setTree] = useState<StructureTreeNode[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
 
     const load = () => {
         setLoading(true);
         setError(false);
-        Promise.all([operational.facilities(), operational.assets()])
-            .then(([f, a]) => { setFacilities(f.facilities); setAssets(a.assets); })
+        blueprint.structureTree()
+            .then(({ tree }) => setTree(tree))
             .catch(() => setError(true))
             .finally(() => setLoading(false));
     };
@@ -41,10 +40,7 @@ export function TenantStructureView() {
                 <RefreshButton onClick={load} />
             </PageHeader>
             <div className="flex-1 overflow-auto px-6 py-4 flex flex-col gap-2">
-                {facilities.length === 0 && <p className="text-sm text-zinc-500 italic">No facilities for this tenant.</p>}
-                {facilities.map(f => (
-                    <FacilityTree key={f.id} facility={f} assets={assets.filter(a => a.facilityId === f.id)} />
-                ))}
+                <InstanceTree nodes={tree} />
             </div>
         </div>
     );

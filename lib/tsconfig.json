@@ -17,6 +17,6 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true
   },
-  "include": ["*.ts", "config/**/*", "graph-db/**/*", "log/**/*"],
+  "include": ["*.ts", "config/**/*", "graph-db/**/*", "log/**/*", "blueprint/**/*"],
   "exclude": ["node_modules", "dist"]
 }

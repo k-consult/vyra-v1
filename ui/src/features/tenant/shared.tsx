@@ -3,9 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AlertTriangle, Building2, ChevronDown, Layers, RefreshCw, Server } from 'lucide-react';
 import { getActiveTenant } from '@/lib/active-tenant';
-
-export type Facility = { id: string; name: string; [k: string]: any };
-export type Asset = { id: string; name: string; code?: string; facilityId?: string; buildingId?: string; zoneId?: string; roomId?: string; category?: string; assetType?: string; [k: string]: any };
+import type { StructureTreeNode } from '@/lib/api';
 
 export function LoadingState({ label }: { label: string }) {
     return (
@@ -115,80 +113,57 @@ export function UploadTrigger<T>({ className, children, upload, onUploaded }: {
     );
 }
 
-// Groups a facility's assets by building → zone/floor → room, so the tree
-// mirrors the location hierarchy the structure-sync CSV carries rather than a
-// flat list. Assets missing a level (blank buildingId/zoneId/roomId) sit
-// directly under the level above — a real, common case for a small site, not
-// an error.
-function groupByLocation(assets: Asset[]): Map<string, Map<string, Map<string, Asset[]>>> {
-    const byBuilding = new Map<string, Map<string, Map<string, Asset[]>>>();
-    for (const a of assets) {
-        const building = a.buildingId || '—';
-        const zone = a.zoneId || '—';
-        const room = a.roomId || '—';
-        if (!byBuilding.has(building)) byBuilding.set(building, new Map());
-        const byZone = byBuilding.get(building)!;
-        if (!byZone.has(zone)) byZone.set(zone, new Map());
-        const byRoom = byZone.get(zone)!;
-        if (!byRoom.has(room)) byRoom.set(room, []);
-        byRoom.get(room)!.push(a);
-    }
-    return byBuilding;
-}
+const iconForLabel = (label: string) => {
+    if (label === 'Facility') return Building2;
+    if (label === 'Asset') return Server;
+    return Layers;
+};
 
-// One facility's structure tree — Facility → Building → Zone/Floor → Room →
-// Asset. Shared by the onboarding wizard's Structure stage and the tenant
-// Structure screen, so both read the same location hierarchy the same way.
-export function FacilityTree({ facility, assets }: { facility: Facility; assets: Asset[] }) {
+// One node in the tenant's blueprint-driven instance tree, rendered at
+// whatever depth its TenantBlueprint declares — not hardcoded to
+// Facility→Building→Zone/Floor→Room→Asset the way this used to be.
+function InstanceNode({ node }: { node: StructureTreeNode }) {
     const [open, setOpen] = useState(true);
-    const byBuilding = groupByLocation(assets);
-    const hasLocationLevels = byBuilding.size > 1 || [...byBuilding.values()].some(z => z.size > 1 || [...z.values()].some(r => r.size > 1));
+    const Icon = iconForLabel(node.label);
+    const hasChildren = node.children.length > 0;
 
     return (
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/40">
-            <button onClick={() => setOpen(v => !v)} className="w-full flex items-center gap-2 px-3 py-2.5 text-left">
-                <Building2 size={13} className="text-sky-400" />
-                <span className="text-sm text-zinc-200">{facility.name}</span>
-                <span className="text-[10px] font-mono text-zinc-600">{facility.id}</span>
-                <span className="ml-auto text-[10px] text-zinc-500">{assets.length} asset{assets.length === 1 ? '' : 's'}</span>
+        <div className="flex flex-col gap-1">
+            <button
+                onClick={() => hasChildren && setOpen(v => !v)}
+                className="w-full flex items-center gap-2 px-2 py-1.5 text-left"
+            >
+                <Icon size={12} className="text-zinc-500" />
+                <span className="text-xs text-zinc-300">{node.node.name}</span>
+                {node.node.code && <span className="text-[10px] font-mono text-zinc-600">{node.node.code}</span>}
+                {node.node.category && <span className="text-[10px] text-zinc-600">{node.node.category}</span>}
+                {node.node.assetType && <span className="text-[10px] text-zinc-700">{node.node.assetType}</span>}
+                <span className="text-[10px] font-mono text-zinc-700">{node.label}</span>
+                {hasChildren && <span className="ml-auto text-[10px] text-zinc-500">{node.children.length}</span>}
             </button>
-            {open && assets.length > 0 && (
-                <div className="border-t border-zinc-800 px-3 py-2 flex flex-col gap-2.5">
-                    {[...byBuilding.entries()].map(([building, byZone]) => (
-                        <div key={building} className="flex flex-col gap-1.5 pl-2">
-                            {hasLocationLevels && building !== '—' && (
-                                <div className="flex items-center gap-2">
-                                    <Layers size={11} className="text-zinc-500" />
-                                    <span className="text-xs text-zinc-400 font-medium">{building}</span>
-                                </div>
-                            )}
-                            {[...byZone.entries()].map(([zone, byRoom]) => (
-                                <div key={zone} className="flex flex-col gap-1.5 pl-4">
-                                    {hasLocationLevels && zone !== '—' && (
-                                        <span className="text-[11px] text-zinc-500">{zone}</span>
-                                    )}
-                                    {[...byRoom.entries()].map(([room, roomAssets]) => (
-                                        <div key={room} className="flex flex-col gap-1 pl-4">
-                                            {hasLocationLevels && room !== '—' && (
-                                                <span className="text-[10.5px] text-zinc-600">{room}</span>
-                                            )}
-                                            {roomAssets.map(a => (
-                                                <div key={a.id} className="flex items-center gap-2 pl-2 py-0.5">
-                                                    <Server size={12} className="text-zinc-500" />
-                                                    <span className="text-xs text-zinc-300">{a.name}</span>
-                                                    {a.code && <span className="text-[10px] font-mono text-zinc-600">{a.code}</span>}
-                                                    {a.category && <span className="text-[10px] text-zinc-600">{a.category}</span>}
-                                                    {a.assetType && <span className="text-[10px] text-zinc-700">{a.assetType}</span>}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ))}
-                                </div>
-                            ))}
-                        </div>
-                    ))}
+            {open && hasChildren && (
+                <div className="flex flex-col gap-1 pl-5 ml-1.5 border-l border-zinc-800/60">
+                    {node.children.map(child => <InstanceNode key={child.node.id} node={child} />)}
                 </div>
             )}
+        </div>
+    );
+}
+
+// Renders the tenant's full blueprint-driven structure tree — whatever depth
+// and labels the active TenantBlueprint declares. Shared by the onboarding
+// wizard's Structure stage and the tenant Structure screen.
+export function InstanceTree({ nodes }: { nodes: StructureTreeNode[] }) {
+    if (!nodes.length) {
+        return <p className="text-sm text-zinc-500 italic">No structure for this tenant yet — upload an asset register to begin.</p>;
+    }
+    return (
+        <div className="flex flex-col gap-2">
+            {nodes.map(n => (
+                <div key={n.node.id} className="rounded-lg border border-zinc-800 bg-zinc-900/40 px-2 py-1">
+                    <InstanceNode node={n} />
+                </div>
+            ))}
         </div>
     );
 }

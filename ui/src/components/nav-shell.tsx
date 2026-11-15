@@ -27,6 +27,7 @@ const TENANT_CATALOG_HREF = '/tenant/catalog';
 
 const TENANT_SUB_LINKS = [
     { href: '/onboarding',          label: 'Onboarding',   icon: Rocket },
+    { href: '/tenant/blueprint',    label: 'Blueprint',    icon: Layers },
     { href: '/tenant/structure',    label: 'Structure',    icon: Building2 },
     { href: '/tenant/documents',    label: 'Documents',    icon: FileText },
     { href: '/tenant/obligations',  label: 'Obligations',  icon: Scale },

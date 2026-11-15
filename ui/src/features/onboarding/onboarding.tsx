@@ -2,9 +2,9 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { Rocket, Circle, Upload } from 'lucide-react';
-import { operational, tenants, StructureSummary } from '@/lib/api';
+import { blueprint, tenants, type StructureSummary, type StructureTreeNode } from '@/lib/api';
 import { PageHeader } from '@/components/page-header';
-import { LoadingState, ErrorState, RefreshButton, UploadTrigger, FacilityTree, type Facility, type Asset } from '@/features/tenant/shared';
+import { LoadingState, ErrorState, RefreshButton, UploadTrigger, InstanceTree } from '@/features/tenant/shared';
 
 type StageId = 'structure' | 'applicability' | 'ratification' | 'view';
 
@@ -38,8 +38,7 @@ function GapPlaceholder({ title, gapRef, children }: { title: string; gapRef: st
 }
 
 function StructureStage() {
-    const [facilities, setFacilities] = useState<Facility[]>([]);
-    const [assets, setAssets] = useState<Asset[]>([]);
+    const [tree, setTree] = useState<StructureTreeNode[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [lastSummary, setLastSummary] = useState<StructureSummary | null>(null);
@@ -47,8 +46,8 @@ function StructureStage() {
     const load = () => {
         setLoading(true);
         setError(false);
-        Promise.all([operational.facilities(), operational.assets()])
-            .then(([f, a]) => { setFacilities(f.facilities); setAssets(a.assets); })
+        blueprint.structureTree()
+            .then(({ tree }) => setTree(tree))
             .catch(() => setError(true))
             .finally(() => setLoading(false));
     };
@@ -79,25 +78,12 @@ function StructureStage() {
 
             {lastSummary && (
                 <div className="rounded-lg border border-emerald-800 bg-emerald-950/30 px-4 py-3 text-xs text-emerald-200">
-                    Ingested {lastSummary.facilitiesCreated} facilit{lastSummary.facilitiesCreated === 1 ? 'y' : 'ies'},{' '}
-                    {lastSummary.assetsCreated} asset{lastSummary.assetsCreated === 1 ? '' : 's'}.
+                    Ingested {Object.entries(lastSummary.nodesCreatedByLevel).map(([level, count]) => `${count} ${level.toLowerCase()}`).join(', ')}.
                     {lastSummary.rowsSkipped > 0 && ` ${lastSummary.rowsSkipped} row(s) skipped (missing Site Code or Asset Code).`}
                 </div>
             )}
 
-            <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">
-                {facilities.length} facilit{facilities.length === 1 ? 'y' : 'ies'} · {assets.length} asset{assets.length === 1 ? '' : 's'} on file
-            </p>
-
-            {facilities.length === 0 ? (
-                <p className="text-sm text-zinc-500 italic">No facilities for this tenant yet — upload an asset register to begin.</p>
-            ) : (
-                <div className="flex flex-col gap-1.5">
-                    {facilities.map(f => (
-                        <FacilityTree key={f.id} facility={f} assets={assets.filter(a => a.facilityId === f.id)} />
-                    ))}
-                </div>
-            )}
+            <InstanceTree nodes={tree} />
         </div>
     );
 }

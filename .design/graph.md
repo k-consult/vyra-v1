@@ -887,12 +887,11 @@ Equipment, systems, or infrastructure involved in the incident.
 | owner | string | `Facility & EHS` (enterprise-pipeline rows only) |
 | facilityId | string | `FAC-1002`, `LOC-001` — FK to Facility |
 | vendorId | string | `VND-2002` (enterprise-pipeline rows only) |
-| buildingId | string | `BLD-002` (`:Enterprise` rows only) |
-| zoneId | string | `ZN-004` (`:Enterprise` rows only) |
-| roomId | string | `RM-004` (`:Enterprise` rows only) |
 | category | string | `Fire Suppression` (`:Enterprise` rows only) |
 | complianceAreaId | string | `CA-002` (`:Enterprise` rows only) — FK to ComplianceArea, mapped from `category` via a manual, name/description-backed table in `convert-enterprise-seed.ts`. `Security`-category assets (2 of 31) have no mapping — no ComplianceArea in the source data corresponds to it; left blank on purpose, not guessed. |
 | status | string | `active` |
+
+**`buildingId`/`zoneId`/`roomId` retired 2026-11-15** (Tenant Blueprint Graph, below) — location granularity below `Facility` is now real `Building`/`Floor`/`Area` nodes, reachable from `Asset` by walking `BELONGS_TO` up the blueprint-driven instance tree, not flattened string properties on `Asset` itself. `Asset`'s own identity (`id`, `code`, `name`, `category`, `assetType`) and its `LOCATED_AT -> Facility` edge are unchanged.
 
 **7 assets** (enterprise pipeline, unlabeled):
 | ID | Name | Facility |
@@ -1334,6 +1333,65 @@ The tenant's actual per-period filing event against a `Report` requirement (Know
 
 ---
 
+## Tenant Blueprint Graph
+
+**Not to be confused with the Onboarding Graph's `Blueprint` node** (below, per-facility org/role/asset ratification) — unrelated concept, a deliberately distinct name. Also not to be confused with `Organization` (above, American spelling — a Company/BusinessUnit/Department combo that `Role` belongs to) or the free-text `businessUnit` string already on `Facility`/`Role` — **`Organisation`/`BusinessUnit` here are new, British-spelled, deliberately distinct node labels** describing the physical/corporate portfolio tree, not the HR org-unit grouping `Role` uses.
+
+Generic, per-tenant, user-editable metadata that replaces a hardcoded CSV shape for the structure-upload asset register. A tenant's `TenantBlueprint` declares an ordered chain of `Level`s (e.g. `Organisation → BusinessUnit → Facility → Building → Floor → Area → Asset`), each carrying one or more `Property` definitions. A `Level` has no ingestKey of its own — just a `name` — the Neo4j label the Ingester creates at that depth is derived straight from it (`labelFromName`, `lib/blueprint/ingest-key.ts`: strip non-alphanumerics, PascalCase each word, e.g. "Business Unit" → `BusinessUnit`). `Property.ingestKey` is still the literal CSV column header for that property — `Property` carries the only ingestKey in this model. Seeded with the standard 7-level default at tenant provisioning (`api/modules/tenants/repo.ts`'s `provisionTenant`), then freely editable — greenfield, no live tenant data yet, so no append-and-supersede/versioning requirement.
+
+A `Level`'s `id` is derived from its resolved label too (`LVL-<label>`), so editing `name` in a way that changes the resolved label is a rename under the hood (new node, Properties and chain position carried over, old node dropped) — transparent to callers, but worth knowing if you're querying `Level` by id directly. Renaming a Level that currently resolves to the reserved `Facility`/`Asset` label *away* from it is blocked (`api/modules/blueprint/spec.ts`'s `isValidLevelNameChange`); cosmetic edits that don't change the resolved label (casing, whitespace) are still allowed.
+
+### `TenantBlueprint`
+Singleton per tenant database.
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | always `default` |
+| createdAt | datetime | set on first `MERGE` |
+
+### `Level`
+One node per depth in the hierarchy chain.
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `LVL-Facility` — derived from the resolved label (`labelFromName(name)`), not a separate ingestKey |
+| name | string | `Facility` — also what drives the Neo4j label the Ingester writes at this depth |
+| alias | string | `Site` — the display name shown to users; the underlying label/identity stays whatever `name` resolves to (`Facility`), so every other module's existing edges (`Permit`/`Contract`/`Signal` → `Facility`) keep working untouched |
+| description | string | free text |
+| order | int | 0-based depth, also the `NEXT` chain's traversal order |
+| createdAt | datetime | `ON CREATE SET`, via `datetime()` |
+
+### `Property`
+One or more per `Level`.
+
+| Property | Type | Example |
+|---|---|---|
+| id | string | `PROP-SITE_CODE` |
+| name | string | `Site Code` |
+| ingestKey | string | `SITE_CODE` — literally the CSV column header |
+| description | string | free text |
+| dataType | string | `STRING` \| `NUMBER` \| `DECIMAL` — default `STRING`. Declarative only in this pass: the Ingester does not coerce or validate a cell's value against it yet |
+| defaultValue | string | applied by the Ingester when a row's cell for this property is blank and the property isn't `required` |
+| required | boolean | default `false`. The Ingester throws (fails the whole upload, not just the row) if a row has no value and no `defaultValue` for a `required` property |
+| createdAt | datetime | `ON CREATE SET`, via `datetime()` |
+
+**Default 7-level seed** (`Level.name` → resolved label → `Property.ingestKey`s):
+| Level `name` (`alias`) | Resolved label | Properties |
+|---|---|---|
+| Organisation | `Organisation` | `ORGANISATION_NAME` |
+| Business Unit | `BusinessUnit` | `BUSINESS_UNIT_NAME` |
+| Facility (**Site**) | `Facility` | `SITE_CODE`, `SITE_NAME` |
+| Building | `Building` | `BUILDING_NAME` |
+| Floor | `Floor` | `FLOOR_NAME` |
+| Area | `Area` | `AREA_NAME` |
+| Asset | `Asset` | `ASSET_CODE`, `ASSET_NAME`, `ASSET_CATEGORY`, `ASSET_TYPE` |
+
+`Facility`'s and `Asset`'s properties above are **reserved** — the Ingester feeds them into the existing static `compile(v2, 'Facility'|'Asset', ...)` path (`cli/semantic-contract/contracts/v2.ts`) rather than the five dynamic Levels' generic node-construction path, since those two node types already have other live consumers. Any *extra* custom property added to the `Facility`/`Asset` Levels beyond this reserved set is parsed from the CSV and merged back onto the compiled node after `compile()` runs (`structure-sync.ts`'s `extraPropsByNodeId`), since the static contract itself only copies properties it already declares.
+
+**Zero seed data from CSV, live-write-only** — same precedent as `Contract`/`Signal`/`CutoverCriterion`: idempotency via `MERGE`-by-id, no `CREATE CONSTRAINT`. Direct CRUD via `api/modules/blueprint/` — no Decision gate (explicit greenfield call: this is editable config, not a ratified assertion about enterprise reality the way `Blueprint`, below, is).
+
+---
+
 ## Onboarding Graph (transitional)
 
 Not one of the five permanent domains — `foundation.md`'s "dashed fourth region," a phase rather than a subject-matter graph. `domain.md`'s Onboarding subdomain designs three aggregates (`Blueprint`, `CutoverCriterion`, `ContinuityBaseline`); `CutoverCriterion` (2026-09-25) and `Blueprint` (2026-09-26) are live so far, both first/second real slices of `track.md` Gap #8. `ContinuityBaseline` remains target — no graph footprint yet.
@@ -1415,6 +1473,7 @@ All relationships below are **live** and are the relationships the API actually 
 | `MANAGED_BY` | Incident → Vendor | Vendor involved in incident |
 | `LOCATED_AT` | Asset → Facility | Physical facility housing the asset |
 | `BELONGS_TO` | Role → Organization | Role's org unit (reuses the `BELONGS_TO` name already used for Clause→Regulation/Standard; safe since `cli/projection/index.ts` groups edge batches by `(relType, sourceLabel, targetLabel)`, not `relType` alone) |
+| `BELONGS_TO` | BusinessUnit → Organisation / Facility → BusinessUnit / Building → Facility / Floor → Building / Area → Floor / Asset → Area \| Floor \| Building | 2026-11-15 — the Tenant Blueprint instance tree (below): each node `BELONGS_TO` its nearest **present** ancestor per CSV row (a row may skip Building/Floor, in which case the edge jumps straight to the next populated level up). Reuses `BELONGS_TO` again, safe under the same `(relType, sourceLabel, targetLabel)` grouping — note `Organisation` (British spelling) is a distinct label from the existing `Organization` node above; they are unrelated concepts that happen to sound alike |
 | `IN_COMPLIANCE_AREA` | Asset → ComplianceArea | Asset's compliance domain (mapped from `category`; `:Enterprise` rows only, 29 of 31 — `Security`-category assets have no mapping) |
 | `WORKS_AT` | Person → Facility | Person has appeared at this facility (many-valued — every seeded Person WORKS_AT 2-4 facilities, no single "home" is supported by the data) |
 | `HAS_ROLE` | Person → Role | Fires for 6 of 7 people via `cli/scripts/lib/title-role-map.ts`'s functional-domain title→role lookup (2026-09-22) — moved here from "Designed, not yet active" below; `QA Executive` has no defensible match and stays unmapped |
@@ -1422,6 +1481,13 @@ All relationships below are **live** and are the relationships the API actually 
 | `WITH_VENDOR` | Contract → Vendor | The vendor this service agreement is with |
 | `COORDINATED_BY` | Contract → Role | Internal role coordinating this contract |
 | `COVERS` | Contract → Facility | Facility(ies) this contract's site coverage applies to (many-valued — expanded from `Sites Covered`; reuses the `COVERS` name already used for `AssuranceStatement → Regulation`, safe under the same `(relType, sourceLabel, targetLabel)` grouping) |
+
+### Tenant Blueprint Graph
+| Relationship | From → To | Meaning |
+|---|---|---|
+| `STARTS` | TenantBlueprint → Level | The first (shallowest) Level in the hierarchy chain |
+| `NEXT` | Level → Level | Strict depth-ordered chain, one path, no branching — siblings/children appear in the *instance* tree (`BELONGS_TO`, above), not here |
+| `HAS_PROPERTY` | Level → Property | One or more per Level — each Property's `ingestKey` is a CSV column name |
 
 ### Intelligence Graph
 | Relationship | From → To | Meaning |

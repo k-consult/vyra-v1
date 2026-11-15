@@ -14,8 +14,9 @@ import catalog from './modules/catalog';
 import enterprise from './modules/enterprise';
 import onboarding from './modules/onboarding';
 import tenants from './modules/tenants';
+import blueprint from './modules/blueprint';
 
-const modules = [execution, operational, intelligence, assurance, dashboard, catalog, enterprise, onboarding, tenants];
+const modules = [execution, operational, intelligence, assurance, dashboard, catalog, enterprise, onboarding, tenants, blueprint];
 
 async function start() {
     try {
