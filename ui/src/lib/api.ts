@@ -254,20 +254,34 @@ export type DocumentCatalogSummary = {
     rowsSkipped: number;
 };
 
+export type StructureSummary = {
+    facilitiesCreated: number;
+    assetsCreated: number;
+    rowsSkipped: number;
+};
+
+// Multipart upload, shared shape for every tenant feed upload below — can't go
+// through the post() helper above (that's JSON-only).
+const uploadMultipart = async <T>(path: string, file: File): Promise<{ summary: T }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${BASE}${path}`, { method: 'POST', body: formData });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `API ${path} ${res.status}`);
+    }
+    return res.json();
+};
+
 export const tenants = {
     list:     () => get<{ tenants: Tenant[] }>('/tenants'),
     provision: (input: { name: string; description?: string }) => post<{ tenant: Tenant }>('/tenants', input),
     remove:   (name: string) => del<{ databaseDropped: boolean }>(`/tenants/${name}`),
     syncCatalog: (name: string) => post<{ tenant: Tenant }>(`/tenants/${name}/catalog/sync`),
-    // Multipart, not JSON — can't go through the post() helper above.
-    uploadDocumentCatalog: async (name: string, file: File): Promise<{ summary: DocumentCatalogSummary }> => {
-        const formData = new FormData();
-        formData.append('file', file);
-        const res = await fetch(`${BASE}/tenants/${name}/document-catalog`, { method: 'POST', body: formData });
-        if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.error || `API /tenants/${name}/document-catalog ${res.status}`);
-        }
-        return res.json();
-    },
+    uploadDocumentCatalog: (name: string, file: File) =>
+        uploadMultipart<DocumentCatalogSummary>(`/tenants/${name}/document-catalog`, file),
+    // The onboarding blueprint upload — facilities/assets with their location
+    // hierarchy (see ui/src/features/onboarding/onboarding.tsx's Structure stage).
+    uploadStructure: (name: string, file: File) =>
+        uploadMultipart<StructureSummary>(`/tenants/${name}/structure`, file),
 };

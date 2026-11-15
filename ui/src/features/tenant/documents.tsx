@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { ArrowLeft, FileText, Upload } from 'lucide-react';
-import { operational } from '@/lib/api';
+import { operational, tenants } from '@/lib/api';
 import { PageHeader } from '@/components/page-header';
-import { LoadingState, ErrorState, RefreshButton, UploadDocumentTrigger } from './shared';
+import { LoadingState, ErrorState, RefreshButton, UploadTrigger } from './shared';
 
 type DocRow = {
     id: string; category: string; documentType: string; year: string; agency: string; asset: string;
@@ -90,7 +90,7 @@ function CategorySection({ category, rows }: { category: string; rows: DocRow[] 
 // Landing grid — one tile per document type, independent of how many sites
 // contribute rows to it. Clicking the tile drills into CategoryDetailView;
 // the per-tile upload trigger is a separate element so it never fires that
-// navigation (see UploadDocumentTrigger usage below).
+// navigation (see UploadTrigger usage below).
 function CategoryGrid({ rows, onSelect, onUploaded }: { rows: DocRow[]; onSelect: (category: string) => void; onUploaded: () => void }) {
     const byCategory = groupBy(rows, r => r.category || 'Uncategorized');
     const known = CATEGORY_ORDER.filter(c => !EXCLUDED_CATEGORIES.has(c));
@@ -112,12 +112,13 @@ function CategoryGrid({ rows, onSelect, onUploaded }: { rows: DocRow[]; onSelect
                             <span className="text-[11px] text-zinc-500">{count} document{count !== 1 ? 's' : ''}</span>
                         </button>
                         <div className="border-t border-zinc-800 px-3.5 py-2">
-                            <UploadDocumentTrigger
+                            <UploadTrigger
                                 className="flex items-center gap-1.5 text-[11px] text-sky-400 hover:text-sky-300 cursor-pointer w-fit"
+                                upload={tenants.uploadDocumentCatalog}
                                 onUploaded={onUploaded}
                             >
                                 <Upload size={11} /> Upload
-                            </UploadDocumentTrigger>
+                            </UploadTrigger>
                         </div>
                     </div>
                 );

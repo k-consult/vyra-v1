@@ -300,6 +300,10 @@ export const v2: Contract = {
             graph: Graph.Operational,
             props: {
                 ...baseProps,
+                // code: the asset's own human-facing identifier (e.g. "DG-01") —
+                // distinct from `id`, which is facility-scoped (slug(facilityId)-
+                // slug(code)) to disambiguate same-named equipment across sites.
+                code: 'code',
                 assetType: 'assetType',
                 owner: 'owner',
                 vendorId: 'vendorId',

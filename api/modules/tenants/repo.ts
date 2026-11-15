@@ -36,6 +36,7 @@ const CATALOG_FEEDS_DIR = path.join(REPO_ROOT, 'cli/feeds/csv/catalog');
 const TENANT_FEEDS_ROOT = path.join(REPO_ROOT, 'cli/feeds/csv/tenants');
 const CATALOG_SYNC_SCRIPT = path.join(REPO_ROOT, 'cli/orchestration/catalog-sync.ts');
 const DOCUMENT_CATALOG_SYNC_SCRIPT = path.join(REPO_ROOT, 'cli/orchestration/document-catalog-sync.ts');
+const STRUCTURE_SYNC_SCRIPT = path.join(REPO_ROOT, 'cli/orchestration/structure-sync.ts');
 const CLI_TSCONFIG = path.join(REPO_ROOT, 'cli/tsconfig.json');
 const TS_NODE_BIN = path.join(REPO_ROOT, 'node_modules/.bin/ts-node');
 
@@ -212,6 +213,49 @@ const runDocumentCatalogSync = (filePath: string, databaseName: string): Promise
             else reject(new Error(`document-catalog-sync --file=${filePath} exited ${code}: ${stderr.slice(-2000)}`));
         });
     });
+
+// Spawns structure-sync.ts the same way runDocumentCatalogSync spawns
+// document-catalog-sync.ts above — same ts-node child-process pattern.
+const runStructureSync = (filePath: string, databaseName: string): Promise<void> =>
+    new Promise((resolve, reject) => {
+        const child = spawn(TS_NODE_BIN, ['--project', CLI_TSCONFIG, STRUCTURE_SYNC_SCRIPT, `--file=${filePath}`], {
+            cwd: REPO_ROOT,
+            env: { ...process.env, DB_NAME: databaseName },
+        });
+        let stderr = '';
+        child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
+        child.on('error', reject);
+        child.on('exit', (code) => {
+            if (code === 0) resolve();
+            else reject(new Error(`structure-sync --file=${filePath} exited ${code}: ${stderr.slice(-2000)}`));
+        });
+    });
+
+export interface IngestStructureInput {
+    name: string;
+    originalFilename: string;
+    content: Buffer;
+}
+
+// Same shape as ingestDocumentCatalog above: write the uploaded CSV under the
+// tenant's feeds folder, hand it to structure-sync.ts, read back its summary
+// sidecar. This is the onboarding blueprint upload — facilities/assets with
+// their location hierarchy — not the document-tracking catalog.
+export const ingestStructure = async (input: IngestStructureInput) => {
+    const tenant = await getTenant(input.name);
+    if (!tenant) throw new Error(`no tenant named "${input.name}" — provision it first via POST /tenants`);
+
+    const uploadsDir = path.join(TENANT_FEEDS_ROOT, input.name, 'structure');
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    const filePath = path.join(uploadsDir, `${Date.now()}-${path.basename(input.originalFilename)}`);
+    fs.writeFileSync(filePath, input.content);
+
+    await runStructureSync(filePath, tenant.database);
+
+    const summary = JSON.parse(fs.readFileSync(`${filePath}.summary.json`, 'utf-8'));
+    log.info(`tenants.repo: ingested structure for '${tenant.database}' — ${summary.facilitiesCreated} facilities, ${summary.assetsCreated} assets`);
+    return summary;
+};
 
 const DELETE_TENANT_REGISTRATION = `MATCH (t:Tenant {id: $name}) DETACH DELETE t`;
 

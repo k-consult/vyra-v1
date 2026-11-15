@@ -11,6 +11,10 @@ cli/neo4j-import/
 cli/cypher/
 cli/out/
 
+# Uploaded tenant feed data (document catalogs, asset registers) — customer
+# data, not source
+cli/feeds/csv/tenants/
+
 # Logs
 logs/
 *.log

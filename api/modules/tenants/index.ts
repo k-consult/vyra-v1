@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import multipart from '@fastify/multipart';
-import { deleteTenant, ingestDocumentCatalog, listTenants, provisionTenant, syncTenantCatalog } from './repo';
+import { deleteTenant, ingestDocumentCatalog, ingestStructure, listTenants, provisionTenant, syncTenantCatalog } from './repo';
 import * as spec from './spec';
 
 const tenants: any = async (fastify: FastifyInstance) => {
@@ -50,6 +50,22 @@ const tenants: any = async (fastify: FastifyInstance) => {
 
         const content = await file.toBuffer();
         const summary = await ingestDocumentCatalog({
+            name: req.params.name,
+            originalFilename: file.filename,
+            content,
+        });
+        reply.code(201).send({ summary });
+    });
+
+    // The onboarding blueprint upload — facilities/assets with their location
+    // hierarchy. Same shape as POST /:name/document-catalog above, different
+    // sync script (structure-sync.ts) and feeds subfolder.
+    fastify.post('/:name/structure', async (req: any, reply) => {
+        const file = await req.file();
+        if (!file) return reply.code(400).send({ error: 'no file uploaded — expected multipart field with a CSV file' });
+
+        const content = await file.toBuffer();
+        const summary = await ingestStructure({
             name: req.params.name,
             originalFilename: file.filename,
             content,

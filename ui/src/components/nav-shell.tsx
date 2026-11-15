@@ -3,15 +3,18 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, BookOpen, Building2, FileText, Scale, Layers, RefreshCw } from 'lucide-react';
+import { ShieldCheck, BookOpen, Building2, FileText, Scale, Layers, RefreshCw, Rocket } from 'lucide-react';
 import { TenantManagementDialog } from '@/features/tenants/tenants';
 import { getActiveTenant } from '@/lib/active-tenant';
 import { tenants } from '@/lib/api';
 
 // Trimmed to a single entry point (2026-10-03, go-live customer track) — every
 // other screen this nav used to list (Landscape, Calendar, Decision Gate,
-// Assurance, Onboarding, ...) is still live and reachable by its own URL; this
-// only removes the sidebar links, it deletes no routes and no pages.
+// Assurance, ...) is still live and reachable by its own URL; this only removes
+// the sidebar links, it deletes no routes and no pages. Onboarding was relisted
+// 2026-11-15 as the Tenant section's first item, once /onboarding became the
+// 4-stage onboarding wizard rather than the old flat Blueprint/CutoverCriterion
+// propose/approve page.
 //
 // "Tenant" (added for the per-tenant Structure/Documents/Obligations views) is the
 // first entry with sub-items — a plain non-collapsing section, not a generic
@@ -23,9 +26,10 @@ const isActive = (pathname: string): boolean =>
 const TENANT_CATALOG_HREF = '/tenant/catalog';
 
 const TENANT_SUB_LINKS = [
-    { href: '/tenant/structure',   label: 'Structure',   icon: Building2 },
-    { href: '/tenant/documents',   label: 'Documents',   icon: FileText },
-    { href: '/tenant/obligations', label: 'Obligations', icon: Scale },
+    { href: '/onboarding',          label: 'Onboarding',   icon: Rocket },
+    { href: '/tenant/structure',    label: 'Structure',    icon: Building2 },
+    { href: '/tenant/documents',    label: 'Documents',    icon: FileText },
+    { href: '/tenant/obligations',  label: 'Obligations',  icon: Scale },
 ];
 
 export function NavShell({ children }: { children: React.ReactNode }) {
