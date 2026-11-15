@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import multipart from '@fastify/multipart';
-import { deleteTenant, ingestDocumentCatalog, listTenants, provisionTenant } from './repo';
+import { deleteTenant, ingestDocumentCatalog, listTenants, provisionTenant, syncTenantCatalog } from './repo';
 import * as spec from './spec';
 
 const tenants: any = async (fastify: FastifyInstance) => {
@@ -31,6 +31,14 @@ const tenants: any = async (fastify: FastifyInstance) => {
     fastify.delete('/:name', async (req: any, reply) => {
         const result = await deleteTenant(req.params.name);
         reply.send(result);
+    });
+
+    // On-demand re-run of the same catalog replay provisioning does, against an
+    // already-active tenant — backs the tenant Catalog screen's "sync with central"
+    // action. Unknown tenant name propagates untouched, same convention as DELETE.
+    fastify.post('/:name/catalog/sync', async (req: any, reply) => {
+        const tenant = await syncTenantCatalog(req.params.name);
+        reply.send({ tenant });
     });
 
     // Separate step from provisioning (upload against an already-active tenant) —

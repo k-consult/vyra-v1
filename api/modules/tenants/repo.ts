@@ -110,9 +110,11 @@ const listAuthorityBoards = (): string[] =>
 
 // Spawns the existing, already-idempotent catalog-sync.ts untouched — provisioning
 // reuses the proven ingestion path rather than re-implementing it in-process.
-const runCatalogSync = (authority: string, databaseName: string): Promise<void> =>
+// authority omitted (null) syncs every board except ignore/, same as ingest.sh.
+const runCatalogSync = (authority: string | null, databaseName: string): Promise<void> =>
     new Promise((resolve, reject) => {
-        const child = spawn(TS_NODE_BIN, ['--project', CLI_TSCONFIG, CATALOG_SYNC_SCRIPT, `--authority=${authority}`], {
+        const args = ['--project', CLI_TSCONFIG, CATALOG_SYNC_SCRIPT, ...(authority ? [`--authority=${authority}`] : [])];
+        const child = spawn(TS_NODE_BIN, args, {
             cwd: REPO_ROOT,
             env: { ...process.env, DB_NAME: databaseName },
         });
@@ -121,7 +123,7 @@ const runCatalogSync = (authority: string, databaseName: string): Promise<void> 
         child.on('error', reject);
         child.on('exit', (code) => {
             if (code === 0) resolve();
-            else reject(new Error(`catalog-sync --authority=${authority} exited ${code}: ${stderr.slice(-2000)}`));
+            else reject(new Error(`catalog-sync${authority ? ` --authority=${authority}` : ''} exited ${code}: ${stderr.slice(-2000)}`));
         });
     });
 
@@ -149,11 +151,10 @@ export const provisionTenant = async (input: ProvisionTenantInput) => {
     const tenantFeedsDir = path.join(TENANT_FEEDS_ROOT, input.name, 'enterprise');
     fs.mkdirSync(tenantFeedsDir, { recursive: true });
 
-    const authoritiesLoaded: string[] = [];
-    for (const authority of listAuthorityBoards()) {
-        await runCatalogSync(authority, databaseName);
-        authoritiesLoaded.push(authority);
-    }
+    // One call, every board — catalog-sync.ts loops internally when --authority is
+    // omitted, so provisioning no longer drives that loop itself.
+    await runCatalogSync(null, databaseName);
+    const authoritiesLoaded = listAuthorityBoards();
 
     const tenant = await registerTenant({
         name: input.name,
@@ -168,6 +169,29 @@ export const provisionTenant = async (input: ProvisionTenantInput) => {
 
     log.info(`tenants.repo: provisioned '${databaseName}', loaded authorities: ${authoritiesLoaded.join(', ') || 'none'}`);
     return tenant;
+};
+
+const RECORD_CATALOG_SYNC = `
+    MATCH (t:Tenant {id: $name})
+    SET t.authoritiesLoaded = $authoritiesLoaded, t.lastCatalogSyncAt = datetime()
+    RETURN properties(t) AS tenant
+`;
+
+// Re-runs the same catalog replay provisioning does, against an already-active
+// tenant — the central board set can grow after a tenant is provisioned (e.g. a new
+// authority folder landing under cli/feeds/csv/catalog/), and nothing re-propagates
+// that into existing tenant databases on its own.
+export const syncTenantCatalog = async (name: string) => {
+    const tenant = await getTenant(name);
+    if (!tenant) throw new Error(`no tenant registered as '${name}'`);
+
+    await runCatalogSync(null, tenant.database);
+    const authoritiesLoaded = listAuthorityBoards();
+
+    const raw: any = await registryDb().exec(RECORD_CATALOG_SYNC, { name, authoritiesLoaded });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    log.info(`tenants.repo: synced '${tenant.database}' with central catalog, authorities: ${authoritiesLoaded.join(', ') || 'none'}`);
+    return row?.tenant;
 };
 
 // Spawns document-catalog-sync.ts the same way runCatalogSync spawns catalog-sync.ts

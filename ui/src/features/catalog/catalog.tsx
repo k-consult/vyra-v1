@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, RefreshCw, BookOpen, History, ShieldAlert, Plus, Share2, CalendarDays, Inbox } from 'lucide-react';
-import { catalog } from '@/lib/api';
+import { catalog, tenants } from '@/lib/api';
+import { getActiveTenant } from '@/lib/active-tenant';
 import { PropRow } from '@/features/landscape/landscape';
 import { formatValue } from '@/features/validation/display';
 import { PageHeader } from '@/components/page-header';
@@ -64,17 +65,35 @@ function FacetGroup({ title, options, selected, onToggle }: {
     selected: Set<string>;
     onToggle: (value: string) => void;
 }) {
+    // Same fixed-position, cursor-following tooltip idiom as calendar.tsx's hover
+    // card — native `title` has a browser-imposed delay and is invisible to
+    // automated/screenshot capture, neither of which this app relies on elsewhere.
+    const [hover, setHover] = useState<{ label: string; x: number; y: number } | null>(null);
+
     if (!options.length) return null;
     return (
         <div className="flex flex-col gap-1.5">
             <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">{title}</p>
             {options.map(o => (
-                <label key={o.value} className="flex items-center gap-2 text-xs text-zinc-400">
+                <label
+                    key={o.value}
+                    className="flex items-center gap-2 text-xs text-zinc-400"
+                    onMouseMove={e => setHover({ label: o.label, x: e.clientX, y: e.clientY })}
+                    onMouseLeave={() => setHover(null)}
+                >
                     <input type="checkbox" checked={selected.has(o.value)} onChange={() => onToggle(o.value)} />
                     <span className="flex-1 truncate">{o.label}</span>
                     <span className="text-zinc-600">{o.count}</span>
                 </label>
             ))}
+            {hover && (
+                <div
+                    className="fixed z-50 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 shadow-2xl pointer-events-none max-w-xs"
+                    style={{ left: hover.x + 14, top: hover.y + 14 }}
+                >
+                    <p className="text-[11px] text-zinc-200">{hover.label}</p>
+                </div>
+            )}
         </div>
     );
 }
@@ -260,7 +279,7 @@ function ObligationRow({ obligation }: { obligation: any }) {
 
 // ── Propose Obligation form ──────────────────────────────────────────────────
 
-function ProposeObligationForm({ clauses, onProposed }: { clauses: any[]; onProposed: () => void }) {
+function ProposeObligationForm({ clauses, onProposed, reqOpts }: { clauses: any[]; onProposed: () => void; reqOpts: { central: boolean } }) {
     const [open, setOpen] = useState(false);
     const [clauseId, setClauseId] = useState('');
     const [name, setName] = useState('');
@@ -278,7 +297,7 @@ function ProposeObligationForm({ clauses, onProposed }: { clauses: any[]; onProp
             proposedName: name,
             proposedObligationType: obligationType || undefined,
             proposedMandatory: mandatory,
-        })
+        }, reqOpts)
             .then(() => {
                 setOpen(false);
                 setClauseId('');
@@ -329,8 +348,16 @@ function ProposeObligationForm({ clauses, onProposed }: { clauses: any[]; onProp
 
 // ── Root view ─────────────────────────────────────────────────────────────────
 
-export function CatalogView() {
+// tenantScoped unset (default) is the global Control-Plane /catalog screen — it
+// always reads Vyra Central, regardless of whichever tenant is active elsewhere in
+// the app (api.ts's `central: true` opt forces that). tenantScoped={true} is the
+// per-tenant /tenant/catalog screen — same component, same data shape, just reads
+// through the normal X-Tenant-scoped path and the Refresh action re-syncs that
+// tenant's database against Central first instead of merely re-fetching.
+export function CatalogView({ tenantScoped = false }: { tenantScoped?: boolean } = {}) {
     const [view, setView] = useState<View>('regulations');
+    const [syncing, setSyncing] = useState(false);
+    const reqOpts = { central: !tenantScoped };
 
     const [regulations, setRegulations] = useState<any[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -365,14 +392,14 @@ export function CatalogView() {
         setLoading(true);
         setError(false);
         Promise.all([
-            catalog.regulations(currentOnly),
-            catalog.syncStatus(),
-            catalog.authorities(),
-            catalog.jurisdictions(),
-            catalog.complianceAreas(),
-            catalog.clauses(),
-            catalog.controls(),
-            uncontrolledOnly ? catalog.uncontrolledObligations() : catalog.obligations(),
+            catalog.regulations(currentOnly, reqOpts),
+            catalog.syncStatus(reqOpts),
+            catalog.authorities(reqOpts),
+            catalog.jurisdictions(reqOpts),
+            catalog.complianceAreas(reqOpts),
+            catalog.clauses(reqOpts),
+            catalog.controls(reqOpts),
+            uncontrolledOnly ? catalog.uncontrolledObligations(reqOpts) : catalog.obligations(reqOpts),
         ])
             .then(([r, s, auth, jur, ca, cls, ctl, obl]) => {
                 const regs = r.regulations ?? [];
@@ -390,11 +417,33 @@ export function CatalogView() {
             .finally(() => setLoading(false));
     };
 
+    // Global view: Refresh just re-fetches Central. Tenant view: Refresh re-syncs
+    // this tenant's database against Central first — the one place a stale tenant
+    // catalog gets closed without going near a terminal.
+    const handleRefresh = async () => {
+        if (!tenantScoped) { load(); return; }
+        const tenant = getActiveTenant();
+        if (!tenant) { load(); return; }
+        setSyncing(true);
+        try {
+            await tenants.syncCatalog(tenant);
+        } finally {
+            setSyncing(false);
+            load();
+        }
+    };
+
     useEffect(load, [currentOnly, uncontrolledOnly]);
 
+    // The selected regulation (and its chain/history) can fall outside the Authority
+    // facet's new result set the moment it changes — clearing the selection here is
+    // what keeps the detail pane from showing a regulation no longer even visible in
+    // the filtered list on the left.
+    useEffect(() => { setSelectedId(null); }, [authorityFilter]);
+
     useEffect(() => {
-        if (!selectedId) return;
-        Promise.all([catalog.trace(selectedId), catalog.regulationHistory(selectedId)])
+        if (!selectedId) { setChain([]); setHistory([]); return; }
+        Promise.all([catalog.trace(selectedId, reqOpts), catalog.regulationHistory(selectedId, reqOpts)])
             .then(([t, h]) => {
                 setChain(t.chain ?? []);
                 setHistory(h.history ?? []);
@@ -663,8 +712,13 @@ export function CatalogView() {
                 <span className="text-[10px] text-zinc-600">
                     last synced: {lastSyncedAt ? formatValue(lastSyncedAt) : 'never'}
                 </span>
-                <button onClick={load} className="p-2 rounded-md hover:bg-zinc-800 transition-colors" title="Refresh">
-                    <RefreshCw size={14} className="text-zinc-500" />
+                <button
+                    onClick={handleRefresh}
+                    disabled={syncing}
+                    className="p-2 rounded-md hover:bg-zinc-800 transition-colors disabled:opacity-40"
+                    title={tenantScoped ? 'Sync with central' : 'Refresh'}
+                >
+                    <RefreshCw size={14} className={`text-zinc-500 ${syncing ? 'animate-spin' : ''}`} />
                 </button>
             </PageHeader>
 
@@ -814,7 +868,7 @@ export function CatalogView() {
                     </>
                 ) : (
                     <div className="flex-1 min-w-0 overflow-auto px-6 py-4 flex flex-col gap-3">
-                        <ProposeObligationForm clauses={clauses} onProposed={load} />
+                        <ProposeObligationForm clauses={clauses} onProposed={load} reqOpts={reqOpts} />
                         <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mt-1">
                             Obligations · {visibleObligations.length}
                         </p>

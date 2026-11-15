@@ -19,18 +19,21 @@ const isDryRun = args.includes('--dry-run');
 const dumpArg = args.find(a => a.startsWith('--dump-ir='));
 const dumpIRPath = dumpArg ? dumpArg.split('=')[1] : null;
 
+const catalogDir = path.resolve(__dirname, '..', 'feeds', 'csv', 'catalog');
+
 // Each regulatory board/authority lives in its own cli/feeds/csv/catalog/<authority>/
-// folder (e.g. cpcb/) rather than one flat catalog/ directory shared by every board —
-// --authority selects which one this run ingests. Required, not defaulted: ingesting
-// "whichever files happen to be in catalog/" silently mixed unrelated boards together,
-// which is the bug this flag exists to make structurally impossible.
+// folder (e.g. cpcb/) rather than one flat catalog/ directory shared by every board.
+// --authority=<folder> syncs just that board; omitted, every board folder except
+// `ignore/` is synced in turn. Boards are never mixed within a run either way — each
+// pass compiles/projects/loads exactly one board's files before moving to the next.
 const authorityArg = args.find(a => a.startsWith('--authority='));
-if (!authorityArg) {
-    log.error('[catalog-sync] --authority=<folder> is required, e.g. --authority=cpcb — each board is ingested from its own cli/feeds/csv/catalog/<authority>/ folder.');
-    process.exit(1);
+
+function discoverBoards(): string[] {
+    return fs.readdirSync(catalogDir, { withFileTypes: true })
+        .filter(d => d.isDirectory() && d.name !== 'ignore')
+        .map(d => d.name)
+        .sort();
 }
-const authority = authorityArg.split('=')[1];
-const feedsDir = path.resolve(__dirname, '..', 'feeds', 'csv', 'catalog', authority);
 
 // Filename → entity type, by convention, not by a per-board registration list — drop
 // a correctly-named file into any authority folder and it's ingested automatically.
@@ -49,11 +52,9 @@ const FILENAME_TO_ENTITY_TYPE: Record<string, string> = {
     'schedules.csv': 'Schedule',
 };
 
-async function main() {
-    log.info(`Vyra Catalog Sync v${v2.version}`);
-    log.info(`Database  : ${config.db.twin.database} @ ${config.db.twin.uri}`);
+async function syncAuthority(authority: string, dumpPath: string | null): Promise<void> {
+    const feedsDir = path.join(catalogDir, authority);
     log.info(`Authority : ${authority}`);
-    log.info(`Mode      : ${isDryRun ? 'dry-run (no Neo4j writes)' : 'full'}`);
 
     if (!fs.existsSync(feedsDir)) {
         log.error(`[catalog-sync] no feed folder at ${feedsDir}`);
@@ -91,26 +92,46 @@ async function main() {
     const ir = buildIR(v2.version, allNodes, allEdges);
     spotCheck(ir);
 
-    if (dumpIRPath) {
-        dumpIR(ir, dumpIRPath);
-        log.info(`[observability] IR dumped → ${dumpIRPath}`);
+    if (dumpPath) {
+        dumpIR(ir, dumpPath);
+        log.info(`[observability] IR dumped → ${dumpPath}`);
     }
 
-    if (skipCount) log.warn(`[catalog-sync] skipped ${skipCount} feeds (empty)`);
-    if (errorCount) log.warn(`[catalog-sync] ${errorCount} validation error(s) in parsed feeds`);
+    if (skipCount) log.warn(`[catalog-sync] ${authority}: skipped ${skipCount} feeds (empty)`);
+    if (errorCount) log.warn(`[catalog-sync] ${authority}: ${errorCount} validation error(s) in parsed feeds`);
 
     if (isDryRun) {
-        log.info(`[catalog-sync] dry-run complete — no Neo4j writes`);
+        log.info(`[catalog-sync] ${authority}: dry-run complete — no Neo4j writes`);
         return;
     }
 
     const projection = project(ir);
-    log.info(`[projection] ${projection.nodeBatches.length} node batches, ${projection.edgeBatches.length} edge batches (CSVs in cli/out/ for debug)`);
+    log.info(`[projection] ${authority}: ${projection.nodeBatches.length} node batches, ${projection.edgeBatches.length} edge batches (CSVs in cli/out/ for debug)`);
 
     // Loaded with the :Catalog origin label, same as every board — which authority a
     // node came from is recorded in its `tags` property (e.g. "CPCB"), not a second
     // structural label; tags is what backs full-text search across boards.
     await run(projection, { originLabel: 'Catalog', sourceRevision: v2.version });
+}
+
+async function main() {
+    log.info(`Vyra Catalog Sync v${v2.version}`);
+    log.info(`Database  : ${config.db.twin.database} @ ${config.db.twin.uri}`);
+    log.info(`Mode      : ${isDryRun ? 'dry-run (no Neo4j writes)' : 'full'}`);
+
+    const authorities = authorityArg ? [authorityArg.split('=')[1]] : discoverBoards();
+    if (!authorityArg) {
+        log.info(`Authority : <all boards> (${authorities.join(', ')}) — ignore/ excluded`);
+    }
+
+    if (dumpIRPath && authorities.length > 1) {
+        log.warn(`[catalog-sync] --dump-ir is only supported for a single --authority; ignoring for this multi-board run`);
+    }
+
+    for (const authority of authorities) {
+        await syncAuthority(authority, authorities.length === 1 ? dumpIRPath : null);
+    }
+
     await DB.closeAll();
 }
 

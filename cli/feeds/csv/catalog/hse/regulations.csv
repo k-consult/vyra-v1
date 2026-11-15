@@ -1,0 +1,4 @@
+id,name,authorityId,jurisdictionId,effectiveDate,effectiveFrom,catalogVersion,supersededBy,description
+REG-008,"Building Regulations 2010, Approved Document B - Fire Safety",AUTH-006,JUR-UK,2010-10-01,2010-10-01,1.0,,"Sets means of escape, fire compartmentation, and fire protection system design standards for non-domestic buildings including warehouses."
+REG-009,Health and Safety at Work etc. Act 1974,AUTH-006,JUR-UK,1974-07-31,1974-07-31,1.0,,"General duty legislation requiring employers to ensure health, safety, and welfare of employees and others affected by work activities."
+REG-010,Control of Major Accident Hazards (COMAH) Regulations 2015,AUTH-006,JUR-UK,2015-06-01,2015-06-01,1.0,,"Regulates sites storing hazardous substances above threshold quantities, requiring major accident prevention policies and safety reports."

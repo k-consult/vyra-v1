@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, BookOpen, Building2, FileText, Scale, Layers } from 'lucide-react';
+import { ShieldCheck, BookOpen, Building2, FileText, Scale, Layers, RefreshCw } from 'lucide-react';
 import { TenantManagementDialog } from '@/features/tenants/tenants';
 import { getActiveTenant } from '@/lib/active-tenant';
+import { tenants } from '@/lib/api';
 
 // Trimmed to a single entry point (2026-10-03, go-live customer track) — every
 // other screen this nav used to list (Landscape, Calendar, Decision Gate,
@@ -19,6 +20,8 @@ import { getActiveTenant } from '@/lib/active-tenant';
 const isActive = (pathname: string): boolean =>
     pathname === '/catalog' || pathname.startsWith('/catalog/');
 
+const TENANT_CATALOG_HREF = '/tenant/catalog';
+
 const TENANT_SUB_LINKS = [
     { href: '/tenant/structure',   label: 'Structure',   icon: Building2 },
     { href: '/tenant/documents',   label: 'Documents',   icon: FileText },
@@ -30,9 +33,25 @@ export function NavShell({ children }: { children: React.ReactNode }) {
     const active = isActive(pathname);
     const [tenantsOpen, setTenantsOpen] = useState(false);
     const [activeTenant, setActiveTenant] = useState<string | null>(null);
+    const [syncingCatalog, setSyncingCatalog] = useState(false);
+    const catalogLinkActive = pathname === TENANT_CATALOG_HREF || pathname.startsWith(`${TENANT_CATALOG_HREF}/`);
 
     // Read after mount, not during render — localStorage is unavailable during SSR.
     useEffect(() => { setActiveTenant(getActiveTenant()); }, []);
+
+    // One-shot re-sync against Central straight from the sidebar, without having to
+    // open the Catalog screen first — same POST /tenants/:name/catalog/sync the
+    // screen's own Refresh button calls when tenantScoped.
+    const handleSyncCatalog = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (!activeTenant || syncingCatalog) return;
+        setSyncingCatalog(true);
+        try {
+            await tenants.syncCatalog(activeTenant);
+        } finally {
+            setSyncingCatalog(false);
+        }
+    };
 
     return (
         <div className="flex h-screen bg-zinc-950 text-zinc-100">
@@ -77,6 +96,27 @@ export function NavShell({ children }: { children: React.ReactNode }) {
                         )}
                     </p>
                     <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1">
+                            <Link
+                                href={TENANT_CATALOG_HREF}
+                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs border transition-colors flex-1 ${
+                                    catalogLinkActive
+                                        ? 'bg-sky-500/10 text-sky-300 border-sky-500/30'
+                                        : 'text-zinc-400 border-transparent hover:bg-zinc-900 hover:text-zinc-100'
+                                }`}
+                            >
+                                <BookOpen size={13} className={catalogLinkActive ? 'text-sky-400' : 'text-zinc-500'} />
+                                Catalog
+                            </Link>
+                            <button
+                                onClick={handleSyncCatalog}
+                                disabled={!activeTenant || syncingCatalog}
+                                title="Sync with central"
+                                className="p-1.5 rounded-md hover:bg-zinc-900 disabled:opacity-30 transition-colors shrink-0"
+                            >
+                                <RefreshCw size={12} className={`text-zinc-500 ${syncingCatalog ? 'animate-spin' : ''}`} />
+                            </button>
+                        </div>
                         {TENANT_SUB_LINKS.map(({ href, label, icon: Icon }) => {
                             const linkActive = pathname === href || pathname.startsWith(`${href}/`);
                             return (

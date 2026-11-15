@@ -5,21 +5,28 @@ const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
 // Read by api/API.ts's onRequest hook — switches which Neo4j database the request
 // hits at runtime (no API restart), scoped to just this request. Absent entirely
 // when no tenant is active, so the server falls back to its default tenant.
-const tenantHeaders = (): Record<string, string> => {
+// central:true forces that fallback regardless of the active tenant — the global
+// Control-Plane Catalog view (ui/src/features/catalog/catalog.tsx, tenantScoped
+// unset) must always read Vyra Central, never silently inherit whatever tenant
+// happens to be active elsewhere in the app.
+export type ReqOpts = { central?: boolean };
+
+const tenantHeaders = (opts?: ReqOpts): Record<string, string> => {
+    if (opts?.central) return {};
     const tenant = getActiveTenant();
     return tenant ? { 'X-Tenant': tenant } : {};
 };
 
-const get = async <T>(path: string): Promise<T> => {
-    const res = await fetch(`${BASE}${path}`, { headers: { ...tenantHeaders() } });
+const get = async <T>(path: string, opts?: ReqOpts): Promise<T> => {
+    const res = await fetch(`${BASE}${path}`, { headers: { ...tenantHeaders(opts) } });
     if (!res.ok) throw new Error(`API ${path} ${res.status}`);
     return res.json();
 };
 
-const post = async <T>(path: string, body?: any): Promise<T> => {
+const post = async <T>(path: string, body?: any, opts?: ReqOpts): Promise<T> => {
     const res = await fetch(`${BASE}${path}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...tenantHeaders() },
+        headers: { 'Content-Type': 'application/json', ...tenantHeaders(opts) },
         body: JSON.stringify(body ?? {}),
     });
     if (!res.ok) {
@@ -139,19 +146,19 @@ export type ProposeObligationInput = {
 };
 
 export const catalog = {
-    syncStatus:      () => get<{ lastSyncedAt: any }>('/catalog/sync-status'),
-    regulations:     (currentOnly?: boolean) => get<{ regulations: any[] }>(`/catalog/regulations${currentOnly ? '?current=true' : ''}`),
-    regulationHistory: (id: string) => get<{ regulationId: string; history: any[] }>(`/catalog/regulations/${id}/history`),
-    trace:           (id: string) => get<{ regulationId: string; chain: any[] }>(`/catalog/regulations/${id}/trace`),
-    clauses:         () => get<{ clauses: any[] }>('/catalog/clauses'),
-    obligations:     () => get<{ obligations: any[] }>('/catalog/obligations'),
-    uncontrolledObligations: () => get<{ obligations: any[] }>('/catalog/obligations/uncontrolled'),
-    proposeObligation: (input: ProposeObligationInput) => post<{ decision: any }>('/catalog/obligations', input),
-    controls:        () => get<{ controls: any[] }>('/catalog/controls'),
-    agentProposedControls: () => get<{ controls: any[] }>('/catalog/controls/agent-proposed'),
-    authorities:     () => get<{ authorities: any[] }>('/catalog/authorities'),
-    jurisdictions:   () => get<{ jurisdictions: any[] }>('/catalog/jurisdictions'),
-    complianceAreas: () => get<{ complianceAreas: any[] }>('/catalog/compliance-areas'),
+    syncStatus:      (opts?: ReqOpts) => get<{ lastSyncedAt: any }>('/catalog/sync-status', opts),
+    regulations:     (currentOnly?: boolean, opts?: ReqOpts) => get<{ regulations: any[] }>(`/catalog/regulations${currentOnly ? '?current=true' : ''}`, opts),
+    regulationHistory: (id: string, opts?: ReqOpts) => get<{ regulationId: string; history: any[] }>(`/catalog/regulations/${id}/history`, opts),
+    trace:           (id: string, opts?: ReqOpts) => get<{ regulationId: string; chain: any[] }>(`/catalog/regulations/${id}/trace`, opts),
+    clauses:         (opts?: ReqOpts) => get<{ clauses: any[] }>('/catalog/clauses', opts),
+    obligations:     (opts?: ReqOpts) => get<{ obligations: any[] }>('/catalog/obligations', opts),
+    uncontrolledObligations: (opts?: ReqOpts) => get<{ obligations: any[] }>('/catalog/obligations/uncontrolled', opts),
+    proposeObligation: (input: ProposeObligationInput, opts?: ReqOpts) => post<{ decision: any }>('/catalog/obligations', input, opts),
+    controls:        (opts?: ReqOpts) => get<{ controls: any[] }>('/catalog/controls', opts),
+    agentProposedControls: (opts?: ReqOpts) => get<{ controls: any[] }>('/catalog/controls/agent-proposed', opts),
+    authorities:     (opts?: ReqOpts) => get<{ authorities: any[] }>('/catalog/authorities', opts),
+    jurisdictions:   (opts?: ReqOpts) => get<{ jurisdictions: any[] }>('/catalog/jurisdictions', opts),
+    complianceAreas: (opts?: ReqOpts) => get<{ complianceAreas: any[] }>('/catalog/compliance-areas', opts),
 };
 
 export type ProposeContractInput = {
@@ -236,6 +243,7 @@ export type Tenant = {
     status: string;
     authoritiesLoaded: string[];
     createdAt: string;
+    lastCatalogSyncAt?: string;
 };
 
 export type DocumentCatalogSummary = {
@@ -250,6 +258,7 @@ export const tenants = {
     list:     () => get<{ tenants: Tenant[] }>('/tenants'),
     provision: (input: { name: string; description?: string }) => post<{ tenant: Tenant }>('/tenants', input),
     remove:   (name: string) => del<{ databaseDropped: boolean }>(`/tenants/${name}`),
+    syncCatalog: (name: string) => post<{ tenant: Tenant }>(`/tenants/${name}/catalog/sync`),
     // Multipart, not JSON — can't go through the post() helper above.
     uploadDocumentCatalog: async (name: string, file: File): Promise<{ summary: DocumentCatalogSummary }> => {
         const formData = new FormData();

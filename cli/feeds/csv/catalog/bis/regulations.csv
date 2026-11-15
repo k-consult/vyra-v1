@@ -1,0 +1,3 @@
+id,name,authorityId,jurisdictionId,effectiveDate,effectiveFrom,catalogVersion,supersededBy,description
+REG-001,"National Building Code of India (NBC) 2016, Part 4 - Fire and Life Safety",AUTH-001,JUR-INDIA,2017-01-01,2017-01-01,1.0,REG-001-V2,"Prescribes fire and life safety design, means of escape, and fire protection system requirements for buildings including warehouses."
+REG-001-V2,"National Building Code of India (NBC) 2016, Part 4 - Fire and Life Safety (Revised)",AUTH-001,JUR-INDIA,2026-01-01,2026-01-01,2.0,,"Prescribes fire and life safety design, means of escape, and fire protection system requirements for buildings including warehouses. (2026 revision — supersedes REG-001.)"

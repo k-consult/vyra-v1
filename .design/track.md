@@ -25,13 +25,15 @@ Regulatory content (`Regulation`/`Clause`/`Obligation`/`Control`/`Authority`/`Ju
 
 **Pending**
 - [ ] Decide the Demography/`workerCategory` and Industry/Asset-Category controlled vocabularies — undecided catalog concepts, invented for the journey mockups with no decision behind them, that block the Obligation Cockpit (Intelligence, below).
-- [ ] Central catalog-distribution service (a real `vyra-catalog` synced down into each tenant) — designed, not built. `catalog-sync.ts` today reads a local CSV directly into each tenant's own database, no separate master service. Revisit once more than one or two real tenants exist (`plan.md`).
+- [ ] Central catalog-distribution service (a real `vyra-catalog` synced down into each tenant) — still designed, not built, as its own physically separate store. `catalog-sync.ts` still reads a local CSV into whichever database `DB_NAME` names — no diffing engine. Partially narrowed by 2026-11-15's on-demand tenant re-sync (below): the *propagation* gap is closed for now via an explicit action; the *separate master store* gap is not. Revisit once more than one or two real tenants exist (`plan.md`).
 
 **Closed**
 - `Control.docType` (policy/sop) split — 2026-09-22
 - Catalog versioning exercised: `REG-001-V2`, `supersededBy`, `GET /knowledge/regulations/:id/history` — 2026-09-22
 - Source-span retention: `sourceDocumentId`/`sourceAnchor` on `Clause`/`Obligation` — 2026-09-22
 - Sync-run attribution: `syncedAt`/`sourceRevision` stamped on every synced node/edge, `GET /knowledge/sync-status` — 2026-09-22
+- Catalog feeds restructured one-folder-per-authority (`bis`/`fire`/`factories`/`peso`/`hse`/`fra`/`ea` added alongside `cpcb`, each its own `authorities`/`jurisdictions`/`regulations.csv`); `catalog-sync.ts --authority` is now optional — omitted, it syncs every board except `ignore/` in one call, same convention `ingest.sh` now delegates to instead of looping itself. `ignore/`'s combined `AUTH-004` (CPCB/SPCB) and its two regulations deliberately left unmigrated, pending a decision to re-point them at the already-live `AUTH-009`/`AUTH-010` instead — 2026-11-15
+- Global Catalog screen (`/catalog`) baselined as structurally pinned to Vyra Central: it previously inherited whichever tenant's `X-Tenant` header happened to be active in the browser (a real bug this restructuring surfaced), now forced off via a `central: true` request opt regardless of tenant selection. New tenant-scoped `/tenant/catalog` screen (sidebar item ahead of Structure/Documents/Obligations) reads a tenant's own database the normal `X-Tenant` way and can re-sync it against central on demand, both from its own Refresh button and a one-shot icon in the sidebar — `POST /tenants/:name/catalog/sync` — 2026-11-15
 
 ---
 
@@ -89,6 +91,7 @@ Not one pillar — the mechanism that exercises Catalog, Operational Context, an
 4. Runtime tenant switching — `X-Tenant` header + `lib/tenant-context/`'s `AsyncLocalStorage`, no restart needed; `/tenant/structure`, `/tenant/documents`, `/tenant/obligations` read through it — 2026-10-25
 5. Document upload reachable from the tenant's own workspace, not just the admin screen — `ToolbarMenu`/`UploadDocumentTrigger`, category-tile document grid — 2026-11-09
 6. Tenant-admin dialog hardening — active tenant's `Delete` disabled; non-active delete refreshes in place instead of a full reload; `ConfirmDialog`-in-`<tr>` hydration fix via `createPortal`; sidebar shows `TENANT: <name>` when active — 2026-11-14
+7. Tenant catalog management baselined — `POST /tenants/:name/catalog/sync` re-runs the board replay against an already-provisioned tenant (reuses provisioning's `runCatalogSync`, now authority-optional) and records `authoritiesLoaded`/`lastCatalogSyncAt` on its registry entry; exposed both as the tenant-scoped Catalog screen's Refresh action and a standalone sidebar icon — 2026-11-15
 
 **Pending, in order:**
 - [ ] Filename-convention parser to route a customer's *received document files* (the PDFs themselves) — distinct from the spreadsheet, already handled
