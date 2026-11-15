@@ -1,84 +1,122 @@
-# Vyra Onboarding Checklist — Must-Have Items
+# Vyra MVP Tracker
 
-**Trimmed view: only what's still partial or open.** Closed items, by-design items (resolved, no action needed), and full build history live in `track-platform.md` — this doc exists so a first-customer onboarding effort isn't wading through everything already done.
-
-> Same numbering as `track-platform.md`, so an item here can always be cross-referenced back to its full history there. Status tags: 🟡 **partial** = real but incomplete · 🔴 **gap** = nothing built.
+**Single source of current build status** — this doc now consolidates what used to be split across `track.md` and `track-platform.md` (merged 2026-11-15; `track-platform.md` retired). Organized by the **three pillars `foundation.md` §1–§3 name** (Catalog, Operational Context, Intelligence), each scaffolded onto the JTBD layers from `foundation.md`'s own operating-model table — not a separate taxonomy, `foundation.md:60` says this doc is exactly where that table's status belongs. Onboarding (§0) is tracked separately since it cuts across all three pillars rather than belonging to one. For the model/requirements themselves (no status) → `foundation.md`. For sequencing → `plan.md`.
 
 ---
 
-## Open Items
+## Pillar Map
 
-1. [Obligation Cockpit foundations](#gap-19) — 🔴 gap
-2. [Fire/Hazard domain cluster has no graph home](#gap-21) — 🟡 partial
-3. [First-customer (tenant) onboarding readiness](#gap-22) — 🟡 partial, third slice live (2026-11-09)
+| Pillar (`foundation.md` §) | JTBD Layers | Status |
+|---|---|---|
+| **1. Catalog** | L1 Knowledge | 🟢 Live |
+| **2. Operational Context** | L2 Interpret · L3 Planning *(+ Execution domain)* | 🟡 Partial |
+| **3. Intelligence** | L5 Oversight · L6 Assurance · L7 Risk *(+ Assurance domain)* | 🟡 Partial |
+| *(shared substrate, not a pillar)* | L4 Graph Spine | 🟢 Live — the graph every pillar reads/writes through |
 
-**On hold (2026-10-04, by request)** — tracked in full in `track-platform.md`, not repeated here:
-- Scenario Simulation (#7)
-- Onboarding-as-a-phase (#8)
-- Domain model is anemic vs. `domain.md` (#9)
+**Onboarding** (§0, the transition guarantee) is cross-cutting — tracked in its own section below, not folded into one pillar. **Value** (§4, monetization/entitlement) isn't tracked at all yet — no metering or entitlement code exists; out of scope until the three pillars are solid.
 
-**Not an onboarding gate (2026-10-04, reclassified)** — Gap #18's last open item, `Role` enrichment (`Responsibility`/`Competency`/decision `Authority`), was WINAIM-parity/white-label content (`foundation.md` §4), not an onboarding-transition requirement (§0) — nothing in `Blueprint`/`CutoverCriterion`'s proposal or approval path reads it. Moved to `track-platform.md`'s general **Domain Model Gaps** section; Gap #18 itself is now fully ✅ closed for onboarding purposes (all of (a)/(b)/(c)/(d) built) and dropped from this checklist entirely.
-
----
-
-<a id="gap-19"></a>
-
-### 19. Obligation Cockpit foundations — 🔴 gap, code-only
-
-**Requirement:** `.design/journey/`'s four mockups (Catalog Ingestion → Catalog Browsing → Enterprise Onboarding → Obligation Cockpit) and `.design/journey/concept-notes.md`'s design work name a real target: obligations superimposed on the ratified Blueprint, drillable by WHO/WHERE/WHEN/Demography, with each task's rendering driven by where it sits in the agent lifecycle (dormant/pending-decision/reasoning/informed). None of this is buildable yet — the schema it depends on doesn't exist.
-
-**Implementation:** Nothing. The Obligation Cockpit mockup runs entirely on static sample data (25 hand-authored workflow classes); no `Task`-delegation edges, per-class Autonomy Level, or Loop-stage state exist in the real graph today. Separately, two smaller catalog-side concepts invented for the earlier mockups (Demography/`workerCategory`, Industry/Asset-Category controlled vocabularies) also have no home in `graph.md`/`domain.md` — they were never put through a `domain-extension.md`-style decision, unlike gap #18's items.
-
-**Gap:** Two distinct clusters, detailed in `.design/journey/v1-plan.md`:
-- **Cockpit foundations** (Phase J5 of that plan) — the delegation-tree relationship (`Obligation`/`Task` → sub-task) that everything else depends on; Autonomy Level as a per-workflow-class aggregate (today `Decision.autonomyLevel` exists only per-Decision instance); Loop-stage as a real state model (today `Decision.status` is only pending/approved/rejected).
-- **Undecided catalog concepts** (Phase J3 of that plan) — Demography and Industry/Asset-Category need a decision pass before either is built, the same discipline gap #18 already went through for WINAIM's concepts.
-
-**Feed Datum Missing:** N/A — pure schema/design gap, not a data-completeness issue.
-
-**Resolution:** Not started. `.design/journey/v1-plan.md` sequences this as Phase J3 (decide the undecided catalog concepts) then Phase J5 (design and build the delegation tree, Autonomy Level aggregate, and Loop-stage state model, in that order — nothing in Phase J5 is buildable out of sequence). Signal/Event flow (how a floor signal or Schedule firing actually resolves to a Task under this tree) is explicitly deferred again — it needs its own design pass once this gap's foundations are real, not before.
+**2026-11-14 — legacy synthetic seed retired.** `cli/orchestration/index.ts`/`enterprise-sync.ts` and the feed folders they read (`cli/feeds/csv/{knowledge,execution,operational,intelligence,assurance,enterprise,edges}/`) — single-tenant synthetic seed data — moved to `cli/_bkup/`. This does **not** remove Execution or Assurance from scope — they're sub-domains *inside* Operational Context and Intelligence per the table above, not separate pillars to exclude. What it actually means: those sub-domains currently have **no live, tenant-sourced data** — no `Task`/`CAPA`/`Verification`, no `Finding`/`Risk`/`RCA` for any real tenant. Tracked as pending items below, not scoped out.
 
 ---
 
-<a id="gap-21"></a>
+## 1. Catalog — 🟢 Live (L1 Knowledge)
 
-### 21. Fire/Hazard domain cluster has no graph home — 🟡 partial, decided and first slice live (2026-10-04)
+Regulatory content (`Regulation`/`Clause`/`Obligation`/`Control`/`Authority`/`Jurisdiction`/`ComplianceArea`/`Report`/`Task`/`Schedule`), synced per authority board (`cli/orchestration/catalog-sync.ts`) and replayed into every tenant database on provisioning.
 
-**Requirement:** Per `foundation.md` §4's "ecosystem extends without forking," a new regulatory domain (Fire Safety, Hazard Management) should be representable as data on the existing graph, not require a parallel schema. `grc_registry_model_explorer.html` (WINAIM reference, 28-Sep-2026) specifies this domain's concepts, facets, and predicates as an extension of the same Concept/Facet/Predicate/SPO meta-model Vyra's CPCB seed already runs on.
+**Pending**
+- [ ] Decide the Demography/`workerCategory` and Industry/Asset-Category controlled vocabularies — undecided catalog concepts, invented for the journey mockups with no decision behind them, that block the Obligation Cockpit (Intelligence, below).
+- [ ] Central catalog-distribution service (a real `vyra-catalog` synced down into each tenant) — designed, not built. `catalog-sync.ts` today reads a local CSV directly into each tenant's own database, no separate master service. Revisit once more than one or two real tenants exist (`plan.md`).
 
-**Implementation:** The decision pass this gap called for is done — `domain-extension.md` §8, same method Gap #18 used for WINAIM. Resolved onto *existing* nodes, no new label: `HazardousMaterialStore`/`FireSafetySystem` → `Asset.assetType` vocabulary; `SafetyDataSheet`/`LabReport`/`Drill` → `Evidence.type` vocabulary (+ `Task.evidenceMethod`); `NonConformance` → already `Finding` (no change, same resolution #6/§7.3 gave WINAIM's CAPA mapping); `Deviation` → new `CAPA.deviationDueBy`/`deviationReason` properties alongside the existing `deviationApprovedBy`. **Built live same day:** `Hazard` (Operational, `hazardType` discriminator, `-[:LOCATED_AT]-> Facility`/`Asset`), `HazardAssessment` (Intelligence, the proactive counterpart to `RCA`, `-[:ASSESSED_BY]<-Hazard`, `score` computed server-side), `EmergencyPlan` (Operational, `-[:COVERS]-> Facility`) — all three zero-seed, live-write-only, Decision-gated exactly like `Contract`/`Blueprint`/`CutoverCriterion` (`api/modules/onboarding/{repo,spec,index}.ts`, new `intelligence/repo.ts` approval branches). Verified live: proposed and approved one `Hazard`/`HazardAssessment`/`EmergencyPlan` against real seeded `FAC-1002`, confirmed `LOCATED_AT`/`ASSESSED_BY`/`COVERS`/`RESULTED_IN` edges and the computed `score` (4×5=20) via direct Cypher; a rejected proposal left no orphan node.
-
-**Gap:** `Form`/`Question`/`InspectionEvent`/`Observation` (the execution-capture layer between `Schedule`→`Task` and `Evidence`) and IoT-sensor-as-`Actor` remain explicitly deferred — the largest, most architecturally consequential piece, deliberately not designed in this pass (`domain-extension.md` §8.5). No live Drill-task generator exists yet either — `Task -[:VERIFIES]-> EmergencyPlan` is schema-designed but nothing creates the recurring Task from `EmergencyPlan.drillFrequency` (no CSV feed to hook a batch generator into, no agent family targets it). No UI screen proposes or lists any of the three new nodes — same state `Permit` has been in since its own schema landed.
-
-**Feed Datum Missing:** N/A for the built slice (live-write-only, no seed). The deferred execution-capture layer is a schema/design gap, not a data-completeness issue, same category as #9 and #19.
-
-**Resolution:** Built: `Hazard`/`HazardAssessment`/`EmergencyPlan` write paths (above). Still needed, each its own future slice: a live Drill-task generator off `EmergencyPlan.drillFrequency`; a UI screen (propose + list, same as `Blueprint`'s `/onboarding` form); the deferred execution-capture layer decision (`Form`/`Question`/`InspectionEvent`/`Observation` — own subdomain vs. folded into `Signal`) before anything in that space gets built.
+**Closed**
+- `Control.docType` (policy/sop) split — 2026-09-22
+- Catalog versioning exercised: `REG-001-V2`, `supersededBy`, `GET /knowledge/regulations/:id/history` — 2026-09-22
+- Source-span retention: `sourceDocumentId`/`sourceAnchor` on `Clause`/`Obligation` — 2026-09-22
+- Sync-run attribution: `syncedAt`/`sourceRevision` stamped on every synced node/edge, `GET /knowledge/sync-status` — 2026-09-22
 
 ---
 
-<a id="gap-22"></a>
+## 2. Operational Context — 🟡 Partial (L2 Interpret · L3 Planning + Execution domain)
 
-### 22. First-customer (tenant) onboarding readiness — 🟡 partial, third slice live (2026-11-09)
+*The hardest of the three — the catalog is the same for every enterprise in a sector, this is where they differ.* A tenant's real-world footprint: `Facility`→`Asset` structure, `Permit`/`Warranty`/`Contract`, `DocumentObligation` tracking, `Hazard`/`EmergencyPlan`, `ReportSubmission`.
 
-**Requirement:** Per `foundation.md` §0, onboarding a real enterprise should run as a measured, agent-run transition, not a services engagement; per §1, "every input channel resolves to the same target shape" — a customer's own document collection should land in the same graph shape as any other catalog/enterprise input.
+**Pending**
+- [ ] (#21) Fire/Hazard execution-capture layer — decide `Form`/`Question`/`InspectionEvent`/`Observation` as its own subdomain vs. folded into `Signal`, before building any of it (`domain-extension.md`'s Gaps section) — the largest, most architecturally consequential piece still undecided
+- [ ] (#21) Drill-task generator off `EmergencyPlan.drillFrequency` — `Task -[:VERIFIES]-> EmergencyPlan` is schema-designed, nothing creates the recurring `Task` yet
+- [ ] (#21) UI screen to propose/list `Hazard`/`EmergencyPlan`/`HazardAssessment` — same gap `Permit` had before its own screen landed
+- [ ] No live Execution-domain data (`Task`/`CAPA`/`Verification`) for any tenant — legacy synthetic seed retired 2026-11-14, no tenant-sourced replacement decided
+- [ ] Design what a confidence-scored Applicability proposal actually requires from an agent — new agent capability, not UI. Real Applicability Scoping is data-only via Landscape drill-down today
 
-**Implementation:** Previously there was exactly one tenant graph (`agentic-grc`), seeded entirely with synthetic CPCB/WINAIM data, with no mechanism to provision a second, isolated tenant database. **That first piece is now built:** new `api/modules/tenants/{repo,spec,index}.ts` — `POST /tenants` creates a dedicated `grc-tenant-<name>` Neo4j database (`lib/graph-db`'s existing `DB.createDB`), scaffolds `cli/feeds/csv/tenants/<name>/enterprise/` on disk, and replays every catalog authority board (`catalog-sync.ts --authority=<board>`, spawned as a child process against the new database — the existing, already-idempotent ingestion script reused untouched, not re-implemented) into it. A `GET /tenants` lists what's provisioned. Both are backed by a new `tenants` registry database (same connection credentials as `config.db.twin`, hardcoded database name, not env-configurable) holding `Tenant` nodes (`name`, `database`, `uri`/`host`/`port`, `status`, `authoritiesLoaded`, `createdAt` — deliberately no password) as the source of truth, rather than relying on `SHOW DATABASES` at read time. `setup.sh` now also bootstraps the `tenants` database explicitly, alongside `agentic-grc`. A small UI entry point (`ui/src/features/tenants/tenants.tsx`, wired into `nav-shell.tsx` as a persistent top-right "+") lets a user name a tenant, provision it, and see the provisioned-tenants list — all synchronous, single request/response (no job queue exists anywhere in this codebase, so provisioning waits for every authority board to finish before responding). ~~Deliberately out of scope for this slice: the running API still serves exactly one tenant per process (`DB_NAME` from its own `.env`) — viewing a newly provisioned tenant means starting a separate process pointed at its database, not switching tenants live in one running app.~~ — ✅ resolved 2026-10-25, see below. The customer document-collection pieces below remain exactly as before: a typical customer pattern — a spreadsheet tracking Received/Not Applicable per site against a six-category folder structure (consents/NOCs, filings, asset register, vendor AMC, historic logs, tickets & CAPA) and a structured filename convention (site/category/agency/asset/doc-type/year) — still has no corresponding ingestion path: `Permit` (consents/NOCs) write path went live 2026-10-04 (Gap #18(c)) but nothing yet routes a customer's own filing documents into it or into the now-live `ReportSubmission` path (Gap #20); historic logs (lab reports, inspection logs) have no document-evidence or `LabReport` subtype; `Asset`/`Vendor` onboarding is CSV-batch only, with no propose-and-approve path for a customer submitting its own asset/vendor list; no facet-intake step exists to capture a tenant's site type, applicable regulations, or asset landscape.
+**Closed**
+- 52-Week Calendar: task completion tracking (`PATCH /execution/tasks/:id`) + event/risk-triggered reactivation — 2026-09-22
+- `HAS_ROLE` resolution via title→role mapping, 6 of 7 people — 2026-09-22
+- `COVERED_BY` edge provenance (`origin`/`confidence`/`derivedAt`) — 2026-09-22
+- `Signal.raisedBy` required, fails fast (400) if missing or unresolved — 2026-09-22
+- `Contract` propose/approve write path, first onboarding-UI write channel — 2026-09-22
+- WINAIM Enterprise-graph parity: `Facility -[:IN_JURISDICTION]->`, `Asset.assetType`, `Permit`, `Warranty` — 2026-10-04
+- (#20) `ReportSubmission` write path + `PATCH .../acknowledge` — 2026-10-04
+- (#21) Fire/Hazard decision pass + `Hazard`/`HazardAssessment`/`EmergencyPlan` live, Decision-gated write paths — 2026-10-04
+- Applicability Scoping's 2 uncovered Security-area assets — ⚪ by-design documented absence, not a gap
+- Tenant onboarding mechanics (provisioning, document ingestion, runtime switching) — see **Onboarding** section below
 
-**Second slice, 2026-10-25:** Two more pieces are now built, neither exercised against synthetic data only — against a real customer's actual spreadsheet (`Royal_Orchid_Document_Catalog.csv`, 93 rows / 3 sites) on the `orchid` tenant. First, resolution item (2): a new `DocumentObligation` node type (Operational graph, `cli/semantic-contract/contracts/v2.ts`) plus `cli/orchestration/document-catalog-sync.ts` ingest a customer's own document-tracking spreadsheet directly — the same six-category structure this gap's requirement names (consents/NOCs, filings, asset register, vendor AMC, historic logs, tickets & CAPA) — creating real `Facility` and `Asset` nodes (facility-scoped ids, so same-named equipment at different sites doesn't collide) and one `DocumentObligation` per row with `LOCATED_AT`→`Facility`, `ISSUED_BY`→`Authority` (the spreadsheet's agency abbreviation resolved against the tenant's seeded catalog; an agency that doesn't resolve is surfaced as a warning, not silently dropped) and `ABOUT`→`Asset` edges. Reachable via `POST /tenants/:name/document-catalog` (multipart upload) and a per-tenant upload control in `ui/src/features/tenants/tenants.tsx`. Second, and not originally on this gap's resolution list: the single-process-per-tenant limitation noted above is gone — an `X-Tenant` request header now switches which database a request hits at runtime, scoped per-request via `lib/tenant-context/`'s `AsyncLocalStorage` (so concurrent requests for different tenants can't race each other the way a shared mutable global would), resolved against the tenant registry by `api/API.ts`'s `onRequest` hook (404s on an unknown tenant name). A UI tenant selector and three new per-tenant views — `/tenant/structure` (Facility→Asset tree), `/tenant/documents`, `/tenant/obligations` (grouped by authority) — read real data through it, no restart needed.
+---
 
-**Third slice, 2026-11-09:** The document-catalog upload endpoint built in the second slice was only reachable from the central tenant-admin screen (`ui/src/features/tenants/tenants.tsx`); a tenant operator working inside their own `/tenant/*` views had no way to add a document without leaving them. That gap is closed: `ui/src/features/tenant/shared.tsx` gets a reusable `ToolbarMenu` dropdown and an `UploadDocumentTrigger` (wraps the existing `POST /tenants/:name/document-catalog` multipart upload behind any trigger element, resolving the target tenant from `getActiveTenant()` rather than a route param). `ui/src/features/tenant/structure.tsx` surfaces it as a "Manage structure" toolbar action. `ui/src/features/tenant/documents.tsx` is reworked from a flat site-grouped list into a category-tile landing grid (one tile per document type, independent of site count) with drill-down into a per-site breakdown, and each tile carries its own upload trigger. Verified live, not just typechecked: uploaded the `acme` tenant's sample spreadsheet (`cli/feeds/csv/tenants/acme/document-catalog/acme-document-catalog-sample.csv`) through the real `POST /tenants/acme/document-catalog` route — created 23 `DocumentObligation` + 2 `Facility` + 4 `Asset` nodes in `grc-tenant-acme`, confirmed by direct Cypher — and confirmed `GET /operational/document-obligations` returns the exact fields (`category`, `facilityName`, `authorityName`, `asset`, `agency`) the new grid/drill-down consumes. This is a usability improvement on the second slice's already-built ingestion endpoint, not a new Resolution item below — none of (3)–(8) move.
+## 3. Intelligence — 🟡 Partial (L5 Oversight · L6 Assurance · L7 Risk + Assurance domain)
 
-**Gap:** Tenant database provisioning, the document-catalog ingestion (now reachable from both the tenant-admin screen and the tenant's own workspace), and runtime tenant switching are done. No path yet exists end-to-end from "customer sends a filled document catalog" to "that customer's compliance calendar goes live" — even though most of the individual pieces (`Contract`, `Permit`, `Blueprint`, the Decision gate, `CutoverCriterion`) already exist for other purposes.
+*Where the JTBD Principle becomes mechanism.* Agent reasoning over the twin — the human-in-the-loop `Decision` gate (every proposal path runs through it), `HazardAssessment`'s computed score, agreement-rate feedback.
 
-**Feed Datum Missing:** N/A — this is an onboarding-mechanics gap, not a data-completeness issue; it's assembling existing and missing pieces into one tenant-onboarding path.
+**Pending**
+- [ ] (#19) Obligation Cockpit foundations — `Obligation`/`Task` delegation-tree relationship; Autonomy Level as a real per-workflow-class aggregate (today only per-`Decision` instance); Loop-stage as a real state model on `Task`/`Decision` (today `Decision.status` is only pending/approved/rejected). Design reasoning in `.design/journey/concept-notes.md` (frozen, reference only) — `04-obligation-cockpit.html` already mocks the UI side of this (pivots, bounded window, per-item autonomy/loop-stage, tree rollup); none of it is backed by real graph schema yet. Blocked on Catalog's vocabulary decision above first.
+- [ ] Signal → Agent → Task → Decision loop (Involve/Inform) — how a floor signal or a `Schedule` firing actually resolves to a `Task` under the Obligation Cockpit's delegation tree. Deferred until the item above is real — reasoning about the loop before the tree it operates on exists would be premature.
+- [ ] No live Intelligence-domain data (`Finding`/`Risk`/`RCA`) for any tenant — legacy synthetic seed retired 2026-11-14; needs a real design decision before Intelligence can move past Decision-gate approvals into actual risk/finding reasoning on tenant data
+- [ ] (#7) Scenario Simulation (L7) — "what happens if this control fails," reasoning across risk/control/signal intelligence together over live graph state. Needs multiple agent families reasoning over shared state simultaneously; unscoped. ⏸️ On hold by request, 2026-10-04
 
-**Resolution:** ~~(1) tenant database provisioning (one Neo4j database per customer, per `foundation.md`'s isolation principle)~~ — ✅ built 2026-10-04. ~~(2) a semantic-contract mapping for a customer's document-tracking spreadsheet~~ — ✅ built 2026-10-25, see above. Still needed, in order: (3) a filename-convention parser to route each *received document file* (the PDF itself) without needing full content interpretation — distinct from the spreadsheet, which is now handled; (4) routing a customer's own filing documents into the now-live `Permit`/`ReportSubmission` paths — `DocumentObligation` is a parallel tracking record today, not wired into either; (5) a document-evidence path for historic logs; (6) a propose-and-approve path for customer-submitted `Asset`/`Vendor` data — partially eroded: real `Asset` nodes are now created directly from the spreadsheet with no Decision gate, so only the propose-and-approve *discipline* half of this item remains open; (7) a facet-intake step feeding each site's `Blueprint` proposal; (8) a `CutoverCriterion` per site so "folder complete → live calendar" is a queryable exit condition. This would be the first real exercise of `foundation.md` §0's onboarding guarantees end-to-end — items (3)–(8) still untested against a real customer's full document set, though (2) and tenant provisioning now are (above).
+**Closed**
+- Escalation Paths: `ESCALATES_TO {order}` chain to seeded `Role` — partial by design, 2026-09-22
+- Audit-Ready Export: honest `origin: agent-proposed | synthetic` tagging — ⚪ by-design, not a gap
+- Multi-turn, tool-using reasoning (`reasonWithTools`) — `control-intelligence` only, 2026-09-22
+- Learning-from-overrides feedback (`GET /intelligence/decisions/agreement-rates`) — `control-intelligence` only, 2026-09-22
+
+---
+
+## Onboarding (§0 — the transition guarantee, cross-cutting)
+
+Not one pillar — the mechanism that exercises Catalog, Operational Context, and Intelligence together to bring one real tenant live end to end. (#8, #22)
+
+**Built, in order:**
+1. `CutoverCriterion` and `Blueprint` nodes — live, Decision-gated graph state for cutover tracking and org/role/asset ratification — 2026-09-25 / 2026-09-26
+2. Tenant database provisioning — `POST /tenants` creates a dedicated `grc-tenant-<name>` Neo4j database, replays the full catalog, tracked in a `tenants` registry DB — 2026-10-04
+3. Document-catalog ingestion — `cli/orchestration/document-catalog-sync.ts` + `POST /tenants/:name/document-catalog` ingest a customer's own tracking spreadsheet into real `Facility`/`Asset`/`DocumentObligation` nodes; verified against a real customer spreadsheet (93 rows / 3 sites) — 2026-10-25
+4. Runtime tenant switching — `X-Tenant` header + `lib/tenant-context/`'s `AsyncLocalStorage`, no restart needed; `/tenant/structure`, `/tenant/documents`, `/tenant/obligations` read through it — 2026-10-25
+5. Document upload reachable from the tenant's own workspace, not just the admin screen — `ToolbarMenu`/`UploadDocumentTrigger`, category-tile document grid — 2026-11-09
+6. Tenant-admin dialog hardening — active tenant's `Delete` disabled; non-active delete refreshes in place instead of a full reload; `ConfirmDialog`-in-`<tr>` hydration fix via `createPortal`; sidebar shows `TENANT: <name>` when active — 2026-11-14
+
+**Pending, in order:**
+- [ ] Filename-convention parser to route a customer's *received document files* (the PDFs themselves) — distinct from the spreadsheet, already handled
+- [ ] Route customer filing documents into the live `Permit`/`ReportSubmission` paths — `DocumentObligation` is a parallel tracking record today, not wired into either
+- [ ] Document-evidence path for historic logs (lab reports, inspection logs)
+- [ ] Propose-and-approve discipline for customer-submitted `Asset`/`Vendor` data — real nodes are created directly from the spreadsheet today with no `Decision` gate
+- [ ] Facet-intake step feeding a site's `Blueprint` proposal (site type, applicable regulations, asset landscape)
+- [ ] `CutoverCriterion` per site, so "folder complete → live calendar" is a queryable exit condition
+- [ ] Design what extending `Blueprint` from one-facility-per-proposal to a full org tree requires — schema and agent both
+
+**On hold by request (2026-10-04):** `ContinuityBaseline` + its feed, shadow-mode dual-tracking, decommissioning-as-a-Decision, a real `Workflow` node (`CutoverCriterion.workflowName` is still a plain string), an onboarding agent family to move `Blueprint` from human-authored to agent-inferred. Each its own future slice — deprioritized, not abandoned.
+
+No path yet exists end-to-end from "customer sends a filled document catalog" to "that customer's compliance calendar goes live" — even though most individual pieces (`Contract`, `Permit`, `Blueprint`, the Decision gate, `CutoverCriterion`) already exist for other purposes. This would be the first real exercise of `foundation.md` §0's onboarding guarantees end to end, still untested against one real customer's full document set.
+
+---
+
+## Not MVP-gating
+
+**Role enrichment** (`Responsibility`/`Competency`/decision `Authority`) — WINAIM-parity/white-label content (`foundation.md` §4), not an onboarding-transition requirement; neither `Blueprint` nor `CutoverCriterion` reads it. Needs its own short design pass (`domain-extension.md` §7.5) before any schema change — likely direction is `Role.decisionAuthority` as a property, not a new node (a new node would clash with the existing `Authority` = regulatory-body node).
+
+**Domain model is anemic vs. `domain.md`** (#9) — `api/modules/*/repo.ts` are plain Cypher-running functions; none of `domain.md`'s Aggregates, Domain Events, or Factories exist in code. An architecture decision to make deliberately, not a side effect of another fix. ⏸️ On hold by request, 2026-10-04.
 
 ---
 
 ## Where to go next
 
-- **Full build history, closed items, by-design items, JTBD layer status** → `track-platform.md`
 - **Model, value and guarantees** (no status) → `foundation.md`
-- **Phase sequencing, what's done, what's next, verification** → `plan.md`
-- **Schema, relationships, live/dormant status, Cypher patterns** → `graph.md`
+- **Phase sequencing** → `plan.md`
+- **Schema, relationships, Cypher patterns** → `graph.md`
 - **Software layers & components** → `architecture.md`
+- **DDD model** → `domain.md`

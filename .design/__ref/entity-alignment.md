@@ -1,6 +1,6 @@
 # Entity Alignment — Consolidated Compliance Data vs. Vyra Graph Model
 
-**Source data:** `.design/consolidated-entities.md` (extracted from `.design/synthetic-data/data.csv`, 22 worksheets, Industrial Parks/Warehouse/3PL vertical — EHS, Fire, FM, Hazard, Waste, India+UK)
+**Source data:** `.design/consolidated-entities.md` (extracted from `.design/.docs/data.csv`, 22 worksheets, Industrial Parks/Warehouse/3PL vertical — EHS, Fire, FM, Hazard, Waste, India+UK)
 **Compared against:** `blueprint.md` (five-graph domain model), `graph.md` (current "canonical" implemented schema), `roadmap.md` (phased plan)
 
 This is a drift analysis, not a schema decision — it identifies where the new dataset confirms, extends, or conflicts with the current model, and where it lands in the roadmap's phases. No schema or code changes made from this doc alone.

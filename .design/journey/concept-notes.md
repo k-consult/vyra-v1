@@ -1,6 +1,6 @@
 # Obligation Cockpit — Concept Notes
 
-**Working design notes, not a canonical spec.** Captures the reasoning behind Stage 4 of the `.design/journey/` mockups (`04-obligation-cockpit.html`) — the model we landed on, how we got there, and what's still open — so it isn't lost the next time this is picked up. Companion to the four HTML mockups in this folder; treat like `.design/domain-extension.md` (decided/explored, not necessarily built).
+**Frozen — kept for reference only, not actively revised.** Captures the reasoning behind `04-obligation-cockpit.html` — the model landed on, how we got there, and what's still open — so it isn't lost. Kept specifically because `track.md`'s Gap #19 (Obligation Cockpit foundations) still points here for the design rationale behind the still-open backend work (delegation-tree edges, Autonomy Level as a per-workflow-class aggregate, Loop-stage as a real state model). If Gap #19 closes or this direction is abandoned, this file should move to `__ref/journey/` with it.
 
 ---
 
@@ -73,7 +73,7 @@ Kept deliberately, not cleaned up — the reasoning is as load-bearing as the co
 - How a "workflow class" is precisely scoped for Autonomy-Level purposes (obligation-type × role? × facility? something coarser?) — named, not specified.
 - Whether a blended/composite color at non-leaf nodes (a mix of loop-stages beneath) stays legible once the tree gets deep — a real risk with sunburst/treemap techniques at scale, untested.
 - Relationship to Stage 2's generic 52-week template and Stage 3's Blueprint ratification is conceptually resolved (this is the enterprise-instantiated version of that template) but not built.
-- **No HTML mockup reflects v2–v5 yet.** `04-obligation-cockpit.html` as it stands is v1 — it needs a rebuild once/if this direction is approved for an actual mockup pass.
+- **Correction (superseded claim removed):** this section previously said no HTML mockup reflects v2–v5 and that `04-obligation-cockpit.html` was still v1. Not true as of the file's current state — the mock already implements WHO/WHERE/WHEN/Demography pivots (v3), a bounded window (v2/v4), per-item `autonomyLevel` and `currentLoopStage` as separate properties (v5's two-axis distinction), and a hierarchical tree with computed status-mix rollup from children (v5's rollup rule). It also already resolved the sunburst-vs-treemap question above — picked an expandable/collapsible tree + properties panel instead of either. What's still genuinely missing is backend, not mock fidelity: none of this is backed by a real graph schema (delegation-tree edges, Autonomy Level as a real per-workflow-class aggregate, Loop-stage as a real `Decision`/`Task` state) — that gap is what `track.md` Gap #19 tracks.
 
 ---
 
@@ -82,5 +82,5 @@ Kept deliberately, not cleaned up — the reasoning is as load-bearing as the co
 - `foundation.md` §0 (onboarding/Blueprint ratification), §2 (Actor polymorphism — Human/Agent, autonomy as a property of the assignment, not the platform), §3 (Autonomy Levels 0–4, agreement-rate-earned elevation, the Decision gate, the Observe→Interpret→Reason→Act→Verify→Learn lifecycle)
 - `domain-extension.md` — companion comparison doc; same "decided, not implemented" discipline this doc follows
 - `track.md` — Gap #7 (Scenario Simulation), Gap #9 (anemic domain model), Gap #18 (WINAIM content gaps); a delegation-tree-edge gap would land here if this direction is pursued
-- `journey-first.md` — coined "operational cockpit," the term Stage 4's name comes from
-- `journey/01-catalog-ingestion.html`, `02-catalog-browsing.html`, `03-enterprise-onboarding.html`, `04-obligation-cockpit.html` — the mockups this note explains
+- `__ref/journey-first.md` (retired) — coined "operational cockpit," the term Stage 4's name comes from
+- `journey/04-obligation-cockpit.html` — the mockup this note explains; sibling mockups `03-enterprise-onboarding.html` are still live reference, `01-catalog-ingestion.html`/`02-catalog-browsing.html` moved to `__ref/journey/` (superseded)

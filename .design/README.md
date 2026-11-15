@@ -10,7 +10,6 @@
 | 4 | [`domain.md`](domain.md) | *What are the Bounded Contexts, Entities, Value Objects, Repositories, and Specifications?* | Anyone designing a module or aggregate — the DDD model layered over the graph spine and architecture |
 | 5 | [`track.md`](track.md) | *What's live, partial, or a gap, right now?* | Anyone asking "is X built yet" — the single source of current status |
 | 6 | [`plan.md`](plan.md) | *What's next, and what's blocking it?* | Anyone resuming work — sequencing and open decisions only, not a build log |
-| 7 | [`journey-first.md`](journey-first.md) | *Does the platform actually carry a persona through their day end to end, or does it just expose what's stored?* | Anyone designing UI/UX or sequencing onboarding work — a critique of the build against `foundation.md`'s personas, not a status report |
 
 ## How the docs relate
 
@@ -20,12 +19,13 @@
 
 **5 and 6 are the only two that carry build-status**, and they're deliberately split by question rather than duplicated: **5** answers *what's true today*, **6** answers *what happens next*. If you only need one, pick by that question.
 
-**7 is a critique, not a status report.** It holds 1's personas and 5's layer-by-layer status side by side and asks a question neither answers alone: does the platform take a persona through their actual day end to end, or does it just expose what's stored, layer by layer? Read it when the question is about product journey, not schema or build status.
-
 ## Everything else in `.design/`
 
+- **`domain-extension.md`** — maps an external SPO (Subject–Predicate–Object) concept registry onto Vyra's domain model: what's already covered, what required a decision, what's still a gap. Not canonical itself — whatever it decides lands in `graph.md`/`domain.md`; `track.md` carries the live status of every gap it names.
+- **`journey/`** — UI mockups and their supporting design notes (`concept-notes.md`, frozen — kept only because `track.md` Gap #19 still points to it) for product surfaces not yet fully built. Kept pruned to what's still a live design target; superseded mockups and retired plans move to `__ref/journey/`.
+- **`.docs/`** — source reference material the docs above map from (currently `grc_registry_model_explorer.html` and `cpcb_spo_map.json`/`data.csv`, the SPO registries `domain-extension.md` and `graph.md` draw on). Inputs, not outputs — nothing here is ground truth on its own.
 - **`artifacts/`** — generated diagrams referenced by the docs above: `foundation-venn` (the four regions), `foundation-value` (the two compounding assets), the architecture diagrams, and the domain-model diagrams (`domain-model-overview`, `domain-model-bc1-tenant-twin`, `domain-model-bc2-vyra-central`).
-- **`__ref/`** — historical and working material: retired canonical docs (including `vyra-landscape.md`, absorbed into `foundation.md` on 2026-09-06), drift-analysis notes, synthetic seed data, archived phase-plan drafts, and the full build narrative in `implementation-history.md`. Not part of the reading path above — nothing there is ground truth, and `plan.md` says so explicitly wherever it cites something from here.
+- **`__ref/`** — historical and working material: retired canonical docs (including `vyra-landscape.md`, absorbed into `foundation.md` on 2026-09-06, and `journey-first.md`, retired 2026-11-15 once its Day X+n+n finding was absorbed into `track.md`'s Intelligence pillar and its Day X+n finding was overtaken by Gap #22's actual build-out), drift-analysis notes, superseded journey mockups and the retired `v1-plan.md` (`__ref/journey/`), archived phase-plan drafts, and the full build narrative in `implementation-history.md`. Not part of the reading path above — nothing there is ground truth, and `plan.md` says so explicitly wherever it cites something from here.
 
 ## For Claude specifically
 

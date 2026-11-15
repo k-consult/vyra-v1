@@ -1,6 +1,6 @@
 # Consolidated Compliance Data — Entity Schema
 
-**Source:** `.design/synthetic-data/data.csv`
+**Source:** `.design/.docs/data.csv`
 **Format:** single CSV, 22 worksheets delimited by `--- WORKSHEET: <name> ---` markers. Each worksheet's header row = entity properties.
 
 Raw extraction only — no mapping to the Vyra graph model performed here.

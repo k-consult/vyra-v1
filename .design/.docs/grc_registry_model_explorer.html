@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GRC Central Registry — Data Model</title>
+<style>
+:root {
+  --bg:#f7f8fa; --panel:#ffffff; --border:#e2e5ea; --text:#1c2230; --muted:#68707e;
+  --accent:#2653d6; --accent-bg:#eaf0ff; --new:#b8562f; --new-bg:#f7ece6; --chip-bg:#eef1f6;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#12141a; --panel:#1b1e27; --border:#2b2f3a; --text:#e7e9ee; --muted:#9aa2b1;
+    --accent:#7ea0ff; --accent-bg:#1e2740; --new:#e0a06b; --new-bg:#332217; --chip-bg:#242835;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:#12141a; --panel:#1b1e27; --border:#2b2f3a; --text:#e7e9ee; --muted:#9aa2b1;
+  --accent:#7ea0ff; --accent-bg:#1e2740; --new:#e0a06b; --new-bg:#332217; --chip-bg:#242835;
+}
+html { scroll-padding-top: env(safe-area-inset-top,0px); }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+header { padding: calc(16px + env(safe-area-inset-top,0px)) 20px 0; position:sticky; top:0; background:var(--bg); border-bottom:1px solid var(--border); z-index:10; }
+h1 { font-size:1.1rem; margin:0 0 2px; }
+.sub { color:var(--muted); font-size:.82rem; margin:0 0 12px; }
+.tabs { display:flex; gap:4px; }
+.tab { padding:9px 16px; font-size:.85rem; font-weight:600; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap; }
+.tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+main { padding:18px 20px 40px; max-width:1000px; margin:0 auto; }
+.panel { display:none; }
+.panel.active { display:block; }
+
+.group { margin-bottom:14px; border:1px solid var(--border); border-radius:12px; overflow:hidden; background:var(--panel); }
+.group summary { list-style:none; cursor:pointer; padding:13px 16px; font-weight:600; font-size:.92rem; display:flex; justify-content:space-between; align-items:center; }
+.group summary::-webkit-details-marker { display:none; }
+.group summary .n { color:var(--muted); font-weight:400; font-size:.78rem; }
+.group[open] summary { border-bottom:1px solid var(--border); }
+.item { padding:11px 16px; border-bottom:1px solid var(--border); font-size:.85rem; }
+.item:last-child { border-bottom:none; }
+.item .name { font-weight:600; margin-bottom:2px; }
+.item .def { color:var(--muted); font-size:.8rem; }
+.item .meta { margin-top:5px; display:flex; flex-wrap:wrap; gap:6px; }
+.chip { display:inline-block; font-size:.68rem; padding:2px 8px; border-radius:999px; background:var(--chip-bg); color:var(--muted); }
+.chip.new { background:var(--new-bg); color:var(--new); font-weight:600; }
+
+.searchwrap { margin:0 0 14px; }
+#spoSearch { width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--panel); color:var(--text); font-size:.87rem; }
+.tablewrap { overflow-x:auto; border-radius:12px; border:1px solid var(--border); }
+table { width:100%; border-collapse:collapse; background:var(--panel); }
+thead th { text-align:left; font-size:.7rem; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); padding:10px 12px; border-bottom:1px solid var(--border); }
+tbody td { padding:9px 12px; border-bottom:1px solid var(--border); font-size:.82rem; vertical-align:top; }
+tbody tr:last-child td { border-bottom:none; }
+tbody tr:hover { background:var(--accent-bg); }
+.pred { font-weight:600; color:var(--accent); }
+footer { text-align:center; color:var(--muted); font-size:.72rem; padding:18px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>GRC Central Registry — Data Model</h1>
+  <p class="sub">48 concepts &middot; 5 facet groups &middot; 36 predicates &middot; 38 SPO triples</p>
+  <div class="tabs" id="tabs"></div>
+</header>
+<main id="main"></main>
+<footer>Orange chips mark elements added for the Fire &amp; Hazard domain and Consent&ndash;Asset binding.</footer>
+<script>
+const D = {"concepts":[{"concept":"Organization","group":"Organizational & Location","definition":"The parent legal entity operating the portfolio"},{"concept":"Client","group":"Organizational & Location","definition":"A business unit or brand within the Organization, where distinct"},{"concept":"Site","group":"Organizational & Location","definition":"A physical property/facility (a hotel, hospital, commercial building)"},{"concept":"Building","group":"Organizational & Location","definition":"A physical structure within a Site"},{"concept":"Floor","group":"Organizational & Location","definition":"A level within a Building"},{"concept":"Area","group":"Organizational & Location","definition":"A functional zone within a Site/Building/Floor (kitchen, plant room, ward)"},{"concept":"RegulatoryInstrument","group":"Regulatory Framework","definition":"An Act, Rule, Code or Standard (Water Act, Fire Safety Code, ISO 22000)"},{"concept":"Authority","group":"Regulatory Framework","definition":"The issuing/regulating body (SPCB, Fire Department, CGWA, ULB)"},{"concept":"Requirement","group":"Regulatory Framework","definition":"An extracted clause/condition from a RegulatoryInstrument"},{"concept":"ComplianceObligation","group":"Regulatory Framework","definition":"A Requirement operationalized and scoped to a specific Site/Asset"},{"concept":"Consent","group":"Consent & Authorization","definition":"CTE/CTO under Water or Air Act"},{"concept":"Authorization","group":"Consent & Authorization","definition":"HWM Rule 6 / BMW Rule 10 style authorization"},{"concept":"Permit","group":"Consent & Authorization","definition":"A general regulatory permit not covered by Consent/Authorization/NOC"},{"concept":"License","group":"Consent & Authorization","definition":"A trade or activity license"},{"concept":"NOC","group":"Consent & Authorization","definition":"No-Objection Certificate \u2014 includes Fire NOC, CGWA NOC"},{"concept":"Registration","group":"Consent & Authorization","definition":"EPR / Bulk Generator / Bulk Consumer registration"},{"concept":"Asset","group":"Assets & Equipment","definition":"A generic physical asset or piece of equipment"},{"concept":"AssetCategory","group":"Assets & Equipment","definition":"Classification of an Asset (STP, DG Set, Boiler, Fire Pump)"},{"concept":"FireSafetySystem","group":"Assets & Equipment","definition":"Fire-domain Asset subtype: alarm panel, sprinkler, hydrant, extinguisher, fire pump"},{"concept":"HazardousMaterialStore","group":"Assets & Equipment","definition":"Storage location/area for hazardous chemicals or materials"},{"concept":"Hazard","group":"Hazard & Risk","definition":"An identified source of potential harm (fire, chemical, electrical, structural)"},{"concept":"HazardAssessment","group":"Hazard & Risk","definition":"A HIRA (Hazard Identification & Risk Assessment) record"},{"concept":"Risk","group":"Hazard & Risk","definition":"The assessed likelihood/severity rating tied to a Hazard"},{"concept":"SafetyDataSheet","group":"Hazard & Risk","definition":"SDS/MSDS chemical safety documentation"},{"concept":"EmergencyPlan","group":"Hazard & Risk","definition":"Fire/evacuation/emergency response plan for a Site"},{"concept":"Incident","group":"Hazard & Risk","definition":"A recorded fire, hazard, or safety incident"},{"concept":"Drill","group":"Hazard & Risk","definition":"A fire or evacuation drill event"},{"concept":"Vendor","group":"Vendor & People","definition":"A third party providing O&M, disposal, testing or AMC services"},{"concept":"Contract","group":"Vendor & People","definition":"A commercial agreement with a Vendor or between Organization entities"},{"concept":"SLA","group":"Vendor & People","definition":"Service-level terms attached to a Contract"},{"concept":"Role","group":"Vendor & People","definition":"A functional responsibility (Site EHS Coordinator, Fire Warden)"},{"concept":"Person","group":"Vendor & People","definition":"An individual holding one or more Roles"},{"concept":"Schedule","group":"Execution Layer","definition":"A recurring task definition generated from a ComplianceObligation's frequency"},{"concept":"ScheduleOccurrence","group":"Execution Layer","definition":"One instance of a Schedule due in a specific week"},{"concept":"Form","group":"Execution Layer","definition":"A structured checklist/questionnaire used to execute a ScheduleOccurrence"},{"concept":"Question","group":"Execution Layer","definition":"A single data-capture field within a Form"},{"concept":"InspectionEvent","group":"Execution Layer","definition":"A completed execution of a Form against an Asset/Area"},{"concept":"Observation","group":"Execution Layer","definition":"A single captured answer/reading from an InspectionEvent"},{"concept":"Evidence","group":"Evidence","definition":"Any artifact proving an Observation or obligation was met"},{"concept":"LabReport","group":"Evidence","definition":"Evidence subtype: an accredited external lab test result"},{"concept":"EvidenceType","group":"Evidence","definition":"The required class of Evidence for a given ComplianceObligation"},{"concept":"NonConformance","group":"Response","definition":"A detected breach of a ComplianceObligation or missed ScheduleOccurrence"},{"concept":"CAPA","group":"Response","definition":"Corrective and Preventive Action raised against a NonConformance"},{"concept":"Deviation","group":"Response","definition":"An approved exception when a CAPA cannot close on time"},{"concept":"Audit","group":"Response","definition":"A structured review of ComplianceObligation adherence, internal or regulatory"},{"concept":"Report","group":"Reporting","definition":"A compiled statutory or management document (Form V, KPI dashboard)"},{"concept":"ReportSubmission","group":"Reporting","definition":"A tracked filing event of a Report to an Authority"},{"concept":"KPI","group":"Reporting","definition":"A measured performance indicator computed from the registry"}],"facets":{"purpose":"Facets are the switches an implementer sets during customer onboarding. Each facet activates a subset of Concepts, Obligations and Predicates for that Site \u2014 nothing in the full catalog applies by default.","facet_groups":[{"group":"Site Profile","facets":[{"facet":"site_type","type":"select","options":["Hospitality","Healthcare","Commercial/Office","Industrial"],"effect":"Activates the base obligation set for that vertical (e.g. Healthcare activates BMW_RULES_2016)"},{"facet":"site_scale","type":"numeric","options":"rooms / beds / sq ft","effect":"Used for consent-category thresholds and reporting-tier defaults, not obligation activation"},{"facet":"cpcb_category","type":"select","options":["Red","Orange","Green","White"],"effect":"Sets monitoring frequency defaults (e.g. Red category shortens lab-testing cadence)"}]},{"group":"Regulatory Domain","facets":[{"facet":"water_applicable","type":"boolean","effect":"Activates WATER_ACT_1974 obligation set"},{"facet":"air_applicable","type":"boolean","effect":"Activates AIR_ACT_1981 obligation set"},{"facet":"noise_applicable","type":"boolean","effect":"Activates NOISE_RULES_2000 obligation set"},{"facet":"hwm_applicable","type":"boolean","effect":"Activates HWM_RULES_2016 obligation set"},{"facet":"swm_applicable","type":"boolean","effect":"Activates SWM_RULES_2016 obligation set"},{"facet":"plastic_epr_applicable","type":"boolean","effect":"Activates PWM_RULES_2016 obligation set"},{"facet":"ewaste_applicable","type":"boolean","effect":"Activates EWASTE_RULES_2022 obligation set"},{"facet":"battery_applicable","type":"boolean","effect":"Activates BATTERY_RULES_2022 obligation set"},{"facet":"bmw_applicable","type":"boolean","effect":"Activates BMW_RULES_2016 \u2014 defaults true for Healthcare, false otherwise"},{"facet":"cgwa_applicable","type":"boolean","effect":"Activates groundwater-extraction obligations; requires bore_well asset facet"},{"facet":"fire_safety_applicable","type":"boolean","effect":"Activates the Fire Safety obligation set (new domain) \u2014 default true for all sites"},{"facet":"cd_waste_applicable","type":"boolean","effect":"Activates C&D obligations for the duration of a renovation/demolition project"}]},{"group":"Asset Landscape","facets":[{"facet":"has_stp","type":"boolean+count","effect":"Instantiates STP Asset records and their linked obligations"},{"facet":"has_dg_sets","type":"boolean+count","effect":"Instantiates DG Set Asset records (Air + Noise + HWM obligations)"},{"facet":"has_boiler","type":"boolean+count","effect":"Instantiates Boiler Asset records"},{"facet":"has_cooling_tower","type":"boolean+count","effect":"Instantiates Cooling Tower Asset records"},{"facet":"has_bore_well","type":"boolean+count","effect":"Instantiates Bore Well Asset records; enables cgwa_applicable"},{"facet":"has_fuel_storage","type":"boolean+count","effect":"Instantiates Fuel Storage Asset records"},{"facet":"has_hazardous_material_store","type":"boolean","effect":"Instantiates HazardousMaterialStore and links SDS obligations"},{"facet":"has_fire_hydrant_system","type":"boolean","effect":"Instantiates FireSafetySystem (hydrant) records"},{"facet":"has_sprinkler_system","type":"boolean","effect":"Instantiates FireSafetySystem (sprinkler) records"},{"facet":"has_fire_alarm_panel","type":"boolean","effect":"Instantiates FireSafetySystem (alarm) records"},{"facet":"has_incinerator_or_autoclave","type":"boolean","effect":"Healthcare only \u2014 instantiates BMW treatment Asset records"},{"facet":"has_radiology_equipment","type":"boolean","effect":"Healthcare only \u2014 flags AERB-adjacent obligations if applicable"}]},{"group":"Consent Portfolio","facets":[{"facet":"held_consents","type":"multi-select","options":"CTE-Water, CTO-Water, CTE-Air, CTO-Air, HWM-Authorization, BMW-Authorization, Fire-NOC, CGWA-NOC","effect":"Pre-populates the Consent register with existing instruments at onboarding, each pending Asset-linkage (see item 5)"}]},{"group":"Vendor Scope","facets":[{"facet":"outsourced_functions","type":"multi-select","options":"STP O&M, DG O&M, HW disposal, Fire system AMC, Waste management, Pest control","effect":"Determines which ComplianceObligations route to a Vendor Role vs. an internal Role"}]}]},"predicates":{"structural_backbone":[{"predicate":"partOf","applies_to":"Site, Building, Floor, Area, Asset (sub-component)","definition":"Physical or organizational containment"},{"predicate":"contains","applies_to":"Site, Building, Floor, Area","inverse_of":"partOf"},{"predicate":"locatedAt","applies_to":"Asset, HazardousMaterialStore, FireSafetySystem","definition":"Physical location within the Area hierarchy"},{"predicate":"operates","applies_to":"Organization, Client","definition":"Operational control of a Site"},{"predicate":"hasAsset","applies_to":"Site, Area","definition":"Asset inventory membership"}],"consent_asset_binding":[{"predicate":"coveredByConsent","applies_to":"Asset","object":"Consent | Authorization | NOC","definition":"REQUIRED per item 5 of the brief \u2014 binds a specific Asset to the specific Consent/Authorization/NOC instrument whose schedule/annexure names it. Without this link, renewal or amendment impact-analysis cannot identify which assets are affected."},{"predicate":"consentScopeIncludes","applies_to":"Consent, Authorization, NOC","object":"Asset","inverse_of":"coveredByConsent"},{"predicate":"subjectToCondition","applies_to":"Asset","object":"Requirement","definition":"The specific numeric/operational condition within the Consent that applies to this Asset"},{"predicate":"requiresAmendment","applies_to":"Consent, Authorization, NOC","object":"Asset","definition":"Fires when a new Asset is commissioned or an existing one decommissioned, flagging the linked Consent for amendment"}],"data_capture":[{"predicate":"observedOn","applies_to":"Observation","object":"Asset | Area","definition":"What the reading was taken against"},{"predicate":"capturedBy","applies_to":"Observation, Evidence","object":"Person | Sensor","definition":"Mobile field officer or IoT source"},{"predicate":"performedBy","applies_to":"InspectionEvent","object":"Person | Vendor","definition":"Who executed the Form"},{"predicate":"executes","applies_to":"InspectionEvent","object":"Form","definition":"Which checklist/questionnaire ran"},{"predicate":"hasValue","applies_to":"Observation","object":"Value","definition":"The captured reading"},{"predicate":"generatedFrom","applies_to":"InspectionEvent","object":"ScheduleOccurrence","definition":"Links execution back to the calendar"}],"lab_testing":[{"predicate":"requiresLabTest","applies_to":"ComplianceObligation","object":"EvidenceType","definition":"Marks an obligation as needing accredited external testing rather than a mobile/IoT reading"},{"predicate":"testedBy","applies_to":"LabReport","object":"Vendor (NABL-accredited lab)","definition":"Testing agency of record"},{"predicate":"hasAccreditation","applies_to":"LabReport","object":"AccreditationStandard","definition":"NABL or equivalent accreditation reference"},{"predicate":"hasResult","applies_to":"LabReport","object":"Value","definition":"Parameter result set"},{"predicate":"passesLimit","applies_to":"LabReport","object":"ComplianceObligation","definition":"Result is within the prescribed limit"},{"predicate":"violates","applies_to":"LabReport, Observation","object":"ComplianceObligation","inverse_of":"passesLimit"}],"schedule":[{"predicate":"hasFrequency","applies_to":"ComplianceObligation","object":"Frequency","definition":"Monthly/quarterly/half-yearly/annual cadence"},{"predicate":"hasSchedule","applies_to":"Asset, Area, ComplianceObligation","object":"Schedule","definition":"The generated weekly-task definition"},{"predicate":"scheduledFor","applies_to":"ScheduleOccurrence","object":"Date","definition":"The due week/date"},{"predicate":"generates","applies_to":"Schedule","object":"ScheduleOccurrence","definition":"Weekly instantiation"},{"predicate":"overdue","applies_to":"ScheduleOccurrence","object":"Status","definition":"Auto-flag when a due date passes uncompleted"},{"predicate":"escalatesTo","applies_to":"ScheduleOccurrence, NonConformance","object":"Role","definition":"Routes an overdue item up the escalation ladder"}],"reporting":[{"predicate":"generatesReport","applies_to":"ComplianceObligation, Schedule","object":"Report","definition":"Which statutory or KPI report this obligation feeds"},{"predicate":"submittedTo","applies_to":"ReportSubmission","object":"Authority","definition":"Regulator of record for the filing"},{"predicate":"hasDeadline","applies_to":"Report","object":"Date","definition":"Statutory filing deadline"},{"predicate":"acknowledgedBy","applies_to":"ReportSubmission","object":"Authority","definition":"Confirms receipt \u2014 closes the filing loop"},{"predicate":"requiresFiling","applies_to":"ComplianceObligation","object":"Report","definition":"Marks an obligation as report-generating vs. evidence-only"}],"response":[{"predicate":"raisedFrom","applies_to":"NonConformance","object":"Observation | LabReport","definition":"Origin of the exception"},{"predicate":"requiresAction","applies_to":"NonConformance","object":"CAPA","definition":"Forces a corrective action record"},{"predicate":"approvedBy","applies_to":"Deviation","object":"Role (Central Compliance Lead)","definition":"Sign-off when a CAPA cannot close on time"},{"predicate":"verifiedBy","applies_to":"ComplianceObligation","object":"Audit","definition":"Confirms adherence via structured review"}]},"spo_table":[{"subject":"Organization","predicate":"operates","object":"Site"},{"subject":"Site","predicate":"hasAsset","object":"STP"},{"subject":"Site","predicate":"hasAsset","object":"FireSafetySystem: Sprinkler"},{"subject":"STP","predicate":"coveredByConsent","object":"CTO-Water (Consent #WA-CTO-2026)"},{"subject":"STP","predicate":"subjectToCondition","object":"Effluent BOD <= 10 mg/l (Condition 14 of CTO-Water)"},{"subject":"DG Set #1","predicate":"coveredByConsent","object":"CTO-Air (Consent #AA-CTO-2026)"},{"subject":"DG Set #1","predicate":"coveredByConsent","object":"HWM-Authorization (used-oil handling)"},{"subject":"CTO-Water (Consent #WA-CTO-2026)","predicate":"consentScopeIncludes","object":"STP, Cooling Tower #1"},{"subject":"New DG Set #3 (commissioned)","predicate":"requiresAmendment","object":"CTO-Air (Consent #AA-CTO-2026)"},{"subject":"Site","predicate":"coveredByConsent","object":"Fire NOC"},{"subject":"FireSafetySystem: Fire Alarm Panel","predicate":"subjectTo","object":"Monthly Functional Test Requirement"},{"subject":"FireSafetySystem: Sprinkler","predicate":"coveredByConsent","object":"Fire NOC"},{"subject":"HazardousMaterialStore","predicate":"hasHazard","object":"Hazard: LPG Storage"},{"subject":"Hazard: LPG Storage","predicate":"assessedBy","object":"HazardAssessment (HIRA-2026-014)"},{"subject":"HazardousMaterialStore","predicate":"requiresEvidence","object":"SafetyDataSheet"},{"subject":"Site","predicate":"requires","object":"EmergencyPlan"},{"subject":"EmergencyPlan","predicate":"verifiedBy","object":"Drill (Quarterly)"},{"subject":"Drill","predicate":"generatesReport","object":"Fire Drill Compliance Report"},{"subject":"InspectionEvent (STP round)","predicate":"executes","object":"Form: STP Daily Log"},{"subject":"InspectionEvent (STP round)","predicate":"performedBy","object":"Person (Site EHS Coordinator)"},{"subject":"Observation (pH reading)","predicate":"observedOn","object":"STP"},{"subject":"Observation (pH reading)","predicate":"capturedBy","object":"IoT Sensor (STP-pH-01)"},{"subject":"STP","predicate":"requiresLabTest","object":"EvidenceType: NABL Effluent Report"},{"subject":"LabReport (Sep-2026)","predicate":"testedBy","object":"Vendor (Accredited Lab)"},{"subject":"LabReport (Sep-2026)","predicate":"violates","object":"ComplianceObligation: Effluent BOD Limit"},{"subject":"LabReport (Sep-2026)","predicate":"raisedFrom","object":"NonConformance NC-2026-0142"},{"subject":"ComplianceObligation: Effluent BOD Limit","predicate":"hasFrequency","object":"Monthly"},{"subject":"ComplianceObligation: Effluent BOD Limit","predicate":"hasSchedule","object":"Schedule: STP-Monthly-Test"},{"subject":"Schedule: STP-Monthly-Test","predicate":"generates","object":"ScheduleOccurrence (Week 39, 2026)"},{"subject":"ScheduleOccurrence (Week 22, 2026)","predicate":"overdue","object":"Status: Overdue"},{"subject":"ScheduleOccurrence (Week 22, 2026)","predicate":"escalatesTo","object":"Role: Regional EHS Manager"},{"subject":"NC-2026-0142","predicate":"requiresAction","object":"CAPA-2026-0089"},{"subject":"CAPA-2026-0089","predicate":"approvedBy","object":"Deviation (15-day extension)"},{"subject":"ComplianceObligation: Effluent BOD Limit","predicate":"verifiedBy","object":"Audit (Q3-2026 Internal)"},{"subject":"ComplianceObligation: Effluent BOD Limit","predicate":"requiresFiling","object":"Report: Form V"},{"subject":"Report: Form V","predicate":"hasDeadline","object":"Date: Sep 30"},{"subject":"ReportSubmission (Form V, FY26)","predicate":"submittedTo","object":"Authority: SPCB"},{"subject":"ReportSubmission (Form V, FY26)","predicate":"acknowledgedBy","object":"Authority: SPCB"}],"meta":{"note":"This is the registry's meta-model: the Concept/Facet/Predicate/SPO architecture the platform runs on. It sits above the two domain-specific catalogs already built \u2014 predicate_master.json (full predicate catalog across 12 semantic families) and cpcb_spo_map.json (29 PCB obligation instances) \u2014 and now extends the domain to Fire Safety and Hazard Management, plus the explicit Asset-Consent binding required for consent-amendment impact analysis.","counts":{"concepts":48,"facet_groups":5,"predicate_groups":7,"predicates_total":36,"spo_rows":38}}};
+const NEW_TERMS = ["Hazard","FireSafetySystem","HazardousMaterialStore","HazardAssessment","EmergencyPlan","Incident","Drill","SafetyDataSheet","coveredByConsent","consentScopeIncludes","subjectToCondition","requiresAmendment"];
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function isNew(name){ return NEW_TERMS.some(t => name.includes(t)); }
+
+const tabs = [
+  {id:'concepts', label:'Concepts'},
+  {id:'facets', label:'Facets (onboarding)'},
+  {id:'predicates', label:'Predicates'},
+  {id:'spo', label:'SPO table'},
+];
+document.getElementById('tabs').innerHTML = tabs.map((t,i)=>`<div class="tab ${i===0?'active':''}" data-tab="${t.id}" onclick="showTab('${t.id}')">${t.label}</div>`).join('');
+
+function showTab(id){
+  tabs.forEach(t=>{
+    document.querySelector(`.tab[data-tab="${t.id}"]`).classList.toggle('active', t.id===id);
+    document.getElementById('panel-'+t.id).classList.toggle('active', t.id===id);
+  });
+}
+window.showTab = showTab;
+
+function renderConcepts(){
+  const groups = {};
+  D.concepts.forEach(c=>{ (groups[c.group] = groups[c.group]||[]).push(c); });
+  return Object.entries(groups).map(([g, items])=>`
+    <details class="group">
+      <summary>${esc(g)} <span class="n">${items.length}</span></summary>
+      ${items.map(c=>`<div class="item">
+        <div class="name">${esc(c.concept)} ${isNew(c.concept)?'<span class="chip new">new domain</span>':''}</div>
+        <div class="def">${esc(c.definition)}</div>
+      </div>`).join('')}
+    </details>`).join('');
+}
+
+function renderFacets(){
+  return D.facets.facet_groups.map(g=>`
+    <details class="group">
+      <summary>${esc(g.group)} <span class="n">${g.facets.length}</span></summary>
+      ${g.facets.map(f=>`<div class="item">
+        <div class="name">${esc(f.facet)} <span class="chip">${esc(f.type)}</span></div>
+        ${f.options?`<div class="def">Options: ${esc(Array.isArray(f.options)?f.options.join(', '):f.options)}</div>`:''}
+        <div class="def" style="margin-top:4px;">${esc(f.effect)}</div>
+      </div>`).join('')}
+    </details>`).join('') + `<p style="color:var(--muted);font-size:.82rem;margin-top:6px;">${esc(D.facets.purpose)}</p>`;
+}
+
+function renderPredicates(){
+  const labels = {structural_backbone:'Structural backbone', consent_asset_binding:'Consent – Asset binding',
+    data_capture:'Data capture', lab_testing:'Lab testing', schedule:'Schedule', reporting:'Reporting', response:'Response'};
+  return Object.entries(D.predicates).map(([key, items])=>`
+    <details class="group" ${key==='consent_asset_binding'?'open':''}>
+      <summary>${esc(labels[key]||key)} <span class="n">${items.length}</span></summary>
+      ${items.map(p=>`<div class="item">
+        <div class="name">${esc(p.predicate)} ${isNew(p.predicate)?'<span class="chip new">new</span>':''}</div>
+        <div class="meta">
+          <span class="chip">applies to: ${esc(p.applies_to)}</span>
+          ${p.object?`<span class="chip">→ ${esc(p.object)}</span>`:''}
+          ${p.inverse_of?`<span class="chip">inverse of ${esc(p.inverse_of)}</span>`:''}
+        </div>
+        <div class="def" style="margin-top:5px;">${esc(p.definition)}</div>
+      </div>`).join('')}
+    </details>`).join('');
+}
+
+function renderSPO(term){
+  const t = (term||'').toLowerCase();
+  const rows = D.spo_table.filter(r => !t || r.subject.toLowerCase().includes(t) || r.predicate.toLowerCase().includes(t) || r.object.toLowerCase().includes(t));
+  if (!rows.length) return `<div style="padding:30px 0;text-align:center;color:var(--muted);">No matches.</div>`;
+  return `<div class="tablewrap"><table><thead><tr><th>Subject</th><th>Predicate</th><th>Object</th></tr></thead><tbody>` +
+    rows.map(r=>`<tr>
+      <td>${esc(r.subject)} ${isNew(r.subject)?'<span class="chip new">new</span>':''}</td>
+      <td class="pred">${esc(r.predicate)} ${isNew(r.predicate)?'<span class="chip new">new</span>':''}</td>
+      <td>${esc(r.object)}</td>
+    </tr>`).join('') + `</tbody></table></div>`;
+}
+
+document.getElementById('main').innerHTML = `
+  <div class="panel active" id="panel-concepts">${renderConcepts()}</div>
+  <div class="panel" id="panel-facets">${renderFacets()}</div>
+  <div class="panel" id="panel-predicates">${renderPredicates()}</div>
+  <div class="panel" id="panel-spo">
+    <div class="searchwrap"><input id="spoSearch" type="text" placeholder="Search subject, predicate or object…"></div>
+    <div id="spoBody">${renderSPO('')}</div>
+  </div>
+`;
+document.getElementById('spoSearch').addEventListener('input', e=>{
+  document.getElementById('spoBody').innerHTML = renderSPO(e.target.value.trim());
+});
+</script>
+</body>
+</html>
