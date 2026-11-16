@@ -41,12 +41,15 @@ Every subdomain is described the same way:
 ### Subdomain: Knowledge
 
 **Aggregates**
-- **`Regulation`** (root) — owns `Clause[]` that belong to it. Refs: `Authority` (by id). Invariant: a `Clause` added to this aggregate belongs to exactly this parent — enforced at add-time, not by a nullable FK on the Clause side.
+- **`Regulation`** (root) — owns `Clause[]` that belong to it. Refs: `Authority`, `ApplicabilityRule` (by id). Invariant: a `Clause` added to this aggregate belongs to exactly this parent — enforced at add-time, not by a nullable FK on the Clause side. The `ApplicabilityRule` ref (`GOVERNED_BY`, `graph.md`, 2026-11-16) is step 2 of `applicability.md` — one rule per regulation, structuring its trigger text.
 - **`Standard`** (root) — owns `Clause[]` that belong to it. Same invariant as `Regulation`, mirrored because `Clause`'s parent is XOR (`graph.md` Appendix A), never both.
-- **`Obligation`** (root, standalone) — refs `Clause` (by id). Kept independent of the `Regulation`/`Standard` aggregate because an Obligation has its own version lifecycle and is referenced by many `Control`s — embedding it under `Clause` would force loading a whole Regulation to revise one obligation.
+- **`Obligation`** (root, standalone) — refs `Clause`, `SubjectType` (by id). Kept independent of the `Regulation`/`Standard` aggregate because an Obligation has its own version lifecycle and is referenced by many `Control`s — embedding it under `Clause` would force loading a whole Regulation to revise one obligation. The `SubjectType` ref (`BINDS_TO_TYPE`, `graph.md`, 2026-11-16) is step 1 of `applicability.md` — the entity type the obligation's regulated subject names, not yet a tenant binding.
 - **`Control`** (root, standalone) — refs `Obligation`, `ComplianceArea` (by id). Origin (`:Catalog` / `:Enterprise` / `:AgentProposed` / legacy) is a VO field on this one Entity type, not a subtype — this is deliberate: it forecloses a future `if (control.origin === ...)` branch by keeping origin as data, not as a type hierarchy.
 - **`ComplianceArea`** (root, reference data) — no owned children, no refs.
 - **`Authority`** (root, reference data) — no owned children, no refs.
+- **`SubjectType`** (root, reference data, **live** — `graph.md`, 2026-11-16) — no owned children, no refs. Bridge vocabulary between an `Obligation`'s regulated subject and a tenant's `Organisation`/`Facility`/`Asset` (`applicability.md` §3).
+- **`ApplicabilityAttribute`** (root, reference data, **live** — `graph.md`, 2026-11-16) — no owned children, no refs. The standard facts an `ApplicabilityRule` may test, reached via `TESTS`.
+- **`ApplicabilityRule`** (root, standalone, **live** — `graph.md`, 2026-11-16) — refs `ApplicabilityAttribute[]` (by id, many-valued via `TESTS`). The structured form of a `Regulation`'s applicability trigger (`applicability.md` §3/§7 step 2). Not pure reference data like `ComplianceArea`/`SubjectType` above it — it's the first Knowledge-subdomain node with real conditional logic (which facts gate which regulation), just not yet evaluable (`TESTS` edges carry no `op`/`value` until a real threshold number is sourced).
 - **`Report`** (root, standalone, **live** — `graph.md`, 2026-10-03) — refs `Authority` (by id, flat reference). A recurring statutory filing requirement an `Obligation` names (e.g. CPCB's Form V) — catalog data, amortized once across every tenant with that obligation, same shape as `Control`. Kept independent of `Obligation` for the same reason `Obligation` is kept independent of `Regulation`/`Standard`: a filing requirement has its own lifecycle and can be referenced by many Obligations. Distinct from `ReportSubmission` (Assurance subdomain, below), which is the tenant's actual per-period filing instance. Its cadence is a Value Object pair, not a scalar — see Value Objects below.
 
 **Value Objects**: CatalogProvenance (catalogVersion, effectiveFrom, supersededBy, sourceRevision), SourceSpan (document, version, anchor/offset), ConfidenceAssertion (confidence, author, assertedAt — revised by replacing the VO wholesale under the Append-and-Supersede Protocol, never mutated in place), FilingCadence (**live, `Report` only, 2026-10-03**: cadenceUnit, cadenceInterval, triggerCondition, cadenceRaw — replaces a single free-text `cadence` field that conflated a periodic schedule with an event trigger; see `graph.md`'s `Report` entry)
@@ -57,7 +60,7 @@ Every subdomain is described the same way:
 
 **Factories**: none — construction here is direct authoring/ingestion, not derived from another aggregate's event.
 
-**Repositories** (one per Aggregate root): RegulationRepository, StandardRepository, ObligationRepository, ControlRepository, ComplianceAreaRepository, AuthorityRepository, ReportRepository
+**Repositories** (one per Aggregate root): RegulationRepository, StandardRepository, ObligationRepository, ControlRepository, ComplianceAreaRepository, AuthorityRepository, ReportRepository, SubjectTypeRepository, ApplicabilityAttributeRepository, ApplicabilityRuleRepository
 
 **Specifications**: CatalogFactIsCurrentSpecification, ObligationIsDefinedBySpecification, ControlImplementsObligationSpecification
 

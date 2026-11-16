@@ -5,8 +5,8 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 import { v2 } from '../semantic-contract';
 import { parseCSV } from '../parser';
-import { buildIR, compile } from '../compiler';
-import { GraphEdge, GraphNode } from '../compiler/types';
+import { buildIR, compile, compileEdges } from '../compiler';
+import { EdgeDef, GraphEdge, GraphNode } from '../compiler/types';
 import { project } from '../projection';
 import { run } from '../runtime';
 import { dumpIR, spotCheck } from '../observability';
@@ -50,6 +50,17 @@ const FILENAME_TO_ENTITY_TYPE: Record<string, string> = {
     'reports.csv': 'Report',
     'tasks.csv': 'Task',
     'schedules.csv': 'Schedule',
+    'subjectTypes.csv': 'SubjectType',
+    'applicabilityAttributes.csv': 'ApplicabilityAttribute',
+    'applicabilityRules.csv': 'ApplicabilityRule',
+};
+
+// Many-valued relationships (one source row, more than one target) can't go through
+// the embedded-FK mechanism above — a node row has exactly one value per column. These
+// live in an edges/ subfolder inside the authority folder, same filename-convention
+// discovery as node feeds, just a different target: compileEdges, not compile.
+const FILENAME_TO_EDGE_DEF: Record<string, EdgeDef> = {
+    'rule_attribute.csv': { relType: 'TESTS', sourceCol: 'ruleId', sourceLabel: 'ApplicabilityRule', targetCol: 'attributeId', targetLabel: 'ApplicabilityAttribute' },
 };
 
 async function syncAuthority(authority: string, dumpPath: string | null): Promise<void> {
@@ -66,7 +77,12 @@ async function syncAuthority(authority: string, dumpPath: string | null): Promis
     let skipCount = 0;
     let errorCount = 0;
 
-    for (const fileName of fs.readdirSync(feedsDir).sort()) {
+    for (const entry of fs.readdirSync(feedsDir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+        // `edges/` is a many-valued-relationship subfolder (see FILENAME_TO_EDGE_DEF
+        // below), not a node feed — handled in its own pass, not warned about here.
+        if (entry.isDirectory()) continue;
+
+        const fileName = entry.name;
         const entityType = FILENAME_TO_ENTITY_TYPE[fileName];
         if (!entityType) {
             log.warn(`[catalog-sync] ${authority}/${fileName} has no known entity-type mapping; skipping`);
@@ -87,6 +103,26 @@ async function syncAuthority(authority: string, dumpPath: string | null): Promis
         allNodes.push(...nodes);
         allEdges.push(...edges);
         log.debug(`[compiler] ${authority}/${fileName} → ${nodes.length} nodes, ${edges.length} rel-edges`);
+    }
+
+    const edgesDir = path.join(feedsDir, 'edges');
+    if (fs.existsSync(edgesDir)) {
+        for (const fileName of fs.readdirSync(edgesDir).sort()) {
+            const edgeDef = FILENAME_TO_EDGE_DEF[fileName];
+            if (!edgeDef) {
+                log.warn(`[catalog-sync] ${authority}/edges/${fileName} has no known edge-def mapping; skipping`);
+                continue;
+            }
+
+            const feedPath = path.join(edgesDir, fileName);
+            const { rows, errors } = parseCSV(feedPath, false); // edge CSVs have no id/name columns
+            if (errors.length) errors.forEach(e => log.warn(`[parser] edges/${fileName}: ${e}`));
+            if (!rows.length) { skipCount++; continue; }
+
+            const edges = compileEdges(edgeDef, rows);
+            allEdges.push(...edges);
+            log.debug(`[compiler] ${authority}/edges/${fileName} → ${edges.length} edges (${edgeDef.relType})`);
+        }
     }
 
     const ir = buildIR(v2.version, allNodes, allEdges);

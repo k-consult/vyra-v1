@@ -132,6 +132,7 @@ function ChainRow({ row, complianceAreaName, reportAuthorityName }: { row: any; 
             </div>
             <PropRow label="obligation" value={row.obligation?.name} />
             <PropRow label="mandatory" value={row.obligation?.mandatory} />
+            {row.subjectType && <PropRow label="binds to" value={`${row.subjectType.name} (${row.subjectType.bindsAt})`} />}
             <TagPills tags={row.obligation?.tags} />
             {row.control ? (
                 <>
@@ -172,6 +173,7 @@ const GRAPH_COLORS: Record<string, string> = {
     clause: '#a78bfa',
     obligation: '#34d399',
     control: '#fbbf24',
+    subjecttype: '#fb7185',
 };
 
 function GraphView({ regulation, chain }: { regulation: any; chain: any[] }) {
@@ -182,11 +184,12 @@ function GraphView({ regulation, chain }: { regulation: any; chain: any[] }) {
     const clauses = Array.from(new Map<string, any>(chain.filter(r => r.clause?.id).map(r => [r.clause.id, r.clause])).values());
     const obligations = Array.from(new Map<string, any>(chain.filter(r => r.obligation?.id).map(r => [r.obligation.id, r.obligation])).values());
     const controls = Array.from(new Map<string, any>(chain.filter(r => r.control?.id).map(r => [r.control.id, r.control])).values());
+    const subjectTypes = Array.from(new Map<string, any>(chain.filter(r => r.subjectType?.id).map(r => [r.subjectType.id, r.subjectType])).values());
 
     const colW = 230;
     const rowH = 34;
-    const colX = { regulation: 20, clause: 20 + colW, obligation: 20 + colW * 2, control: 20 + colW * 3 };
-    const maxRows = Math.max(1, clauses.length, obligations.length, controls.length);
+    const colX = { regulation: 20, clause: 20 + colW, obligation: 20 + colW * 2, control: 20 + colW * 3, subjectType: 20 + colW * 4 };
+    const maxRows = Math.max(1, clauses.length, obligations.length, controls.length, subjectTypes.length);
     const height = Math.max(200, maxRows * rowH + 40);
 
     const yFor = (i: number, count: number) => (height / (count + 1)) * (i + 1);
@@ -195,28 +198,31 @@ function GraphView({ regulation, chain }: { regulation: any; chain: any[] }) {
     const clausePos = new Map(clauses.map((c: any, i) => [c.id, { x: colX.clause + 90, y: yFor(i, clauses.length) }]));
     const oblPos = new Map(obligations.map((o: any, i) => [o.id, { x: colX.obligation + 90, y: yFor(i, obligations.length) }]));
     const ctlPos = new Map(controls.map((c: any, i) => [c.id, { x: colX.control + 90, y: yFor(i, controls.length) }]));
+    const stPos = new Map(subjectTypes.map((s: any, i) => [s.id, { x: colX.subjectType + 90, y: yFor(i, subjectTypes.length) }]));
 
     const edges: { from: { x: number; y: number }; to: { x: number; y: number } }[] = [];
     chain.forEach(row => {
         const cp = row.clause && clausePos.get(row.clause.id);
         const op = row.obligation && oblPos.get(row.obligation.id);
         const ctp = row.control && ctlPos.get(row.control.id);
+        const stp = row.subjectType && stPos.get(row.subjectType.id);
         if (cp) edges.push({ from: regPos, to: cp });
         if (cp && op) edges.push({ from: cp, to: op });
         if (op && ctp) edges.push({ from: op, to: ctp });
+        if (op && stp) edges.push({ from: op, to: stp });
     });
 
     return (
         <div className="flex-1 min-w-0 overflow-auto px-6 py-4">
             <div className="flex items-center gap-4 mb-3">
-                {(['Regulation', 'Clause', 'Obligation', 'Control'] as const).map(label => (
+                {(['Regulation', 'Clause', 'Obligation', 'Control', 'SubjectType'] as const).map(label => (
                     <div key={label} className="flex items-center gap-1.5 text-[10px] text-zinc-500">
                         <span className="w-2 h-2 rounded-full" style={{ background: GRAPH_COLORS[label.toLowerCase()] }} />
-                        {label}
+                        {label === 'SubjectType' ? 'Binds To' : label}
                     </div>
                 ))}
             </div>
-            <svg width="100%" height={height} viewBox={`0 0 ${colX.control + colW} ${height}`} preserveAspectRatio="xMinYMin meet">
+            <svg width="100%" height={height} viewBox={`0 0 ${colX.subjectType + colW} ${height}`} preserveAspectRatio="xMinYMin meet">
                 {edges.map((e, i) => (
                     <line key={i} x1={e.from.x} y1={e.from.y} x2={e.to.x} y2={e.to.y} stroke="#3f3f46" strokeWidth={1} />
                 ))}
@@ -256,6 +262,17 @@ function GraphView({ regulation, chain }: { regulation: any; chain: any[] }) {
                         </g>
                     );
                 })}
+
+                {subjectTypes.map((s: any) => {
+                    const p = stPos.get(s.id)!;
+                    return (
+                        <g key={s.id}>
+                            <circle cx={p.x} cy={p.y} r={6} fill={GRAPH_COLORS.subjecttype} />
+                            <text x={p.x} y={p.y - 10} textAnchor="middle" fontSize="9" fill="#d4d4d8">{s.name}</text>
+                            <title>{`${s.name} (${s.bindsAt})`}</title>
+                        </g>
+                    );
+                })}
             </svg>
         </div>
     );
@@ -263,7 +280,7 @@ function GraphView({ regulation, chain }: { regulation: any; chain: any[] }) {
 
 // ── Obligations view ─────────────────────────────────────────────────────────
 
-function ObligationRow({ obligation }: { obligation: any }) {
+function ObligationRow({ obligation, subjectTypeName }: { obligation: any; subjectTypeName: (id: string) => string }) {
     return (
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 flex flex-col gap-2">
             <p className="text-[11px] font-mono text-zinc-500">{obligation.id}</p>
@@ -272,6 +289,7 @@ function ObligationRow({ obligation }: { obligation: any }) {
             <PropRow label="mandatory" value={obligation.mandatory} />
             <PropRow label="clause" value={obligation.clauseId} />
             <PropRow label="source" value={obligation.sourceAnchor} />
+            {obligation.subjectTypeId && <PropRow label="binds to" value={subjectTypeName(obligation.subjectTypeId)} />}
             <TagPills tags={obligation.tags} />
         </div>
     );
@@ -366,6 +384,7 @@ export function CatalogView({ tenantScoped = false }: { tenantScoped?: boolean }
     const [authorities, setAuthorities] = useState<any[]>([]);
     const [jurisdictions, setJurisdictions] = useState<any[]>([]);
     const [complianceAreas, setComplianceAreas] = useState<any[]>([]);
+    const [subjectTypes, setSubjectTypes] = useState<any[]>([]);
     const [clauses, setClauses] = useState<any[]>([]);
     const [controls, setControls] = useState<any[]>([]);
 
@@ -397,17 +416,19 @@ export function CatalogView({ tenantScoped = false }: { tenantScoped?: boolean }
             catalog.authorities(reqOpts),
             catalog.jurisdictions(reqOpts),
             catalog.complianceAreas(reqOpts),
+            catalog.subjectTypes(reqOpts),
             catalog.clauses(reqOpts),
             catalog.controls(reqOpts),
             uncontrolledOnly ? catalog.uncontrolledObligations(reqOpts) : catalog.obligations(reqOpts),
         ])
-            .then(([r, s, auth, jur, ca, cls, ctl, obl]) => {
+            .then(([r, s, auth, jur, ca, st, cls, ctl, obl]) => {
                 const regs = r.regulations ?? [];
                 setRegulations(regs);
                 setLastSyncedAt(s.lastSyncedAt);
                 setAuthorities(auth.authorities ?? []);
                 setJurisdictions(jur.jurisdictions ?? []);
                 setComplianceAreas(ca.complianceAreas ?? []);
+                setSubjectTypes(st.subjectTypes ?? []);
                 setClauses(cls.clauses ?? []);
                 setControls(ctl.controls ?? []);
                 setObligations(obl.obligations ?? []);
@@ -465,6 +486,13 @@ export function CatalogView({ tenantScoped = false }: { tenantScoped?: boolean }
         const byId = new Map(complianceAreas.map((c: any) => [c.id, c.name]));
         return (id: string) => byId.get(id) ?? id ?? 'UNKNOWN';
     }, [complianceAreas]);
+
+    // applicability.md §3 step 1 — the entity type an obligation's regulated
+    // subject names (e.g. "DG Set"), from BINDS_TO_TYPE; not yet a tenant binding.
+    const subjectTypeName = useMemo(() => {
+        const byId = new Map(subjectTypes.map((s: any) => [s.id, s.name]));
+        return (id: string) => byId.get(id) ?? id ?? 'UNKNOWN';
+    }, [subjectTypes]);
 
     const visibleObligations = mandatoryOnly ? obligations.filter(o => o.mandatory === 'Y' || o.mandatory === true) : obligations;
 
@@ -876,7 +904,7 @@ export function CatalogView({ tenantScoped = false }: { tenantScoped?: boolean }
                             <EmptyState label={uncontrolledOnly ? 'No uncontrolled obligations — every obligation here has an implementing control.' : 'No obligations match the selected facets.'} />
                         ) : (
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                                {visibleObligations.map(o => <ObligationRow key={o.id} obligation={o} />)}
+                                {visibleObligations.map(o => <ObligationRow key={o.id} obligation={o} subjectTypeName={subjectTypeName} />)}
                             </div>
                         )}
                     </div>

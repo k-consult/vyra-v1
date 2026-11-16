@@ -59,6 +59,12 @@ const LIST_COMPLIANCE_AREAS = `
     ORDER BY n.name
 `;
 
+const LIST_SUBJECT_TYPES = `
+    MATCH (n:SubjectType)
+    RETURN properties(n) AS subjectType
+    ORDER BY n.name
+`;
+
 const LAST_SYNCED_AT = `
     MATCH (n)
     WHERE n.syncedAt IS NOT NULL
@@ -84,12 +90,14 @@ const TRACE_FORWARD = `
                  <-[:DEFINED_BY]-(obl:Obligation)
     OPTIONAL MATCH (obl)<-[:IMPLEMENTS]-(ctl:Control)
     OPTIONAL MATCH (obl)-[:REQUIRES_FILING]->(rpt:Report)
+    OPTIONAL MATCH (obl)-[:BINDS_TO_TYPE]->(st:SubjectType)
     RETURN
         properties(reg) AS regulation,
         properties(cls) AS clause,
         properties(obl) AS obligation,
         properties(ctl) AS control,
-        properties(rpt) AS report
+        properties(rpt) AS report,
+        properties(st) AS subjectType
     LIMIT 200
 `;
 
@@ -145,6 +153,12 @@ export const listComplianceAreas = async () => {
     const raw: any = await db().fetch(LIST_COMPLIANCE_AREAS, {});
     const rows = Array.isArray(raw) ? raw : [raw];
     return rows.map((r: any) => r.complianceArea).filter(Boolean);
+};
+
+export const listSubjectTypes = async () => {
+    const raw: any = await db().fetch(LIST_SUBJECT_TYPES, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.subjectType).filter(Boolean);
 };
 
 export const getLastSyncedAt = async () => {

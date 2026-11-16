@@ -1,0 +1,11 @@
+id,name,dataType,unit,description
+ATTR-FACILITY_TYPE,facilityType,string,,Hospitality/healthcare/commercial/industrial classification
+ATTR-CPCB_CATEGORY,cpcbCategory,string,,CPCB Red/Orange/Green/White classification
+ATTR-DG_CAPACITY_KVA,dgCapacityKva,number,kVA,Installed DG set capacity
+ATTR-BOILER_CAPACITY_TPH,boilerCapacityTph,number,TPH,Installed boiler capacity
+ATTR-BULK_WASTE_GENERATOR,bulkWasteGenerator,boolean,,Whether the site is a bulk waste generator under SWM Rules
+ATTR-NOISE_ZONE,noiseZone,string,,Industrial/commercial/residential/silence noise zone
+ATTR-RENOVATION_ACTIVE,renovationActive,boolean,,Whether renovation/demolition activity is currently in progress
+ATTR-PLASTIC_BULK_USER,plasticBulkUser,boolean,,Whether plastic packaging use crosses the EPR bulk brand-owner/user threshold
+ATTR-EWASTE_BULK_CONSUMER,eWasteBulkConsumer,boolean,,Whether e-waste disposal volume crosses the bulk-consumer threshold
+ATTR-BATTERY_BULK_CONSUMER,batteryBulkConsumer,boolean,,Whether DG-set/UPS battery usage crosses the bulk-consumer threshold

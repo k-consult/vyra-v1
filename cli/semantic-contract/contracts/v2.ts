@@ -48,12 +48,14 @@ export const v2: Contract = {
                 catalogVersion: 'catalogVersion',
                 effectiveFrom: 'effectiveFrom',
                 supersededBy: 'supersededBy',
+                ruleId: 'ruleId',
                 tags: { mapTo: 'tags', isArray: true },
             },
             axes: [Axis.Regulatory],
             rels: [
                 { type: 'IN_JURISDICTION', targetLabel: 'Jurisdiction', sourceField: 'jurisdictionId' },
                 { type: 'ISSUED_BY', targetLabel: 'Authority', sourceField: 'authorityId' },
+                { type: 'GOVERNED_BY', targetLabel: 'ApplicabilityRule', sourceField: 'ruleId' },
             ],
         },
 
@@ -94,12 +96,14 @@ export const v2: Contract = {
                 sourceDocumentId: 'sourceDocumentId',
                 sourceAnchor: 'sourceAnchor',
                 reportId: 'reportId',
+                subjectTypeId: 'subjectTypeId',
                 tags: { mapTo: 'tags', isArray: true },
             },
             axes: [Axis.Regulatory],
             rels: [
                 { type: 'DEFINED_BY', targetLabel: 'Clause', sourceField: 'clauseId' },
                 { type: 'REQUIRES_FILING', targetLabel: 'Report', sourceField: 'reportId' },
+                { type: 'BINDS_TO_TYPE', targetLabel: 'SubjectType', sourceField: 'subjectTypeId' },
             ],
         },
 
@@ -131,6 +135,42 @@ export const v2: Contract = {
             label: 'ComplianceArea',
             graph: Graph.Knowledge,
             props: { ...baseProps },
+            axes: [Axis.Regulatory],
+            rels: [],
+        },
+
+        // The entity type an Obligation's regulated subject names (e.g. "DG Set",
+        // "Site") — bridge vocabulary between a catalog obligation's spo.subject and
+        // a tenant's own Organisation/Facility/Asset. applicability.md §3, step 1.
+        SubjectType: {
+            label: 'SubjectType',
+            graph: Graph.Knowledge,
+            props: { ...baseProps, bindsAt: 'bindsAt' },
+            axes: [Axis.Regulatory],
+            rels: [],
+        },
+
+        // A standard fact an ApplicabilityRule may test (e.g. dgCapacityKva) —
+        // vocabulary only this pass; rule authoring (GOVERNED_BY/TESTS) is
+        // applicability.md §7 step 2, not yet wired.
+        ApplicabilityAttribute: {
+            label: 'ApplicabilityAttribute',
+            graph: Graph.Knowledge,
+            props: { ...baseProps, dataType: 'dataType', unit: 'unit' },
+            axes: [Axis.Regulatory],
+            rels: [],
+        },
+
+        // Structured form of a regulation's applicability trigger — applicability.md
+        // §3, step 2. `predicates` is realized as TESTS edges (cli/orchestration/
+        // catalog-sync.ts's edges/ mechanism), not a node property: Neo4j properties
+        // can't hold nested objects. op/value per TESTS edge are Step 4 work, once a
+        // real gazette number is sourced — the CPCB feed names the tested attribute
+        // but never gives the actual threshold number.
+        ApplicabilityRule: {
+            label: 'ApplicabilityRule',
+            graph: Graph.Knowledge,
+            props: { ...baseProps, triggerRaw: 'triggerRaw', ruleVersion: 'ruleVersion' },
             axes: [Axis.Regulatory],
             rels: [],
         },

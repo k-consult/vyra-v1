@@ -159,6 +159,7 @@ export const catalog = {
     authorities:     (opts?: ReqOpts) => get<{ authorities: any[] }>('/catalog/authorities', opts),
     jurisdictions:   (opts?: ReqOpts) => get<{ jurisdictions: any[] }>('/catalog/jurisdictions', opts),
     complianceAreas: (opts?: ReqOpts) => get<{ complianceAreas: any[] }>('/catalog/compliance-areas', opts),
+    subjectTypes:    (opts?: ReqOpts) => get<{ subjectTypes: any[] }>('/catalog/subject-types', opts),
 };
 
 export type ProposeContractInput = {

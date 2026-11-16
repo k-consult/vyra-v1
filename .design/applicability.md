@@ -32,10 +32,10 @@ Applicable-but-uncovered is a first-class gap. The LLM never decides applicabili
 | Node | Purpose | Key properties |
 |---|---|---|
 | `SubjectType` | Shared bridge vocabulary between obligation subjects and enterprise entities | `id`, `name` (`DG Set`), `bindsAt` (`Organisation`\|`Facility`\|`Asset`) |
-| `ApplicabilityRule` | Structured form of an act's (or a "where applicable" obligation's) trigger | `predicates: [{attribute, op, value}]`, `triggerRaw` (verbatim source text — same discipline as `Report.cadenceRaw`), `ruleVersion` |
-| `ApplicabilityAttribute` | The standard facts rules may test | `id`, `name`, `dataType`, `unit` — initial set: `facilityType`, `cpcbCategory`, `dgCapacityKva`, `boilerCapacityTph`, `bulkWasteGenerator`, `noiseZone`, `renovationActive` |
+| `ApplicabilityRule` | Structured form of an act's (or a "where applicable" obligation's) trigger | `triggerRaw` (verbatim source text — same discipline as `Report.cadenceRaw`), `ruleVersion`. **Predicates are `TESTS` edges to `ApplicabilityAttribute`, not a nested `predicates` property** — Neo4j can't store `[{attribute, op, value}]` as a property; corrected 2026-11-16 once step 2 actually built this. `op`/`value` per edge are unpopulated until a real gazette number is sourced (step 4) |
+| `ApplicabilityAttribute` | The standard facts rules may test | `id`, `name`, `dataType`, `unit` — seeded set: `facilityType`, `cpcbCategory`, `dgCapacityKva`, `boilerCapacityTph`, `bulkWasteGenerator`, `noiseZone`, `renovationActive`, plus `plasticBulkUser`/`eWasteBulkConsumer`/`batteryBulkConsumer` added 2026-11-16 so PWM/E-Waste/Battery get a real predicate instead of staying unconditional |
 
-Seed `SubjectType` from the 12 CPCB subjects, splitting compound ones (`DG Set / UPS Battery`, `DG Set / Vendor`, `Autoclave/Deep Burial Pit (if on-site)`) into atomic types. Seed `ApplicabilityAttribute` minimally from the 11 act triggers. WINAIM's Activity→Asset→Aspect taxonomy can extend this later; it does not block it.
+Seed `SubjectType` from the 12 CPCB subjects, splitting compound ones (`DG Set / UPS Battery`, `DG Set / Vendor`, `Autoclave/Deep Burial Pit (if on-site)`) into atomic types. Seed `ApplicabilityAttribute` minimally from the 11 act triggers. WINAIM's Activity→Asset→Aspect taxonomy was evaluated 2026-11-16 as a future `SubjectType` extension — not relevant to `ApplicabilityAttribute` (it carries no demography/thresholds), and not ready to seed as-is (no stable ids, never validated against a real tenant asset register). It does not block this step.
 
 ### Tenant side (`:Enterprise`)
 
@@ -57,8 +57,8 @@ Seed `SubjectType` from the 12 CPCB subjects, splitting compound ones (`DG Set /
 |---|---|---|
 | `BINDS_TO_TYPE` | Obligation → SubjectType | The entity type an obligation attaches to (from `spo.subject`) |
 | `OF_TYPE` | Asset/Facility/Organisation → SubjectType | Tenant entity classification — agent-proposed, ratified |
-| `GOVERNED_BY` | Regulation/Obligation → ApplicabilityRule | Rule that decides scope (name collides with `Incident → Regulation`; safe under `(relType, sourceLabel, targetLabel)` grouping, but confirm with `/graph-spine`) |
-| `TESTS` | ApplicabilityRule → ApplicabilityAttribute | Attributes a rule reads — what makes re-evaluation targeted |
+| `GOVERNED_BY` | Regulation → ApplicabilityRule | Rule that decides scope — built 2026-11-16, regulation-level only per D1 (never Obligation; name collision with `Incident → Regulation` confirmed safe via `/graph-spine`'s `(relType, sourceLabel, targetLabel)` grouping) |
+| `TESTS` | ApplicabilityRule → ApplicabilityAttribute | Attributes a rule reads — built 2026-11-16 via `catalog-sync.ts`'s new `edges/` subfolder mechanism (many-valued; `compile()`'s embedded-FK can't produce 2 edges from 1 row, e.g. `RULE-AIR_ACT_1981`'s DG+boiler predicates) |
 | `MAPS_TO` | Blueprint `Property` → ApplicabilityAttribute | Tenant-editable blueprint stays free-form; rules see standard facts |
 | `OF` | Applicability → Obligation \| Regulation | What is being scoped |
 | `BINDS` | Applicability → Organisation \| Facility \| Asset | What it binds to |
@@ -125,8 +125,8 @@ Re-evaluation triggers: `ObligationRevised` on catalog sync; asset added/recateg
 
 | Step | Scope | Exit check (live graph) |
 |---|---|---|
-| 1 | Vocabulary: `SubjectType`, `ApplicabilityAttribute` seeds | Every CPCB obligation subject resolves to ≥1 atomic `SubjectType` |
-| 2 | Catalog: `subjectType` column in `obligations.csv` + `v2.ts` mapping → `BINDS_TO_TYPE`; `ApplicabilityRule` per regulation | 29/29 CPCB obligations carry `BINDS_TO_TYPE`; 11/11 regulations carry a rule with `triggerRaw` preserved |
+| 1 | ✅ Vocabulary: `SubjectType`, `ApplicabilityAttribute` seeds | Every CPCB obligation subject resolves to ≥1 atomic `SubjectType` — done 2026-11-16 |
+| 2 | ✅ Catalog: `subjectTypeId` column in `obligations.csv` + `v2.ts` mapping → `BINDS_TO_TYPE`; `ApplicabilityRule` per regulation | 29/29 CPCB obligations carry `BINDS_TO_TYPE`; 11/11 regulations carry a rule with `triggerRaw` preserved — done 2026-11-16. 3 new attributes added for PWM/E-Waste/Battery rather than leaving them unconditional; only 3 of 11 rules (Water/EPA/HWM) stay unconditional, matching an activity-based rather than threshold-based trigger |
 | 3 | Tenant facts: asset → `SubjectType` proposals; `Property -[:MAPS_TO]->` attribute; facet intake (`track.md` Onboarding pending) | Orchid's 19 assets each `OF_TYPE` a type or explicitly `none` |
 | 4 | `Applicability` node + evaluator + `applicability-proposal` Decision type; wizard Stages 2–3 (bundled per site × regulation) | §6 table reproduces from a live query |
 | 5 | Consent conditions on `Permit` | A real CTO's conditions bind to named assets |
@@ -138,6 +138,8 @@ Re-evaluation triggers: `ObligationRevised` on catalog sync; asset added/recateg
 - **`SubjectType` vs `Asset.assetType`.** `assetType` already has a controlled vocabulary (`hazardous-material-store`, `fire-pump`, …). Leaning: `SubjectType` is the canonical node; `assetType` values migrate onto it rather than two vocabularies coexisting. Decide at step 1.
 - **`WAIVES` target.** The designed `Exception -[:WAIVES]-> Obligation` should probably target `Applicability` — an exception is granted for a binding at a site, not for the obligation everywhere.
 - **Consent-to-asset resolution** ("Stack S-2", "Boiler No. 2") will need a reconciliation queue; not designed yet.
+
+**Resolved 2026-11-16, step 1 shipped:** `DG Set / Vendor` (HW-02) binds to `ST-DG_SET` only — `Vendor` is a responsible party, not a `SubjectType`; no `Vendor` entry was seeded into the 11-row vocabulary. `DG Set / UPS Battery` (BW-01) binds to `ST-UPS_BATTERY` (the regulated waste item) and `Autoclave/Deep Burial Pit` (BMW-03) binds to `ST-AUTOCLAVE` (the obligation text is specifically about autoclave cycle parameters) — both resolved on the same "most specific regulated entity" principle as the HW-02 call. `ST-DEEP_BURIAL_PIT` is still seeded, unused by any obligation today — documented absence, not a gap.
 
 ## References
 

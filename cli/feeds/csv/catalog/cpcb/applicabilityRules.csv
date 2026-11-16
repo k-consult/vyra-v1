@@ -1,0 +1,12 @@
+id,name,triggerRaw,ruleVersion
+RULE-WATER_ACT_1974,Water Act applicability,"Any establishment discharging trade effluent or sewage, or drawing/using water in a manner covered by Section 25",1.0
+RULE-AIR_ACT_1981,Air Act applicability,"Any premises operating an 'air pollutant' emitting source (DG sets, boilers) above notified capacity thresholds",1.0
+RULE-EPA_1986,EPA applicability,"Applies to every establishment; gives rise to the subordinate Rules (HWM, SWM, Plastic, Noise, E-Waste, Battery, BMW, C&D)",1.0
+RULE-HWM_RULES_2016,HWM Rules applicability,"Any establishment generating, storing, or transporting hazardous waste (used oil, e-waste, batteries, chemical residues)",1.0
+RULE-SWM_RULES_2016,SWM Rules applicability,Any establishment generating solid waste above the 'bulk generator' threshold (most hotels/hospitals qualify),1.0
+RULE-NOISE_RULES_2000,Noise Rules applicability,Applies to premises adjoining or within notified zones (commercial/industrial/silence),1.0
+RULE-PWM_RULES_2016,PWM Rules applicability,"Brand owners/users of plastic packaging above notified thresholds (F&B outlets, amenities packaging)",1.0
+RULE-EWASTE_RULES_2022,E-Waste Rules applicability,Establishments disposing of end-of-life electronic/IT equipment as bulk consumers,1.0
+RULE-BATTERY_RULES_2022,Battery Rules applicability,Establishments using DG-set/UPS batteries above bulk-consumer threshold,1.0
+RULE-BMW_RULES_2016,BMW Rules applicability,"Hospitals, clinics, diagnostic centres and any healthcare facility generating bio-medical waste",1.0
+RULE-CD_RULES_2016,CD Rules applicability,"Applies during renovation, refurbishment, or demolition activity generating C&D waste above threshold",1.0

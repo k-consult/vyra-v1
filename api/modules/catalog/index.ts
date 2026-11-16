@@ -12,6 +12,7 @@ import {
     listAuthorities,
     listJurisdictions,
     listComplianceAreas,
+    listSubjectTypes,
     getLastSyncedAt,
     listReportSubmissions,
     proposeReportSubmission,
@@ -83,6 +84,10 @@ const catalog: any = async (fastify: FastifyInstance) => {
 
     fastify.get('/compliance-areas', async (_req, reply) => {
         reply.send({ complianceAreas: await listComplianceAreas() });
+    });
+
+    fastify.get('/subject-types', async (_req, reply) => {
+        reply.send({ subjectTypes: await listSubjectTypes() });
     });
 
     fastify.get('/report-submissions', async (_req, reply) => {
