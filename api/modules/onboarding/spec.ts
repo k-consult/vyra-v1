@@ -1,6 +1,7 @@
 import {
     ProposeCutoverCriterionInput, ProposeBlueprintInput, facilityExists, roleExists, assetExists,
     ProposeHazardInput, ProposeHazardAssessmentInput, ProposeEmergencyPlanInput, hazardExists,
+    ReclassifyAssetInput,
 } from './repo';
 
 const isNonEmptyString = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
@@ -144,5 +145,24 @@ export const isValidEmergencyPlanProposal = async (input: Partial<ProposeEmergen
     }
     if (!DRILL_FREQUENCIES.has(input.drillFrequency as string)) {
         throw new Error(`drillFrequency must be one of [${[...DRILL_FREQUENCIES].join(', ')}]; got ${JSON.stringify(input.drillFrequency)}`);
+    }
+};
+
+const isOptionalString = (v: unknown): boolean => v === undefined || v === null || typeof v === 'string';
+
+// Structural validity for POST /onboarding/obligation-mapping/:assetId/reclassify.
+// subjectTypeOverride stays unchecked against the live SubjectType list — same
+// reasoning as intelligence/spec.ts's subjectTypeOverride check: the literal
+// "none" is a valid value with no SubjectType row behind it, and a bogus id just
+// resolves to no match at write time (documented absence, not an error).
+export const isValidReclassifyInput = (input: Partial<ReclassifyAssetInput>): void => {
+    if (!isNonEmptyString(input.subjectTypeOverride)) {
+        throw new Error(`subjectTypeOverride must be a non-empty string; got ${JSON.stringify(input.subjectTypeOverride)}`);
+    }
+    if (!isOptionalString(input.reviewedBy)) {
+        throw new Error(`reviewedBy must be a string when provided; got ${JSON.stringify(input.reviewedBy)}`);
+    }
+    if (!isOptionalString(input.reviewNote)) {
+        throw new Error(`reviewNote must be a string when provided; got ${JSON.stringify(input.reviewNote)}`);
     }
 };

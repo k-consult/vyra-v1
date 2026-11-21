@@ -2,7 +2,8 @@ import { FastifyInstance } from 'fastify';
 import {
     listCutoverCriteria, proposeCutoverCriterion, listBlueprints, proposeBlueprint,
     listHazards, proposeHazard, listHazardAssessments, proposeHazardAssessment,
-    listEmergencyPlans, proposeEmergencyPlan,
+    listEmergencyPlans, proposeEmergencyPlan, listObligationMappings, reclassifyAsset,
+    suggestClassification,
 } from './repo';
 import * as spec from './spec';
 
@@ -90,6 +91,31 @@ const onboarding: any = async (fastify: FastifyInstance) => {
         }
         const result = await proposeEmergencyPlan(req.body);
         reply.code(201).send(result);
+    });
+
+    fastify.get('/obligation-mapping', async (_req, reply) => {
+        reply.send({ mappings: await listObligationMappings() });
+    });
+
+    // Corrects an already-resolved classification — unlike approve/reject above,
+    // this targets the Asset directly (not a specific pending Decision id), since
+    // the point is to act regardless of the current Decision's status. See
+    // repo.ts's reclassifyAsset for the supersede discipline.
+    fastify.post('/obligation-mapping/:assetId/reclassify', async (req: any, reply) => {
+        try {
+            spec.isValidReclassifyInput(req.body ?? {});
+        } catch (err: any) {
+            return reply.code(400).send({ error: err.message });
+        }
+        const result = await reclassifyAsset({ assetId: req.params.assetId, ...req.body });
+        reply.send(result);
+    });
+
+    // Writes nothing — a synchronous model preview the reviewer can accept
+    // (Save), tweak, or discard (Cancel) before anything hits the graph.
+    fastify.post('/obligation-mapping/:assetId/suggest', async (req: any, reply) => {
+        const result = await suggestClassification(req.params.assetId);
+        reply.send(result);
     });
 };
 

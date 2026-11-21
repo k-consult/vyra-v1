@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import multipart from '@fastify/multipart';
-import { deleteTenant, ingestDocumentCatalog, ingestStructure, listTenants, provisionTenant, syncTenantCatalog } from './repo';
+import { deleteTenant, ingestDocumentCatalog, ingestStructure, listTenants, provisionTenant, syncTenantCatalog, runClassification } from './repo';
 import * as spec from './spec';
 
 const tenants: any = async (fastify: FastifyInstance) => {
@@ -38,6 +38,14 @@ const tenants: any = async (fastify: FastifyInstance) => {
     // action. Unknown tenant name propagates untouched, same convention as DELETE.
     fastify.post('/:name/catalog/sync', async (req: any, reply) => {
         const tenant = await syncTenantCatalog(req.params.name);
+        reply.send({ tenant });
+    });
+
+    // On-demand re-run of the applicability-intelligence agent — backs the
+    // Onboarding Annotate stage's toolbar action. Same synchronous shape as
+    // catalog/sync above (no job queue exists in this codebase).
+    fastify.post('/:name/classification/run', async (req: any, reply) => {
+        const tenant = await runClassification(req.params.name);
         reply.send({ tenant });
     });
 

@@ -11,6 +11,12 @@ export const isValid = (input: Record<string, unknown>): void => {
     if (!isOptionalString(input.reviewNote)) {
         throw new Error(`reviewNote must be a string when provided; got ${JSON.stringify(input.reviewNote)}`);
     }
+    // Only meaningful on a subject-type-proposal approve; a bogus/foreign id here
+    // just resolves to no SubjectType at write time (same documented-absence path
+    // as an agent-proposed "none"), so this stays structural, not referential.
+    if (!isOptionalString(input.subjectTypeOverride)) {
+        throw new Error(`subjectTypeOverride must be a string when provided; got ${JSON.stringify(input.subjectTypeOverride)}`);
+    }
 };
 
 // DecisionIsApprovableSpecification / DecisionIsRejectableSpecification (domain.md, Intelligence

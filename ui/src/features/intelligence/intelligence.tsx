@@ -6,6 +6,7 @@ import {
     AlertTriangle, RefreshCw, Brain, ArrowRight,
     Sparkles, TrendingUp, Search, Users, ShieldCheck,
     Radio, FileText, ClipboardCheck, Eye, Gavel, Flag, GitPullRequestArrow,
+    Box, Tag,
 } from 'lucide-react';
 import { intelligence, operational, catalog } from '@/lib/api';
 import { Badge, PropRow } from '@/features/landscape/landscape';
@@ -54,6 +55,8 @@ const ENTITY_ICON: Record<string, React.ElementType> = {
     Control: ShieldCheck,
     Risk: TrendingUp,
     Audit: ClipboardCheck,
+    Asset: Box,
+    SubjectType: Tag,
 };
 
 // ── Decisions ────────────────────────────────────────────────────────────────────
@@ -91,10 +94,18 @@ function TimelineStage({ label, icon: Icon, state, last, children }: {
     );
 }
 
-function DecisionRow({ decision, people, onResolved, onViewResult }: {
-    decision: any; people: any[]; onResolved: () => void; onViewResult: (tab: Tab) => void;
+const NONE_SUBJECT_TYPE = 'none';
+
+function DecisionRow({ decision, people, subjectTypes, onResolved, onViewResult }: {
+    decision: any; people: any[]; subjectTypes: any[]; onResolved: () => void; onViewResult: (tab: Tab) => void;
 }) {
     const [reviewedBy, setReviewedBy] = useState(people[0]?.id ?? '');
+    const isSubjectTypeProposal = decision.type === 'subject-type-proposal';
+    const assetSubjectTypes = useMemo(
+        () => subjectTypes.filter((st) => st.bindsAt === 'Asset'),
+        [subjectTypes]
+    );
+    const [subjectTypeChoice, setSubjectTypeChoice] = useState(decision.proposedSubjectTypeId ?? NONE_SUBJECT_TYPE);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -103,7 +114,7 @@ function DecisionRow({ decision, people, onResolved, onViewResult }: {
         setError(null);
         try {
             await (action === 'approve'
-                ? intelligence.approve(decision.id, reviewedBy)
+                ? intelligence.approve(decision.id, reviewedBy, undefined, isSubjectTypeProposal ? subjectTypeChoice : undefined)
                 : intelligence.reject(decision.id, reviewedBy));
             onResolved();
         } catch (err: any) {
@@ -168,7 +179,12 @@ function DecisionRow({ decision, people, onResolved, onViewResult }: {
                         </Link>
                     ) : approved && result ? (
                         <button onClick={() => onViewResult(fallbackResultTab ?? 'controls')} className="text-left group">
-                            <p className="text-[11px] text-emerald-400 group-hover:text-emerald-300">{result.label}</p>
+                            <p className="text-[11px] text-emerald-400 group-hover:text-emerald-300 flex items-center gap-1">
+                                {result.label}
+                                {decision.overridden && (
+                                    <span className="text-[9px] rounded border border-amber-700/50 bg-amber-900/30 text-amber-400 px-1 normal-case">overridden</span>
+                                )}
+                            </p>
                             <p className="text-[10px] font-mono text-zinc-500 truncate flex items-center gap-0.5">{result.id} <ArrowRight size={9} /></p>
                         </button>
                     ) : approved && decision.type === 'assurance-package-proposal' ? (
@@ -186,28 +202,46 @@ function DecisionRow({ decision, people, onResolved, onViewResult }: {
                     ) : rejected ? (
                         <p className="text-[11px] text-zinc-600">nothing created</p>
                     ) : (
-                        <div className="flex items-center gap-1.5">
-                            <select
-                                value={reviewedBy}
-                                onChange={(e) => setReviewedBy(e.target.value)}
-                                className="min-w-0 flex-1 rounded border border-zinc-700 bg-zinc-950 px-1.5 py-1 text-[10px] text-zinc-300"
-                            >
-                                {people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                            </select>
-                            <button
-                                onClick={() => resolve('approve')}
-                                disabled={busy}
-                                className="shrink-0 rounded border border-emerald-700/50 bg-emerald-900/30 px-1.5 py-1 text-[10px] font-medium text-emerald-300 hover:bg-emerald-900/50 disabled:opacity-40"
-                            >
-                                Approve
-                            </button>
-                            <button
-                                onClick={() => resolve('reject')}
-                                disabled={busy}
-                                className="shrink-0 rounded border border-red-700/50 bg-red-900/30 px-1.5 py-1 text-[10px] font-medium text-red-300 hover:bg-red-900/50 disabled:opacity-40"
-                            >
-                                Reject
-                            </button>
+                        <div className="flex flex-col gap-1.5">
+                            {isSubjectTypeProposal && (
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[9px] text-zinc-600 uppercase tracking-wider shrink-0">
+                                        Model: {assetSubjectTypes.find((st) => st.id === decision.proposedSubjectTypeId)?.name ?? 'None'}
+                                    </span>
+                                    <select
+                                        value={subjectTypeChoice}
+                                        onChange={(e) => setSubjectTypeChoice(e.target.value)}
+                                        title="Override the agent's recommended SubjectType before approving"
+                                        className="min-w-0 flex-1 rounded border border-sky-800/60 bg-zinc-950 px-1.5 py-1 text-[10px] text-sky-300"
+                                    >
+                                        <option value={NONE_SUBJECT_TYPE}>None — no SubjectType applies</option>
+                                        {assetSubjectTypes.map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
+                                    </select>
+                                </div>
+                            )}
+                            <div className="flex items-center gap-1.5">
+                                <select
+                                    value={reviewedBy}
+                                    onChange={(e) => setReviewedBy(e.target.value)}
+                                    className="min-w-0 flex-1 rounded border border-zinc-700 bg-zinc-950 px-1.5 py-1 text-[10px] text-zinc-300"
+                                >
+                                    {people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                </select>
+                                <button
+                                    onClick={() => resolve('approve')}
+                                    disabled={busy}
+                                    className="shrink-0 rounded border border-emerald-700/50 bg-emerald-900/30 px-1.5 py-1 text-[10px] font-medium text-emerald-300 hover:bg-emerald-900/50 disabled:opacity-40"
+                                >
+                                    Approve
+                                </button>
+                                <button
+                                    onClick={() => resolve('reject')}
+                                    disabled={busy}
+                                    className="shrink-0 rounded border border-red-700/50 bg-red-900/30 px-1.5 py-1 text-[10px] font-medium text-red-300 hover:bg-red-900/50 disabled:opacity-40"
+                                >
+                                    Reject
+                                </button>
+                            </div>
                         </div>
                     )}
                 </TimelineStage>
@@ -224,8 +258,8 @@ const DECISION_FILTERS: { key: DecisionFilter; label: string }[] = [
     { key: 'all', label: 'All' },
 ];
 
-function DecisionsPanel({ items, people, onResolved, onViewResult }: {
-    items: any[]; people: any[]; onResolved: () => void; onViewResult: (tab: Tab) => void;
+function DecisionsPanel({ items, people, subjectTypes, onResolved, onViewResult }: {
+    items: any[]; people: any[]; subjectTypes: any[]; onResolved: () => void; onViewResult: (tab: Tab) => void;
 }) {
     const [filter, setFilter] = useState<DecisionFilter>('pending');
 
@@ -273,7 +307,7 @@ function DecisionsPanel({ items, people, onResolved, onViewResult }: {
             ) : (
                 <div className="flex flex-col gap-2">
                     {filtered.map((d, i) => (
-                        <DecisionRow key={d?.id ?? i} decision={d} people={people} onResolved={onResolved} onViewResult={onViewResult} />
+                        <DecisionRow key={d?.id ?? i} decision={d} people={people} subjectTypes={subjectTypes} onResolved={onResolved} onViewResult={onViewResult} />
                     ))}
                 </div>
             )}
@@ -383,6 +417,7 @@ export function IntelligenceView() {
     const [people, setPeople] = useState<any[]>([]);
     const [agentProposedControls, setAgentProposedControls] = useState<any[]>([]);
     const [agreementRates, setAgreementRates] = useState<any[]>([]);
+    const [subjectTypes, setSubjectTypes] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [activeTab, setActiveTab] = useState<Tab>('decisions');
@@ -392,13 +427,14 @@ export function IntelligenceView() {
         setError(false);
         Promise.all([
             intelligence.decisions(), operational.people(), catalog.agentProposedControls(),
-            intelligence.agreementRates(),
+            intelligence.agreementRates(), catalog.subjectTypes(),
         ])
-            .then(([dec, ppl, ctl, rates]: any[]) => {
+            .then(([dec, ppl, ctl, rates, subj]: any[]) => {
                 setDecisions(dec.decisions ?? []);
                 setPeople(ppl.people ?? []);
                 setAgentProposedControls(ctl.controls ?? []);
                 setAgreementRates(rates.agreementRates ?? []);
+                setSubjectTypes(subj.subjectTypes ?? []);
             })
             .catch(() => setError(true))
             .finally(() => setLoading(false));
@@ -472,7 +508,7 @@ export function IntelligenceView() {
                 {activeTab === 'decisions' && (
                     <div className="flex flex-col gap-6">
                         <AgreementRatesPanel items={agreementRates} />
-                        <DecisionsPanel items={decisions} people={people} onResolved={load} onViewResult={setActiveTab} />
+                        <DecisionsPanel items={decisions} people={people} subjectTypes={subjectTypes} onResolved={load} onViewResult={setActiveTab} />
                     </div>
                 )}
                 {activeTab === 'controls' && <ControlsPanel items={agentProposedControls} />}

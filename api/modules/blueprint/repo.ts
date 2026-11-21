@@ -345,6 +345,7 @@ interface StructureNodeRow {
     nodeLabels: string[];
     node: Record<string, any>;
     parentId: string | null;
+    subjectTypeName: string | null;
 }
 
 // Label names here are derived (labelFromName) from Level.name already
@@ -358,7 +359,8 @@ const buildStructureQuery = (labels: string[]): string => {
         MATCH (n)
         WHERE ${predicate}
         OPTIONAL MATCH (n)-[:BELONGS_TO]->(parent)
-        RETURN labels(n) AS nodeLabels, properties(n) AS node, parent.id AS parentId
+        OPTIONAL MATCH (n)-[:OF_TYPE]->(st:SubjectType)
+        RETURN labels(n) AS nodeLabels, properties(n) AS node, parent.id AS parentId, st.name AS subjectTypeName
     `;
 };
 
@@ -382,7 +384,8 @@ export const getStructureTree = async (databaseName?: string): Promise<TreeNode[
     const byId = new Map<string, TreeNode>();
     for (const row of rows.filter(r => r?.node)) {
         const label = (row.nodeLabels ?? []).find(l => labels.includes(l)) ?? row.nodeLabels?.[0] ?? 'Unknown';
-        byId.set(row.node.id, { label, node: row.node, children: [] });
+        const node = row.subjectTypeName ? { ...row.node, subjectType: row.subjectTypeName } : row.node;
+        byId.set(row.node.id, { label, node, children: [] });
     }
     const roots: TreeNode[] = [];
     for (const row of rows.filter(r => r?.node)) {

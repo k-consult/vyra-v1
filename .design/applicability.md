@@ -91,7 +91,7 @@ Single-shot constrained extraction/classification — fits today's `reasonWithLL
 | Job | When | Output |
 |---|---|---|
 | Trigger text → `ApplicabilityRule` predicates | Catalog time, once, at Vyra Central — part of the licensed catalog asset | Ratified centrally |
-| `ASSET_CATEGORY`/`ASSET_NAME` → `SubjectType` (choose from list, or `none`) | Onboarding | `OF_TYPE` proposals |
+| ✅ `ASSET_CATEGORY`/`ASSET_NAME` → `SubjectType` (choose from list, or `none`) — done 2026-11-18 | Onboarding | `OF_TYPE` proposals |
 | Blueprint `Property` → `ApplicabilityAttribute` | Onboarding | `MAPS_TO` proposals |
 | Consent PDF → conditions | Permit proposal | `consent-condition` obligations |
 | Vague predicates ("if on-site", "where applicable") | Evaluation | `undetermined` + a question to a human — never a guess |
@@ -127,7 +127,7 @@ Re-evaluation triggers: `ObligationRevised` on catalog sync; asset added/recateg
 |---|---|---|
 | 1 | ✅ Vocabulary: `SubjectType`, `ApplicabilityAttribute` seeds | Every CPCB obligation subject resolves to ≥1 atomic `SubjectType` — done 2026-11-16 |
 | 2 | ✅ Catalog: `subjectTypeId` column in `obligations.csv` + `v2.ts` mapping → `BINDS_TO_TYPE`; `ApplicabilityRule` per regulation | 29/29 CPCB obligations carry `BINDS_TO_TYPE`; 11/11 regulations carry a rule with `triggerRaw` preserved — done 2026-11-16. 3 new attributes added for PWM/E-Waste/Battery rather than leaving them unconditional; only 3 of 11 rules (Water/EPA/HWM) stay unconditional, matching an activity-based rather than threshold-based trigger |
-| 3 | Tenant facts: asset → `SubjectType` proposals; `Property -[:MAPS_TO]->` attribute; facet intake (`track.md` Onboarding pending) | Orchid's 19 assets each `OF_TYPE` a type or explicitly `none` |
+| 3 | ✅ Tenant facts: asset → `SubjectType` proposals (`applicability-intelligence` agent + `subject-type-proposal` Decision gate) — done 2026-11-18. `Property -[:MAPS_TO]->` attribute + facet intake (`track.md` Onboarding pending) remain open | Orchid's 19 assets each proposed (pending human review) or resolved `OF_TYPE` a type or explicitly `none` — verified live: all 19 observed and proposed in one run; re-run observed 0 (idempotency holds). The local `llama3.1:8b` model does **not** reliably propose `"none"` for the two documented-gap categories (`Fire System`/`Borewell`) — it offers a best-effort (sometimes wrong) candidate instead, same as it occasionally mis-picked within a clear category (one `STP`→`ST-BOILER`). This is the Decision gate working as designed, not a code defect: approving a correct match writes `OF_TYPE` (verified, `Boiler`→`ST-BOILER`); rejecting a wrong one leaves no edge (verified); approving a genuine `"none"` writes `RESULTED_IN` the `Asset` itself with no `OF_TYPE` edge (verified). A reviewer is expected to reject/correct weak proposals rather than auto-accept them — exactly why this gate is Level 1, never auto |
 | 4 | `Applicability` node + evaluator + `applicability-proposal` Decision type; wizard Stages 2–3 (bundled per site × regulation) | §6 table reproduces from a live query |
 | 5 | Consent conditions on `Permit` | A real CTO's conditions bind to named assets |
 | 6 | Reporting: `REQUIRES_FILING`, `ReportSubmission -[:FOR]->` | Form V duty per Orchid site |

@@ -39,6 +39,11 @@ const CATALOG_SYNC_SCRIPT = path.join(REPO_ROOT, 'cli/orchestration/catalog-sync
 const DOCUMENT_CATALOG_SYNC_SCRIPT = path.join(REPO_ROOT, 'cli/orchestration/document-catalog-sync.ts');
 const STRUCTURE_SYNC_SCRIPT = path.join(REPO_ROOT, 'cli/orchestration/structure-sync.ts');
 const CLI_TSCONFIG = path.join(REPO_ROOT, 'cli/tsconfig.json');
+// Agents are a separate workspace with their own tsconfig (architecture.md:59 —
+// agents never called in-process by the API, only spawned as their own process,
+// same arm's-length precedent as the CLI scripts below).
+const AGENTS_TSCONFIG = path.join(REPO_ROOT, 'agents/tsconfig.json');
+const AGENTS_ENTRYPOINT = path.join(REPO_ROOT, 'agents/index.ts');
 const TS_NODE_BIN = path.join(REPO_ROOT, 'node_modules/.bin/ts-node');
 
  
@@ -51,9 +56,9 @@ const stripAnsi = (s: string): string => s.replace(ANSI_PATTERN, '');
 // meant every clean validation failure (missing CSV column, required-field
 // violation, ...) surfaced to the API caller as an empty-message 500. Capture
 // both streams and report whichever one actually has content.
-const runScript = (scriptPath: string, args: string[], databaseName: string, label: string): Promise<void> =>
+const runScript = (scriptPath: string, args: string[], databaseName: string, label: string, tsconfigPath: string = CLI_TSCONFIG): Promise<void> =>
     new Promise((resolve, reject) => {
-        const child = spawn(TS_NODE_BIN, ['--project', CLI_TSCONFIG, scriptPath, ...args], {
+        const child = spawn(TS_NODE_BIN, ['--project', tsconfigPath, scriptPath, ...args], {
             cwd: REPO_ROOT,
             env: { ...process.env, DB_NAME: databaseName },
         });
@@ -218,6 +223,33 @@ export const syncTenantCatalog = async (name: string) => {
     const raw: any = await registryDb().exec(RECORD_CATALOG_SYNC, { name, authoritiesLoaded });
     const row = Array.isArray(raw) ? raw[0] : raw;
     log.info(`tenants.repo: synced '${tenant.database}' with central catalog, authorities: ${authoritiesLoaded.join(', ') || 'none'}`);
+    return row?.tenant;
+};
+
+const RECORD_CLASSIFICATION_RUN = `
+    MATCH (t:Tenant {id: $name})
+    SET t.lastClassificationRunAt = datetime()
+    RETURN properties(t) AS tenant
+`;
+
+// On-demand re-run of the applicability-intelligence agent against an
+// already-active tenant — backs the Onboarding Annotate stage's "Run
+// classification" toolbar action and the auto-trigger after a structure
+// upload. Spawned, not imported — architecture.md:59's agents-never-called-
+// in-process-by-the-API rule, same arm's-length precedent as runCatalogSync
+// above, just pointed at the agents/ workspace's own tsconfig and entrypoint
+// instead of a cli/ script. The agent's own idempotency guard
+// (fetchUnclassifiedAssets' no-Decision filter) makes this safe to call even
+// when nothing new needs classifying — it just observes 0.
+export const runClassification = async (name: string) => {
+    const tenant = await getTenant(name);
+    if (!tenant) throw new Error(`no tenant registered as '${name}'`);
+
+    await runScript(AGENTS_ENTRYPOINT, ['applicability-intelligence'], tenant.database, 'applicability-intelligence', AGENTS_TSCONFIG);
+
+    const raw: any = await registryDb().exec(RECORD_CLASSIFICATION_RUN, { name });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    log.info(`tenants.repo: ran applicability-intelligence against '${tenant.database}'`);
     return row?.tenant;
 };
 

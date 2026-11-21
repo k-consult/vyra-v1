@@ -113,7 +113,10 @@ export function UploadTrigger<T>({ className, children, upload, onUploaded }: {
     );
 }
 
-const iconForLabel = (label: string) => {
+// Exported for the onboarding wizard's Obligation Mapping tree (onboarding.tsx),
+// which walks this same StructureTreeNode shape but needs its own node renderer
+// (classification status, inline confirm/override, nested Obligation rows).
+export const iconForLabel = (label: string) => {
     if (label === 'Facility') return Building2;
     if (label === 'Asset') return Server;
     return Layers;
@@ -138,6 +141,9 @@ function InstanceNode({ node }: { node: StructureTreeNode }) {
                 {node.node.code && <span className="text-[10px] font-mono text-zinc-600">{node.node.code}</span>}
                 {node.node.category && <span className="text-[10px] text-zinc-600">{node.node.category}</span>}
                 {node.node.assetType && <span className="text-[10px] text-zinc-700">{node.node.assetType}</span>}
+                {node.node.subjectType && (
+                    <span className="text-[10px] rounded border border-sky-800/60 bg-sky-950/40 text-sky-400 px-1">{node.node.subjectType}</span>
+                )}
                 <span className="text-[10px] font-mono text-zinc-700">{node.label}</span>
                 {hasChildren && <span className="ml-auto text-[10px] text-zinc-500">{node.children.length}</span>}
             </button>

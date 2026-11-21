@@ -96,8 +96,8 @@ export const intelligence = {
     agreementRates: () => get<{ agreementRates: { agentId: string; approved: number; rejected: number; total: number; agreementRate: number | null }[] }>('/intelligence/decisions/agreement-rates'),
     rcas:         () => get<{ rcas: any[] }>('/intelligence/rcas'),
     reverseTrace: (id: string) => get<any>(`/intelligence/incidents/${id}/reverse-trace`),
-    approve: (id: string, reviewedBy?: string, reviewNote?: string) =>
-        post<any>(`/intelligence/decisions/${id}/approve`, { reviewedBy, reviewNote }),
+    approve: (id: string, reviewedBy?: string, reviewNote?: string, subjectTypeOverride?: string) =>
+        post<any>(`/intelligence/decisions/${id}/approve`, { reviewedBy, reviewNote, subjectTypeOverride }),
     reject: (id: string, reviewedBy?: string, reviewNote?: string) =>
         post<any>(`/intelligence/decisions/${id}/reject`, { reviewedBy, reviewNote }),
 };
@@ -232,6 +232,22 @@ export const onboarding = {
     blueprints: () => get<{ blueprints: any[] }>('/onboarding/blueprints'),
     proposeBlueprint: (input: ProposeBlueprintInput) =>
         post<{ decision: any }>('/onboarding/blueprints', input),
+    obligationMapping: () => get<{ mappings: ObligationMapping[] }>('/onboarding/obligation-mapping'),
+    reclassify: (assetId: string, subjectTypeOverride: string, reviewedBy?: string, reviewNote?: string) =>
+        post<{ decision: any; asset: any; subjectType: any }>(`/onboarding/obligation-mapping/${assetId}/reclassify`, { subjectTypeOverride, reviewedBy, reviewNote }),
+    // Writes nothing — a preview the Annotate row's "Invoke model" button uses
+    // to pre-fill the dropdown with a fresh model read, left for the reviewer
+    // to Save or Cancel.
+    suggestClassification: (assetId: string) =>
+        post<{ proposedSubjectTypeId: string; rationale: string; confidence: number }>(`/onboarding/obligation-mapping/${assetId}/suggest`, {}),
+};
+
+export type ObligationMapping = {
+    asset: { id: string; name: string; category?: string };
+    status: 'unclassified' | 'pending' | 'classified' | 'none' | 'rejected';
+    decisionId: string | null;
+    previewSubjectType: { id: string; name: string } | null;
+    obligations: { id: string; name: string }[];
 };
 
 export type Tenant = {
@@ -245,6 +261,7 @@ export type Tenant = {
     authoritiesLoaded: string[];
     createdAt: string;
     lastCatalogSyncAt?: string;
+    lastClassificationRunAt?: string;
 };
 
 export type DocumentCatalogSummary = {
@@ -319,6 +336,7 @@ export const tenants = {
     provision: (input: { name: string; description?: string }) => post<{ tenant: Tenant }>('/tenants', input),
     remove:   (name: string) => del<{ databaseDropped: boolean }>(`/tenants/${name}`),
     syncCatalog: (name: string) => post<{ tenant: Tenant }>(`/tenants/${name}/catalog/sync`),
+    runClassification: (name: string) => post<{ tenant: Tenant }>(`/tenants/${name}/classification/run`),
     uploadDocumentCatalog: (name: string, file: File) =>
         uploadMultipart<DocumentCatalogSummary>(`/tenants/${name}/document-catalog`, file),
     // The onboarding blueprint upload — facilities/assets with their location

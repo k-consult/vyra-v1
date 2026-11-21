@@ -1,5 +1,6 @@
 import { DB } from '../../../lib/graph-db';
 import { config } from '../../../lib/config';
+import { listSubjectTypes } from '../catalog/repo';
 
 const db = () => DB.get(config.db.twin.database, {
     uri: config.db.twin.uri,
@@ -352,4 +353,190 @@ export const proposeEmergencyPlan = async (input: ProposeEmergencyPlanInput) => 
     });
     const row = Array.isArray(raw) ? raw[0] : raw;
     return { decision: row?.decision };
+};
+
+// Onboarding's "Obligation Mapping" stage — the user-facing wrapper around the
+// subject-type-proposal Decision queue (intelligence/repo.ts). A tenant admin
+// should never need to know what a SubjectType is; they need "here's my asset,
+// here's what it's obligated to do." previewSubjectTypeId resolves to whichever
+// SubjectType is actually relevant right now — the confirmed OF_TYPE one once
+// classified, or the agent's still-pending proposal beforehand — so a reviewer
+// sees the obligations a pending proposal would unlock *before* approving it,
+// not just after. BINDS_TO_TYPE is the live Obligation->SubjectType edge from
+// applicability.md step 2 (cli/semantic-contract/contracts/v2.ts).
+// Reclassification (reclassifyAsset below) supersedes rather than mutates a prior
+// Decision — same append-and-supersede discipline as Contract/Permit/Warranty — so
+// an Asset can carry more than one subject-type-proposal Decision over its
+// lifetime. Only the active (non-superseded) one is "the" current classification;
+// without this filter, a reclassified Asset would duplicate here, once per
+// Decision it ever had.
+const LIST_OBLIGATION_MAPPINGS = `
+    MATCH (a:Asset)
+    OPTIONAL MATCH (d:Decision {type: 'subject-type-proposal'})-[:ABOUT]->(a)
+        WHERE d.supersededBy IS NULL OR d.supersededBy = ''
+    OPTIONAL MATCH (a)-[:OF_TYPE]->(resolvedSt:SubjectType)
+    WITH a, d, resolvedSt, coalesce(resolvedSt.id, d.proposedSubjectTypeId) AS previewSubjectTypeId
+    OPTIONAL MATCH (previewSt:SubjectType {id: previewSubjectTypeId})
+    OPTIONAL MATCH (obl:Obligation)-[:BINDS_TO_TYPE]->(previewSt)
+    RETURN properties(a) AS asset, properties(d) AS decision, properties(resolvedSt) AS resolvedSubjectType,
+           properties(previewSt) AS previewSubjectType, collect(DISTINCT properties(obl)) AS obligations
+    ORDER BY asset.category, asset.name
+`;
+
+export type ObligationMappingStatus = 'unclassified' | 'pending' | 'classified' | 'none' | 'rejected';
+
+export const listObligationMappings = async () => {
+    const raw: any = await db().fetch(LIST_OBLIGATION_MAPPINGS, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.filter((r: any) => r?.asset).map((r: any) => {
+        const status: ObligationMappingStatus = !r.decision ? 'unclassified'
+            : r.decision.status === 'pending' ? 'pending'
+            : r.decision.status === 'rejected' ? 'rejected'
+            : r.resolvedSubjectType ? 'classified' : 'none';
+        // A rejected proposal has nothing to preview — it won't resolve on its own,
+        // and showing the agent's old (rejected) guess as if it still applied would
+        // misrepresent a reviewer's own call as a live recommendation.
+        const showPreview = status !== 'rejected';
+        return {
+            asset: r.asset,
+            status,
+            decisionId: r.decision?.id ?? null,
+            previewSubjectType: showPreview ? (r.previewSubjectType ?? null) : null,
+            obligations: showPreview ? (r.obligations ?? []).filter(Boolean) : [],
+        };
+    });
+};
+
+// Reclassify an Asset that already has a resolved subject-type-proposal Decision
+// (classified/none/rejected) — a correction made after the fact, not a fresh
+// agent proposal. Never mutates the prior Decision or OF_TYPE edge in place:
+// creates a brand-new Decision (origin: 'human', pre-resolved to 'approved' since
+// the reviewer is both proposer and approver in one action), marks the prior
+// Decision superseded (mirrors Contract/Permit/Warranty's prior.supersededBy —
+// never deleted, so the full history of what this asset was classified as, and
+// when, stays queryable), and swaps the OF_TYPE edge. The $subjectTypeOverride
+// literal "none" OPTIONAL MATCHes nothing, so it falls through to the same
+// documented-absence path (RESULTED_IN the Asset, no OF_TYPE edge) the original
+// approval flow already uses — no special-casing here either.
+const RECLASSIFY_SUBJECT_TYPE = `
+    MATCH (a:Asset {id: $assetId})
+    OPTIONAL MATCH (prior:Decision {type: 'subject-type-proposal'})-[:ABOUT]->(a)
+        WHERE prior.supersededBy IS NULL OR prior.supersededBy = ''
+    OPTIONAL MATCH (a)-[priorEdge:OF_TYPE]->(:SubjectType)
+    DELETE priorEdge
+    WITH a, prior
+    MERGE (d:Decision {id: $id})
+    ON CREATE SET
+        d += $props,
+        d.decidedAt = datetime(),
+        d.reviewedAt = datetime(),
+        d.priorDecisionId = coalesce(prior.id, '')
+    MERGE (d)-[:ABOUT]->(a)
+    WITH a, d, prior
+    FOREACH (_ IN CASE WHEN prior IS NOT NULL THEN [1] ELSE [] END | SET prior.supersededBy = d.id)
+    WITH a, d
+    OPTIONAL MATCH (st:SubjectType {id: $subjectTypeOverride})
+    FOREACH (_ IN CASE WHEN st IS NOT NULL THEN [1] ELSE [] END | MERGE (a)-[:OF_TYPE]->(st))
+    FOREACH (_ IN CASE WHEN st IS NOT NULL THEN [1] ELSE [] END | MERGE (d)-[:RESULTED_IN]->(st))
+    FOREACH (_ IN CASE WHEN st IS NULL THEN [1] ELSE [] END | MERGE (d)-[:RESULTED_IN]->(a))
+    WITH a, d, st
+    OPTIONAL MATCH (p:Person {id: $reviewedBy})
+    FOREACH (_ IN CASE WHEN p IS NOT NULL THEN [1] ELSE [] END | MERGE (d)-[:REVIEWED_BY]->(p))
+    RETURN properties(d) AS decision, properties(a) AS asset, properties(st) AS subjectType
+`;
+
+export interface ReclassifyAssetInput {
+    assetId: string;
+    subjectTypeOverride: string;
+    reviewedBy?: string;
+    reviewNote?: string;
+}
+
+export const reclassifyAsset = async (input: ReclassifyAssetInput) => {
+    const id = `DEC-${input.assetId}-RECLASSIFY-${Date.now()}`;
+    const raw: any = await db().exec(RECLASSIFY_SUBJECT_TYPE, {
+        id,
+        assetId: input.assetId,
+        subjectTypeOverride: input.subjectTypeOverride,
+        reviewedBy: input.reviewedBy ?? null,
+        props: {
+            type: 'subject-type-proposal',
+            rationale: 'Manually reclassified by reviewer',
+            agentId: input.reviewedBy || 'unattributed',
+            origin: 'human',
+            autonomyLevel: 0,
+            confidence: 1,
+            sourceId: input.assetId,
+            proposedSubjectTypeId: input.subjectTypeOverride,
+            resolvedSubjectTypeId: input.subjectTypeOverride,
+            overridden: false,
+            status: 'approved',
+            reviewedBy: input.reviewedBy ?? null,
+            reviewNote: input.reviewNote ?? null,
+        },
+    });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    if (!row?.asset) throw new Error(`Asset ${input.assetId} not found`);
+    return { decision: row.decision, asset: row.asset, subjectType: row.subjectType };
+};
+
+const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://localhost:11434';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.1:8b';
+
+// Minimal duplicate of agents/runtime/index.ts's reasonWithLLM — this is the
+// one place the API talks to the local model directly, for Annotate's
+// "Invoke model" button: a synchronous, read-only preview for a single Asset
+// that writes nothing to the graph (the human still has to click Save, which
+// goes through reclassifyAsset above). Duplicated rather than imported from
+// agents/, per this codebase's cross-workspace isolation convention —
+// agents/tools/graph-read.ts's fetchAgreementRate duplicates the same way in
+// the other direction (architecture.md:59).
+const askModel = async (prompt: string): Promise<{ rationale: string; confidence: number; proposedSubjectTypeId: string }> => {
+    const res = await fetch(`${OLLAMA_HOST}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            model: OLLAMA_MODEL,
+            stream: false,
+            format: 'json',
+            messages: [{
+                role: 'user',
+                content: `${prompt}\n\nRespond with ONLY a JSON object of the form `
+                    + `{"rationale": string, "confidence": number between 0 and 1, `
+                    + `"proposedSubjectTypeId": one of the listed ids, or the literal string "none" if no candidate applies}. No other text.`,
+            }],
+        }),
+    });
+    if (!res.ok) throw new Error(`onboarding.repo: Ollama request failed: ${res.status} ${await res.text()}`);
+    const data: any = await res.json();
+    const parsed = JSON.parse(data?.message?.content ?? '{}');
+    return {
+        rationale: String(parsed.rationale ?? 'UNKNOWN'),
+        confidence: Number(parsed.confidence ?? 0),
+        proposedSubjectTypeId: String(parsed.proposedSubjectTypeId ?? 'none'),
+    };
+};
+
+const GET_ASSET = `MATCH (a:Asset {id: $id}) RETURN properties(a) AS asset`;
+
+// Same prompt shape as applicability-intelligence/index.ts's `reason` step,
+// against one caller-chosen Asset instead of the full unclassified-assets
+// observe loop — Annotate's per-row "Invoke model" when a reviewer wants a
+// fresh read rather than picking from the dropdown themselves.
+export const suggestClassification = async (assetId: string) => {
+    const raw: any = await db().fetch(GET_ASSET, { id: assetId });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    const asset = row?.asset;
+    if (!asset) throw new Error(`Asset ${assetId} not found`);
+
+    const subjectTypes = await listSubjectTypes();
+    const candidates = subjectTypes.filter((st: any) => st.bindsAt === 'Asset');
+    const candidateList = candidates.map((st: any) => `${st.id}: ${st.name}`).join('\n');
+
+    return askModel(
+        `A tenant Asset needs to be classified against the regulatory SubjectType vocabulary:\n` +
+        `Asset: "${asset.name}" (category: ${asset.category ?? 'UNKNOWN'}, assetType: ${asset.assetType ?? 'UNKNOWN'})\n` +
+        `Candidate SubjectTypes (id: name):\n${candidateList}\n\n` +
+        `Propose, in one or two sentences, which SubjectType this Asset is regulated as, if any.`
+    );
 };

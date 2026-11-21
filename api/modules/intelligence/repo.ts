@@ -62,13 +62,17 @@ export const listDecisions = async () => {
 
 // origin = 'agent' excludes human-authored proposals (e.g. contract-proposal) from
 // a per-agent-family agreement stat — a human's own decision has no "agreement
-// rate" with itself.
+// rate" with itself. d.overridden (subject-type-proposal only, so far) means the
+// reviewer approved a *different* SubjectType than the agent proposed — that is a
+// correction, not agreement, so it counts on the rejected side despite status
+// staying 'approved'. coalesce(...,false) is a no-op for every other decision
+// type, which never sets this field.
 const GET_AGREEMENT_RATES = `
     MATCH (d:Decision)
     WHERE d.status IN ['approved', 'rejected'] AND d.origin = 'agent'
     RETURN d.agentId AS agentId,
-           sum(CASE WHEN d.status = 'approved' THEN 1 ELSE 0 END) AS approved,
-           sum(CASE WHEN d.status = 'rejected' THEN 1 ELSE 0 END) AS rejected
+           sum(CASE WHEN d.status = 'approved' AND NOT coalesce(d.overridden, false) THEN 1 ELSE 0 END) AS approved,
+           sum(CASE WHEN d.status = 'rejected' OR coalesce(d.overridden, false) THEN 1 ELSE 0 END) AS rejected
     ORDER BY agentId
 `;
 
@@ -601,6 +605,41 @@ const APPROVE_REPORT_SUBMISSION_PROPOSAL = `
     RETURN properties(d) AS decision, properties(rs) AS reportSubmission
 `;
 
+// OF_TYPE is the first Decision-approval write with a genuine "no match" outcome as a
+// first-class result, not an edge case — applicability.md §6's own worked example
+// expects some tenant Assets to resolve to no SubjectType. The OPTIONAL MATCH on
+// resolvedSubjectTypeId = 'none' simply finds nothing, so both FOREACHs below fall
+// through to the documented-absence path (RESULTED_IN the Asset itself, no OF_TYPE
+// edge) for free — no special-casing of the literal "none" string in TS.
+//
+// $overrideSubjectTypeId lets a human reviewer bind to a different SubjectType than
+// the agent proposed (the Intelligence UI's dropdown next to the recommendation) —
+// coalesce falls back to the agent's own d.proposedSubjectTypeId when no override is
+// sent. d.proposedSubjectTypeId is never overwritten (it's the permanent record of
+// what the agent actually said, needed for the agreement-rate metric below); the
+// resolved outcome is stamped separately as d.resolvedSubjectTypeId/d.overridden so
+// an override shows up as a correction, not an agreement — foundation.md's "human
+// overrides must feed back into future reasoning" requires the two to stay distinct.
+const APPROVE_SUBJECT_TYPE_PROPOSAL = `
+    MATCH (d:Decision {id: $id})-[:ABOUT]->(a:Asset)
+    WITH d, a, coalesce($overrideSubjectTypeId, d.proposedSubjectTypeId) AS resolvedSubjectTypeId
+    OPTIONAL MATCH (st:SubjectType {id: resolvedSubjectTypeId})
+    FOREACH (_ IN CASE WHEN st IS NOT NULL THEN [1] ELSE [] END | MERGE (a)-[:OF_TYPE]->(st))
+    SET d.status = 'approved',
+        d.reviewedAt = datetime(),
+        d.reviewedBy = $reviewedBy,
+        d.reviewNote = $reviewNote,
+        d.resolvedSubjectTypeId = resolvedSubjectTypeId,
+        d.overridden = (resolvedSubjectTypeId <> d.proposedSubjectTypeId)
+    WITH d, a, st
+    FOREACH (_ IN CASE WHEN st IS NOT NULL THEN [1] ELSE [] END | MERGE (d)-[:RESULTED_IN]->(st))
+    FOREACH (_ IN CASE WHEN st IS NULL THEN [1] ELSE [] END | MERGE (d)-[:RESULTED_IN]->(a))
+    WITH d, a, st
+    OPTIONAL MATCH (p:Person {id: $reviewedBy})
+    FOREACH (_ IN CASE WHEN p IS NOT NULL THEN [1] ELSE [] END | MERGE (d)-[:REVIEWED_BY]->(p))
+    RETURN properties(d) AS decision, properties(a) AS asset, properties(st) AS subjectType
+`;
+
 // YYYY-Qn off an incidentTime-shaped "YYYY-MM-DD HH:mm" string — same derivation
 // cli/scripts/generate-assurance-seed.ts's quarterOf() uses, ported to JS since this is a
 // live API path rather than a batch script.
@@ -614,7 +653,8 @@ export const resolveDecision = async (
     type: string,
     action: 'approve' | 'reject',
     reviewedBy?: string,
-    reviewNote?: string
+    reviewNote?: string,
+    subjectTypeOverride?: string
 ) => {
     const params = { id, reviewedBy: reviewedBy ?? null, reviewNote: reviewNote ?? null };
     try {
@@ -700,6 +740,12 @@ export const resolveDecision = async (
             const row = Array.isArray(raw) ? raw[0] : raw;
             if (!row?.decision) throw new Error(`Decision ${id} has no linked Report, or authorityId no longer resolves`);
             return { decision: row.decision, reportSubmission: row.reportSubmission };
+        }
+        if (type === 'subject-type-proposal') {
+            const raw: any = await db().exec(APPROVE_SUBJECT_TYPE_PROPOSAL, { ...params, overrideSubjectTypeId: subjectTypeOverride ?? null });
+            const row = Array.isArray(raw) ? raw[0] : raw;
+            if (!row?.decision) throw new Error(`Decision ${id} has no linked Asset to approve`);
+            return { decision: row.decision, asset: row.asset, subjectType: row.subjectType };
         }
         if (type === 'assurance-package-proposal') {
             const incRaw: any = await db().fetch(

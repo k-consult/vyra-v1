@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, BookOpen, Building2, FileText, Scale, Layers, RefreshCw, Rocket } from 'lucide-react';
+import { ShieldCheck, BookOpen, FileText, Scale, Layers, RefreshCw, Rocket, Brain } from 'lucide-react';
 import { TenantManagementDialog } from '@/features/tenants/tenants';
 import { getActiveTenant } from '@/lib/active-tenant';
 import { tenants } from '@/lib/api';
@@ -25,12 +25,15 @@ const isActive = (pathname: string): boolean =>
 
 const TENANT_CATALOG_HREF = '/tenant/catalog';
 
+// Blueprint/Structure dropped as standalone links (2026-11-21) — both fold into
+// Onboarding's "Upload Structure" stage now; this only removes the sidebar
+// shortcuts, the /tenant/blueprint and /tenant/structure routes still work.
+// Intelligence relisted here — it previously had no sidebar entry at all.
 const TENANT_SUB_LINKS = [
-    { href: '/onboarding',          label: 'Onboarding',   icon: Rocket },
-    { href: '/tenant/blueprint',    label: 'Blueprint',    icon: Layers },
-    { href: '/tenant/structure',    label: 'Structure',    icon: Building2 },
-    { href: '/tenant/documents',    label: 'Documents',    icon: FileText },
-    { href: '/tenant/obligations',  label: 'Obligations',  icon: Scale },
+    { href: '/onboarding',          label: 'Onboarding',    icon: Rocket },
+    { href: '/tenant/documents',    label: 'Documents',     icon: FileText },
+    { href: '/tenant/obligations',  label: 'Obligations',   icon: Scale },
+    { href: '/intelligence',        label: 'Intelligence',  icon: Brain },
 ];
 
 export function NavShell({ children }: { children: React.ReactNode }) {

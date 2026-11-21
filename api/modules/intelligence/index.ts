@@ -12,7 +12,7 @@ const resolve = (action: 'approve' | 'reject') => async (req: any, reply: any) =
     if (!decision) return reply.code(404).send({ error: 'Decision not found' });
     const isAllowed = action === 'approve' ? spec.isApprovable(decision) : spec.isRejectable(decision);
     if (!isAllowed) return reply.code(400).send({ error: `Decision already ${decision.status}` });
-    const result = await resolveDecision(req.params.id, decision.type, action, req.body?.reviewedBy, req.body?.reviewNote);
+    const result = await resolveDecision(req.params.id, decision.type, action, req.body?.reviewedBy, req.body?.reviewNote, req.body?.subjectTypeOverride);
     reply.send(result);
 };
 

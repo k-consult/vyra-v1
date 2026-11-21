@@ -114,11 +114,15 @@ export const fetchUnbundledEvidenceIncidents = async () => {
 // rather than imported from api/modules/intelligence/repo.ts, per this codebase's
 // cross-workspace isolation convention (agents never import from api/).
 export const fetchAgreementRate = async (agentId: string): Promise<{ approved: number; rejected: number; agreementRate: number | null }> => {
+    // d.overridden (subject-type-proposal only, so far) counts as disagreement, not
+    // agreement, despite status staying 'approved' — same adjustment as
+    // api/modules/intelligence/repo.ts's GET_AGREEMENT_RATES, duplicated per this
+    // file's existing cross-workspace isolation convention (see note above).
     const cypher = `
         MATCH (d:Decision {agentId: $agentId})
         WHERE d.status IN ['approved', 'rejected'] AND d.origin = 'agent'
-        RETURN sum(CASE WHEN d.status = 'approved' THEN 1 ELSE 0 END) AS approved,
-               sum(CASE WHEN d.status = 'rejected' THEN 1 ELSE 0 END) AS rejected
+        RETURN sum(CASE WHEN d.status = 'approved' AND NOT coalesce(d.overridden, false) THEN 1 ELSE 0 END) AS approved,
+               sum(CASE WHEN d.status = 'rejected' OR coalesce(d.overridden, false) THEN 1 ELSE 0 END) AS rejected
     `;
     const raw: any = await db().fetch(cypher, { agentId });
     const row = Array.isArray(raw) ? raw[0] : raw;
@@ -135,6 +139,34 @@ export const fetchAgreementRate = async (agentId: string): Promise<{ approved: n
 // families adopt multi-turn reasoning.
 export const TOOL_REGISTRY: Record<string, (args: any) => Promise<any>> = {
     fetchControlsForObligation: (args: { obligationId: string }) => fetchControlsForObligation(args.obligationId),
+};
+
+// Assets with no OF_TYPE edge yet, AND no Decision already proposed for them —
+// same no-Decision idempotency guard every other fetcher in this file uses, since
+// OF_TYPE is only written on approval (applicability.md §7 step 3).
+export const fetchUnclassifiedAssets = async () => {
+    const cypher = `
+        MATCH (a:Asset)
+        WHERE NOT (a)-[:OF_TYPE]->(:SubjectType) AND NOT (:Decision)-[:ABOUT]->(a)
+        RETURN properties(a) AS asset
+        LIMIT 100
+    `;
+    const raw: any = await db().fetch(cypher, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.asset).filter(Boolean);
+};
+
+// SubjectType rows that can bind at Asset level — Site/Organization bind at
+// Facility/Organisation instead (applicability.md §3), so an Asset classification
+// prompt must only offer the candidates that are actually valid for it.
+export const fetchAssetSubjectTypes = async () => {
+    const cypher = `
+        MATCH (st:SubjectType {bindsAt: 'Asset'})
+        RETURN properties(st) AS subjectType
+    `;
+    const raw: any = await db().fetch(cypher, {});
+    const rows = Array.isArray(raw) ? raw : [raw];
+    return rows.map((r: any) => r.subjectType).filter(Boolean);
 };
 
 export const traceForward = async (regulationId: string) => {
