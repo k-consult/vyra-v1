@@ -5,10 +5,11 @@ import { Rocket, Circle, Upload, CheckCircle2, HelpCircle, Clock, FileText, Spar
 import { blueprint, catalog, intelligence, onboarding, tenants, type ObligationMapping, type StructureSummary, type StructureTreeNode, type Tenant } from '@/lib/api';
 import { PageHeader } from '@/components/page-header';
 import { LoadingState, ErrorState, RefreshButton, UploadTrigger, InstanceTree, StructureLegend, iconForLabel } from '@/features/tenant/shared';
+import { BlueprintEditor } from '@/features/tenant/blueprint';
 import { getActiveTenant } from '@/lib/active-tenant';
 import { formatValue } from '@/features/validation/display';
 
-type StageId = 'structure' | 'annotate' | 'mapping' | 'ratification';
+type StageId = 'blueprint' | 'structure' | 'annotate' | 'mapping' | 'ratification';
 
 type Stage = { id: StageId; label: string; description: string };
 
@@ -21,7 +22,14 @@ type Stage = { id: StageId; label: string; description: string };
 // read-only. Replaces what used to be the separate "Applicability" stage — a
 // tenant admin doesn't need to know what a SubjectType is, only "here's my
 // asset, confirm what it is" (applicability.md §7 step 3, now live).
+// 'Blueprint' is the first step (2026-11-22) — the schema a structure upload
+// must match (Level/Property hierarchy) has to be defined, or confirmed as the
+// seeded default, before there's anything for "Upload Structure" to validate
+// against. It's deliberately not a standalone sidebar item — same reasoning
+// as folding the old Applicability stage into Annotate: a tenant admin
+// encounters it as a step in the onboarding sequence, not a menu to discover.
 const STAGES: Stage[] = [
+    { id: 'blueprint',    label: 'Blueprint',          description: 'Define the org/location/asset hierarchy structure uploads must match' },
     { id: 'structure',    label: 'Upload Structure',   description: 'Upload the tenant’s current footprint — locations, assets' },
     { id: 'annotate',     label: 'Annotate',           description: 'Confirm or correct what each asset is classified as' },
     { id: 'mapping',      label: 'Obligation Mapping', description: 'See the obligations mapped onto your structure' },
@@ -734,7 +742,7 @@ function RatificationStage() {
 }
 
 export function OnboardingView() {
-    const [stage, setStage] = useState<StageId>('structure');
+    const [stage, setStage] = useState<StageId>('blueprint');
 
     return (
         <div className="h-full flex flex-col overflow-hidden bg-zinc-950 text-zinc-100">
@@ -742,7 +750,7 @@ export function OnboardingView() {
                 icon={Rocket}
                 iconClassName="text-sky-400"
                 title="Onboarding"
-                subtitle="Upload Structure → Annotate → Obligation Mapping → Ratification"
+                subtitle="Blueprint → Upload Structure → Annotate → Obligation Mapping → Ratification"
             />
             <div className="flex-1 min-h-0 flex overflow-hidden">
                 <aside className="w-64 shrink-0 border-r border-zinc-800/60 overflow-y-auto px-4 py-4 flex flex-col gap-1">
@@ -770,6 +778,7 @@ export function OnboardingView() {
                     })}
                 </aside>
                 <div className="flex-1 min-w-0 overflow-y-auto px-6 py-5">
+                    {stage === 'blueprint' && <BlueprintEditor />}
                     {stage === 'structure' && <StructureStage onClassificationStarted={() => setStage('annotate')} />}
                     {stage === 'annotate' && <AnnotateStage />}
                     {stage === 'mapping' && <ObligationMappingStage onNeedsAnnotation={() => setStage('annotate')} />}

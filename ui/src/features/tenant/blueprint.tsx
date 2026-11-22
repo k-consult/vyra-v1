@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Layers, Plus, Trash2, ArrowUp, ArrowDown, Pencil, Check, X } from 'lucide-react';
-import { blueprint as blueprintApi, type BlueprintLevel, type BlueprintProperty, type TenantBlueprint, type PropertyDataType } from '@/lib/api';
+import { useEffect, useRef, useState } from 'react';
+import { Layers, Plus, Trash2, ArrowUp, ArrowDown, Pencil, Check, X, Download, Upload } from 'lucide-react';
+import { blueprint as blueprintApi, type BlueprintLevel, type BlueprintProperty, type TenantBlueprint, type PropertyDataType, type BlueprintExport } from '@/lib/api';
 import { PageHeader } from '@/components/page-header';
+import { ConfirmDialog } from '@/components/dialog';
 import { LoadingState, ErrorState, RefreshButton } from './shared';
 
 const inputClass = 'bg-zinc-900 border border-zinc-800 rounded-md px-2 py-1 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600';
@@ -313,7 +314,94 @@ function LevelNode({ level, levels, position, onChanged }: {
     );
 }
 
-export function TenantBlueprintView() {
+// Export downloads the current schema as portable JSON. Restore is a full,
+// destructive replace — not a merge — so it always goes through a confirm
+// step naming exactly what gets wiped: see api/modules/blueprint/repo.ts's
+// restoreBlueprint for the authoritative list.
+function ExportRestoreControls({ onRestored }: { onRestored: () => void }) {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [pending, setPending] = useState<BlueprintExport | null>(null);
+    const [parseError, setParseError] = useState<string | null>(null);
+    const [restoreError, setRestoreError] = useState<string | null>(null);
+    const [restoring, setRestoring] = useState(false);
+
+    const exportJson = () => {
+        blueprintApi.export().then(data => {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'vyra-blueprint.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    };
+
+    const onFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        e.target.value = '';
+        if (!file) return;
+        setParseError(null);
+        setRestoreError(null);
+        file.text()
+            .then(text => {
+                const parsed = JSON.parse(text);
+                if (!Array.isArray(parsed?.levels)) throw new Error('file does not look like a blueprint export (missing "levels" array)');
+                setPending(parsed);
+            })
+            .catch((err: any) => setParseError(err.message));
+    };
+
+    const confirmRestore = () => {
+        if (!pending) return;
+        setRestoring(true);
+        setRestoreError(null);
+        blueprintApi.restore(pending.levels)
+            .then(() => { setPending(null); onRestored(); })
+            .catch((err: any) => setRestoreError(err.message))
+            .finally(() => setRestoring(false));
+    };
+
+    return (
+        <>
+            <button
+                title="Export this tenant's blueprint as JSON"
+                onClick={exportJson}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-zinc-400 border border-zinc-800 hover:border-zinc-700 hover:text-zinc-200"
+            >
+                <Download size={12} /> Export
+            </button>
+            <button
+                title="Restore from a blueprint JSON file — wipes the current org structure"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-zinc-400 border border-zinc-800 hover:border-zinc-700 hover:text-zinc-200"
+            >
+                <Upload size={12} /> Restore
+            </button>
+            <input ref={fileInputRef} type="file" accept="application/json" className="hidden" onChange={onFileSelected} />
+            {parseError && <span className="text-[11px] text-red-400">{parseError}</span>}
+            <ConfirmDialog
+                open={!!pending}
+                title="Restore blueprint from file?"
+                danger
+                busy={restoring}
+                confirmLabel="Wipe and restore"
+                message={
+                    (restoreError ? `${restoreError} — ` : '') +
+                    `This replaces the current structure schema and permanently deletes every real Organisation/Business Unit/Facility/Building/Floor/Area/Asset node under it, along with all Permit, Contract, Warranty, Signal, Vendor records and this tenant's own Task/Schedule entries. Obligation mappings and classifications tied to those assets are deleted with them. Catalog data (regulations, obligations, controls, and catalog-sourced Task/Schedule templates) is never touched. This cannot be undone.`
+                }
+                onConfirm={confirmRestore}
+                onCancel={() => { setPending(null); setRestoreError(null); }}
+            />
+        </>
+    );
+}
+
+// The tree editor itself, with no page chrome of its own — shared between the
+// standalone /tenant/blueprint route (TenantBlueprintView, below) and
+// Onboarding's "Blueprint" stage (onboarding.tsx), which is now the first
+// step in the wizard rather than this having its own sidebar entry.
+export function BlueprintEditor() {
     const [data, setData] = useState<TenantBlueprint | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -346,26 +434,38 @@ export function TenantBlueprintView() {
     const expectedColumns = data.levels.flatMap(l => l.properties.map(p => p.ingestKey));
 
     return (
-        <div className="h-full flex flex-col overflow-hidden bg-zinc-950 text-zinc-100">
-            <PageHeader icon={Layers} iconClassName="text-sky-400" title="Blueprint" subtitle="Structure hierarchy for the active tenant">
-                <RefreshButton onClick={load} />
-            </PageHeader>
-            <div className="flex-1 overflow-auto px-6 py-4 flex flex-col gap-4">
+        <div className="flex flex-col gap-4">
+            <div className="flex items-start justify-between gap-4">
                 <p className="text-sm text-zinc-400 leading-relaxed max-w-[70ch]">
                     The tree below defines the org/location/asset hierarchy this tenant&rsquo;s structure uploads
                     must match. <code className="text-zinc-300">Facility</code>/<code className="text-zinc-300">Asset</code>{' '}
                     are reserved — every other module already depends on those two node types.
                 </p>
-                {data.levels.length === 0 ? (
-                    <AddLevelForm onAdded={refresh} />
-                ) : (
-                    <LevelNode level={data.levels[0]} levels={data.levels} position={0} onChanged={refresh} />
-                )}
-
-                <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 px-4 py-3">
-                    <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mb-2">Expected structure-upload CSV columns, in order</p>
-                    <p className="text-xs font-mono text-zinc-400 leading-relaxed break-words">{expectedColumns.join(', ')}</p>
+                <div className="flex items-center gap-2 shrink-0">
+                    <ExportRestoreControls onRestored={load} />
+                    <RefreshButton onClick={load} />
                 </div>
+            </div>
+            {data.levels.length === 0 ? (
+                <AddLevelForm onAdded={refresh} />
+            ) : (
+                <LevelNode level={data.levels[0]} levels={data.levels} position={0} onChanged={refresh} />
+            )}
+
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 px-4 py-3">
+                <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mb-2">Expected structure-upload CSV columns, in order</p>
+                <p className="text-xs font-mono text-zinc-400 leading-relaxed break-words">{expectedColumns.join(', ')}</p>
+            </div>
+        </div>
+    );
+}
+
+export function TenantBlueprintView() {
+    return (
+        <div className="h-full flex flex-col overflow-hidden bg-zinc-950 text-zinc-100">
+            <PageHeader icon={Layers} iconClassName="text-sky-400" title="Blueprint" subtitle="Structure hierarchy for the active tenant" />
+            <div className="flex-1 overflow-auto px-6 py-4">
+                <BlueprintEditor />
             </div>
         </div>
     );

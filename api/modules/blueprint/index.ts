@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { addLevel, addProperty, getBlueprint, getStructureTree, removeLevel, removeProperty, reorderLevels, updateLevel, updateProperty } from './repo';
+import { addLevel, addProperty, exportBlueprint, getBlueprint, getStructureTree, removeLevel, removeProperty, reorderLevels, restoreBlueprint, updateLevel, updateProperty } from './repo';
 import * as spec from './spec';
 
 const blueprint: any = async (fastify: FastifyInstance) => {
@@ -9,6 +9,23 @@ const blueprint: any = async (fastify: FastifyInstance) => {
 
     fastify.get('/structure-tree', async (_req, reply) => {
         reply.send({ tree: await getStructureTree() });
+    });
+
+    fastify.get('/export', async (_req, reply) => {
+        reply.send(await exportBlueprint());
+    });
+
+    // Full destructive restore — see repo.ts's restoreBlueprint for exactly
+    // what gets wiped (org structure, Permit/Contract/Warranty/Signal/Vendor,
+    // tenant-instance Task/Schedule) and what's protected (Catalog data,
+    // catalog-labeled Task/Schedule templates).
+    fastify.post('/restore', async (req: any, reply) => {
+        try {
+            spec.isValidBlueprintRestore(req.body ?? {});
+        } catch (err: any) {
+            return reply.code(400).send({ error: err.message });
+        }
+        reply.send({ blueprint: await restoreBlueprint(req.body.levels) });
     });
 
     // Direct CRUD, no Decision gate — TenantBlueprint is editable config describing

@@ -34,3 +34,41 @@ export const ROLE_PROPERTY_NAME: Record<string, string> = {
     category: 'category',
     assetType: 'assetType',
 };
+
+// Every real node label the system creates anywhere else in the graph — a
+// Level name must never resolve (via labelFromName) to one of these, or a
+// blueprint restore's structure-wipe (api/modules/blueprint/repo.ts's
+// restoreBlueprint) would delete that domain's data under the guise of
+// wiping the org structure. Deliberately excludes Organisation/BusinessUnit/
+// Facility/Building/Floor/Area/Asset — the expected default Level labels.
+export const PROTECTED_SYSTEM_LABELS = new Set([
+    // Knowledge / Catalog
+    'Jurisdiction', 'Authority', 'Regulation', 'Clause', 'Obligation', 'Control',
+    'ComplianceArea', 'SubjectType', 'ApplicabilityAttribute', 'ApplicabilityRule',
+    'Report', 'Policy', 'Standard',
+    // Execution
+    'Program', 'Workflow', 'Task', 'CAPA', 'Verification', 'Schedule', 'Assignment', 'Actor',
+    // Operational (non-blueprint)
+    'Incident', 'Vendor', 'Contract', 'Permit', 'Organization', 'DocumentObligation',
+    'Role', 'Person', 'Signal', 'Evidence', 'Hazard', 'HazardAssessment', 'EmergencyPlan', 'Warranty',
+    // Intelligence
+    'Finding', 'Risk', 'Decision', 'RCA',
+    // Assurance
+    'EvidencePackage', 'Attestation', 'AssuranceStatement', 'Audit', 'ReportSubmission', 'Exception',
+    // Blueprint meta
+    'TenantBlueprint', 'Level', 'Property',
+    // Onboarding
+    'CutoverCriterion', 'Blueprint',
+    // Tenancy
+    'Tenant',
+]);
+
+// Deleted wholesale on a blueprint restore, regardless of whether they appear
+// in the old blueprint's own Level chain — these are tenant-structure-adjacent
+// node types with no catalog-template variant.
+export const STRUCTURE_ADJACENT_LABELS = new Set(['Permit', 'Contract', 'Warranty', 'Signal', 'Vendor']);
+
+// Deleted on restore too, but only the tenant-instance rows — a Task/Schedule
+// node also carrying :Catalog is a reusable template replayed into every
+// tenant at provisioning (same mechanism as Control) and must survive.
+export const CATALOG_EXEMPT_STRUCTURE_LABELS = new Set(['Task', 'Schedule']);

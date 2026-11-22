@@ -1,6 +1,6 @@
-import { AddLevelInput, AddPropertyInput, PropertyDataType } from './repo';
+import { AddLevelInput, AddPropertyInput, PropertyDataType, RestoreLevelInput } from './repo';
 import { labelFromName } from '../../../lib/blueprint/ingest-key';
-import { RESERVED_LABELS, UNDELETABLE_LABELS } from '../../../lib/blueprint/reserved';
+import { RESERVED_LABELS, UNDELETABLE_LABELS, PROTECTED_SYSTEM_LABELS } from '../../../lib/blueprint/reserved';
 
 // Upper case, '_'-delimited — a Property's ingestKey is still the literal CSV
 // column header. Levels have no ingestKey of their own (just a `name`).
@@ -84,6 +84,68 @@ export const isValidLevelNameChange = (currentName: string, newName: string): vo
 // node itself (lib/blueprint/reserved.ts's PropertyRole), not by matching a
 // literal ingestKey string, so renaming SITE_CODE/ASSET_CODE/etc. never
 // breaks ingestion. No property-level rename guard is needed here.
+
+// Validates a full restore payload — the destructive full-replace path
+// (api/modules/blueprint/repo.ts's restoreBlueprint), not the incremental
+// add/update endpoints above. Three failure classes, checked in order: (1)
+// structural — same per-level/per-property rules as the incremental API; (2)
+// a Level name resolving to a label another Level in this same payload also
+// resolves to, which would silently clobber one of them in Cypher; (3) a
+// Level name resolving to a label PROTECTED_SYSTEM_LABELS reserves for a real
+// domain node type (Catalog, Operational, Intelligence, Assurance, ...) —
+// the guard that keeps "restore wipes the org structure" from ever being able
+// to wipe catalog or other domain data through the same mechanism. Finally,
+// the resolved label set must still cover Organisation/Facility/Asset
+// (UNDELETABLE_LABELS) — every other module depends on those existing.
+export const isValidBlueprintRestore = (input: { levels?: unknown }): void => {
+    if (!Array.isArray(input.levels) || !input.levels.length) {
+        throw new Error('levels must be a non-empty array');
+    }
+    const levels = input.levels as Partial<RestoreLevelInput>[];
+    const seenLabels = new Set<string>();
+
+    for (const level of levels) {
+        if (typeof level.name !== 'string' || !level.name.trim()) {
+            throw new Error('every level must have a non-empty name');
+        }
+        const label = labelFromName(level.name);
+        if (PROTECTED_SYSTEM_LABELS.has(label)) {
+            throw new Error(`level "${level.name}" resolves to "${label}", which is reserved for an existing system node type and cannot be used as a blueprint level`);
+        }
+        if (seenLabels.has(label)) {
+            throw new Error(`level "${level.name}" resolves to the same label ("${label}") as another level in this payload`);
+        }
+        seenLabels.add(label);
+
+        if (level.properties !== undefined) {
+            if (!Array.isArray(level.properties)) {
+                throw new Error(`level "${level.name}"'s properties must be an array`);
+            }
+            for (const prop of level.properties as Partial<AddPropertyInput>[]) {
+                if (typeof prop.name !== 'string' || !prop.name.trim()) {
+                    throw new Error(`level "${level.name}" has a property with no name`);
+                }
+                if (typeof prop.ingestKey !== 'string' || !INGEST_KEY_PATTERN.test(prop.ingestKey)) {
+                    throw new Error(`level "${level.name}" property "${prop.name}" has an invalid ingestKey: ${JSON.stringify(prop.ingestKey)}`);
+                }
+                if (prop.dataType !== undefined && !DATA_TYPES.has(prop.dataType)) {
+                    throw new Error(`level "${level.name}" property "${prop.name}" has an invalid dataType: ${JSON.stringify(prop.dataType)}`);
+                }
+                if (prop.required !== undefined && typeof prop.required !== 'boolean') {
+                    throw new Error(`level "${level.name}" property "${prop.name}": required must be a boolean`);
+                }
+                if (prop.defaultValue !== undefined && typeof prop.defaultValue !== 'string') {
+                    throw new Error(`level "${level.name}" property "${prop.name}": defaultValue must be a string`);
+                }
+            }
+        }
+    }
+
+    const missing = [...UNDELETABLE_LABELS].filter(label => !seenLabels.has(label));
+    if (missing.length) {
+        throw new Error(`restore payload is missing required level(s) resolving to: ${missing.join(', ')}`);
+    }
+};
 
 // Organisation/Facility/Asset can never be removed, regardless of their
 // current position in the chain — not just "whatever's currently first/last"

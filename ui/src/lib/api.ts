@@ -350,6 +350,26 @@ export type BlueprintLevel = {
 export type TenantBlueprint = { id: string; levels: BlueprintLevel[] };
 export type StructureTreeNode = { label: string; node: Record<string, any>; children: StructureTreeNode[] };
 
+// Portable export/restore shape — no ids (regenerated from name/ingestKey on
+// restore), but `role` is carried so Facility/Asset's code/name resolution
+// survives a restore onto a fresh tenant.
+export type BlueprintExportProperty = {
+    name: string;
+    ingestKey: string;
+    description?: string;
+    dataType?: PropertyDataType;
+    defaultValue?: string;
+    required?: boolean;
+    role?: string;
+};
+export type BlueprintExportLevel = {
+    name: string;
+    alias?: string;
+    description?: string;
+    properties: BlueprintExportProperty[];
+};
+export type BlueprintExport = { levels: BlueprintExportLevel[] };
+
 // Direct CRUD, no Decision gate — TenantBlueprint is editable config (the
 // hierarchy shape a structure upload must match), not a ratified assertion
 // about enterprise reality. See api/modules/blueprint/ and .design/graph.md's
@@ -368,6 +388,11 @@ export const blueprint = {
     updateProperty: (id: string, input: { name?: string; description?: string; dataType?: PropertyDataType; defaultValue?: string; required?: boolean; ingestKey?: string }) =>
         patch<{ blueprint: TenantBlueprint }>(`/blueprint/properties/${id}`, input),
     removeProperty: (id: string) => del<{ blueprint: TenantBlueprint }>(`/blueprint/properties/${id}`),
+    // Full destructive restore (wipes org structure + Permit/Contract/Warranty/
+    // Signal/Vendor + tenant-instance Task/Schedule; catalog data untouched) —
+    // see api/modules/blueprint/repo.ts's restoreBlueprint.
+    export: () => get<BlueprintExport>('/blueprint/export'),
+    restore: (levels: BlueprintExportLevel[]) => post<{ blueprint: TenantBlueprint }>('/blueprint/restore', { levels }),
 };
 
 export const tenants = {

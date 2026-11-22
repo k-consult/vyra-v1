@@ -1,7 +1,7 @@
 import { DB } from '../../../lib/graph-db';
 import { config } from '../../../lib/config';
 import { labelFromName } from '../../../lib/blueprint/ingest-key';
-import { PropertyRole } from '../../../lib/blueprint/reserved';
+import { PropertyRole, STRUCTURE_ADJACENT_LABELS, CATALOG_EXEMPT_STRUCTURE_LABELS } from '../../../lib/blueprint/reserved';
 
 // Same lazy-factory shape as every other repo.ts — but this one also backs
 // seedDefaultBlueprint, called from tenants/repo.ts's provisionTenant *before* any
@@ -453,4 +453,113 @@ export const seedDefaultBlueprint = async (databaseName?: string): Promise<void>
         }
     }
     await rebuildChain(orderedIds, databaseName);
+};
+
+// Clean, portable JSON — ids/createdAt are derived (from name/ingestKey) and
+// regenerated on restore, not exported. `role` *is* included, unlike the
+// public Property API, since it's what lets Facility/Asset's code/name
+// resolution survive a restore onto a fresh tenant.
+export const exportBlueprint = async (databaseName?: string) => {
+    const { levels } = await getBlueprint(databaseName);
+    return {
+        levels: levels.map((l: any) => ({
+            name: l.name,
+            alias: l.alias ?? '',
+            description: l.description ?? '',
+            properties: (l.properties ?? []).map((p: any) => ({
+                name: p.name,
+                ingestKey: p.ingestKey,
+                description: p.description ?? '',
+                dataType: p.dataType ?? 'STRING',
+                defaultValue: p.defaultValue ?? '',
+                required: p.required ?? false,
+                role: p.role ?? '',
+            })),
+        })),
+    };
+};
+
+export interface RestoreLevelInput {
+    name: string;
+    alias?: string;
+    description?: string;
+    properties?: Array<{
+        name: string;
+        ingestKey: string;
+        description?: string;
+        dataType?: PropertyDataType;
+        defaultValue?: string;
+        required?: boolean;
+        role?: PropertyRole | '';
+    }>;
+}
+
+const buildLabelDeleteQuery = (labels: string[]): string => {
+    const predicate = labels.map(label => `n:\`${label}\``).join(' OR ');
+    return `MATCH (n) WHERE ${predicate} DETACH DELETE n`;
+};
+
+// Permit/Contract/Warranty/Signal/Vendor have no catalog-template variant —
+// deleted outright. Task/Schedule do (the 60/50 :Catalog-labeled rows replayed
+// into every tenant at provisioning, same mechanism as Control) — only the
+// tenant-instance rows are wiped.
+const STRUCTURE_ADJACENT_PREDICATE = Array.from(STRUCTURE_ADJACENT_LABELS).map(l => `n:\`${l}\``).join(' OR ');
+const DELETE_STRUCTURE_ADJACENT = `MATCH (n) WHERE ${STRUCTURE_ADJACENT_PREDICATE} DETACH DELETE n`;
+
+const CATALOG_EXEMPT_PREDICATE = Array.from(CATALOG_EXEMPT_STRUCTURE_LABELS).map(l => `n:\`${l}\``).join(' OR ');
+const DELETE_CATALOG_EXEMPT_INSTANCES = `MATCH (n) WHERE (${CATALOG_EXEMPT_PREDICATE}) AND NOT n:Catalog DETACH DELETE n`;
+
+const DELETE_ALL_LEVELS_AND_PROPERTIES = `
+    MATCH (l:Level)
+    OPTIONAL MATCH (l)-[:HAS_PROPERTY]->(p:Property)
+    DETACH DELETE l, p
+`;
+
+// Full destructive restore — the first step of onboarding a tenant, or a
+// recovery path when the structure is corrupted. Tears down every instance
+// node under the *current* blueprint's own labels (org structure, assets),
+// every structure-adjacent node (Permit/Contract/Warranty/Signal/Vendor,
+// tenant Task/Schedule), then replaces the Level/Property schema itself from
+// the given JSON. Catalog-labeled nodes are never touched — isValidBlueprintRestore
+// (spec.ts) already rejected any Level name that would collide with a real
+// catalog/domain label before this runs. Edges from the deleted instance nodes
+// into Obligation/Control/SubjectType (OF_TYPE, Applicability bindings, etc.)
+// disappear as a DETACH DELETE side effect, not a separate step.
+export const restoreBlueprint = async (levels: RestoreLevelInput[], databaseName?: string) => {
+    const { levels: oldLevels } = await getBlueprint(databaseName);
+    const oldLabels = oldLevels.map((l: any) => labelFromName(l.name));
+
+    if (oldLabels.length) {
+        await db(databaseName).exec(buildLabelDeleteQuery(oldLabels), {});
+    }
+    await db(databaseName).exec(DELETE_STRUCTURE_ADJACENT, {});
+    await db(databaseName).exec(DELETE_CATALOG_EXEMPT_INSTANCES, {});
+    await db(databaseName).exec(DELETE_ALL_LEVELS_AND_PROPERTIES, {});
+
+    const orderedIds: string[] = [];
+    for (const level of levels) {
+        const id = `LVL-${labelFromName(level.name)}`;
+        orderedIds.push(id);
+        await db(databaseName).exec(UPSERT_LEVEL, {
+            id,
+            props: { name: level.name, alias: level.alias ?? '', description: level.description ?? '' },
+        });
+        for (const prop of level.properties ?? []) {
+            await db(databaseName).exec(UPSERT_PROPERTY, {
+                id: `PROP-${prop.ingestKey}`,
+                levelId: id,
+                props: {
+                    name: prop.name,
+                    ingestKey: prop.ingestKey,
+                    description: prop.description ?? '',
+                    dataType: prop.dataType ?? 'STRING',
+                    defaultValue: prop.defaultValue ?? '',
+                    required: prop.required ?? false,
+                    role: prop.role ?? '',
+                },
+            });
+        }
+    }
+    await rebuildChain(orderedIds, databaseName);
+    return getBlueprint(databaseName);
 };

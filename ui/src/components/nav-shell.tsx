@@ -26,9 +26,11 @@ const isActive = (pathname: string): boolean =>
 const TENANT_CATALOG_HREF = '/tenant/catalog';
 
 // Blueprint/Structure dropped as standalone links (2026-11-21) — both fold into
-// Onboarding's "Upload Structure" stage now; this only removes the sidebar
-// shortcuts, the /tenant/blueprint and /tenant/structure routes still work.
-// Intelligence relisted here — it previously had no sidebar entry at all.
+// Onboarding now: Blueprint as its own first stage (2026-11-22, carrying the
+// schema's Export/Restore actions), Structure as the "Upload Structure" stage.
+// This only removes the sidebar shortcuts — /tenant/blueprint and
+// /tenant/structure still work as routes. Intelligence relisted here — it
+// previously had no sidebar entry at all.
 const TENANT_SUB_LINKS = [
     { href: '/onboarding',          label: 'Onboarding',    icon: Rocket },
     { href: '/tenant/documents',    label: 'Documents',     icon: FileText },
