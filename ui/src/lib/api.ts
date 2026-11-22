@@ -275,7 +275,18 @@ export type ObligationMapping = {
     status: 'unclassified' | 'pending' | 'classified' | 'none' | 'rejected';
     decisionId: string | null;
     previewSubjectType: { id: string; name: string } | null;
-    obligations: { id: string; name: string }[];
+    obligations: {
+        id: string;
+        name: string;
+        // Regulation->Clause->Obligation<-Control / Obligation->Report chain,
+        // mirroring catalog.tsx's trace view but starting from the Obligation
+        // already bound to this asset — null fields are real states (no filing
+        // requirement, clause not yet linked), not missing data.
+        regulation: { id: string; name: string } | null;
+        clause: { id: string; clauseRef?: string; name?: string } | null;
+        report: { id: string; name: string; cadenceRaw?: string; triggerCondition?: string } | null;
+        controls: { id: string; name: string }[];
+    }[];
 };
 
 export type Tenant = {

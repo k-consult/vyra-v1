@@ -566,6 +566,51 @@ function AnnotateStage() {
 // mentally re-link back to the structure they just uploaded. Read-only: the
 // classification action happens in Annotate, not here — a still-pending asset
 // links back there instead of offering its own copy of the same control.
+// One mapped obligation: name + the "<regulation> | <filing requirement>
+// (<cadence>)" summary line beneath it (report is optional — an obligation
+// with no distinct external filing is a real state, not missing data, per
+// catalog.tsx's ChainRow convention). Hover shows the full
+// regulation->clause->obligation->control chain via the same fixed-position,
+// cursor-following tooltip calendar.tsx/catalog.tsx/shared.tsx all use —
+// native `title` has a browser-imposed delay and doesn't render for
+// automated/screenshot capture.
+function ObligationRow({ obligation }: { obligation: ObligationMapping['obligations'][number] }) {
+    const [hover, setHover] = useState<{ x: number; y: number } | null>(null);
+    const regulationName = obligation.regulation?.name ?? 'UNKNOWN';
+    const filingLabel = obligation.report
+        ? `${obligation.report.name}${obligation.report.cadenceRaw ? ` (${obligation.report.cadenceRaw})` : ''}`
+        : 'no distinct filing — internal record only';
+    const controlNames = obligation.controls.length ? obligation.controls.map((c) => c.name).join(', ') : 'UNKNOWN';
+    const clauseLabel = obligation.clause?.clauseRef ?? obligation.clause?.name ?? 'UNKNOWN';
+
+    return (
+        <div
+            className="flex flex-col gap-0.5 px-2 py-1"
+            onMouseMove={(e) => setHover({ x: e.clientX, y: e.clientY })}
+            onMouseLeave={() => setHover(null)}
+        >
+            <div className="flex items-center gap-2">
+                <FileText size={11} className="text-sky-500/70 shrink-0" />
+                <span className="text-[11px] text-zinc-400">{obligation.name}</span>
+            </div>
+            <p className="text-[10px] text-zinc-600 pl-[19px]">
+                {regulationName} <span className="text-zinc-700">|</span> {filingLabel}
+            </p>
+            {hover && (
+                <div
+                    className="fixed z-50 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 shadow-2xl pointer-events-none max-w-xs flex flex-col gap-0.5"
+                    style={{ left: hover.x + 14, top: hover.y + 14 }}
+                >
+                    <p className="text-[11px] text-zinc-500">regulation: <span className="text-zinc-200">{regulationName}</span></p>
+                    <p className="text-[11px] text-zinc-500">clause: <span className="text-zinc-200">{clauseLabel}</span></p>
+                    <p className="text-[11px] text-zinc-500">obligation: <span className="text-zinc-200">{obligation.name}</span></p>
+                    <p className="text-[11px] text-zinc-500">control: <span className="text-zinc-200">{controlNames}</span></p>
+                </div>
+            )}
+        </div>
+    );
+}
+
 function ObligationTreeNode({ node, mappingByAssetId, onNeedsAnnotation }: {
     node: StructureTreeNode;
     mappingByAssetId: Map<string, ObligationMapping>;
@@ -613,10 +658,7 @@ function ObligationTreeNode({ node, mappingByAssetId, onNeedsAnnotation }: {
             {open && hasChildren && (
                 <div className="flex flex-col gap-1 pl-5 ml-1.5 border-l border-zinc-800/60">
                     {mapping?.obligations.map((o) => (
-                        <div key={o.id} className="flex items-center gap-2 px-2 py-1">
-                            <FileText size={11} className="text-sky-500/70 shrink-0" />
-                            <span className="text-[11px] text-zinc-400">{o.name}</span>
-                        </div>
+                        <ObligationRow key={o.id} obligation={o} />
                     ))}
                     {node.children.map((child) => (
                         <ObligationTreeNode key={child.node.id} node={child} mappingByAssetId={mappingByAssetId} onNeedsAnnotation={onNeedsAnnotation} />

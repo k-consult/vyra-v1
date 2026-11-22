@@ -370,6 +370,14 @@ export const proposeEmergencyPlan = async (input: ProposeEmergencyPlanInput) => 
 // lifetime. Only the active (non-superseded) one is "the" current classification;
 // without this filter, a reclassified Asset would duplicate here, once per
 // Decision it ever had.
+// Same Regulation->Clause->Obligation<-Control / Obligation->Report chain
+// catalog/repo.ts's TRACE_FORWARD walks forward from a Regulation — mirrored
+// here starting from each Obligation already bound to the asset, so the
+// mapping stage can show "<regulation> | <filing requirement> (<cadence>)"
+// and the full chain in one round trip rather than a per-obligation follow-up
+// call. OPTIONAL MATCH on every hop: an obligation may have no Report
+// (internal record only), and Clause.BELONGS_TO targets exactly one of
+// Regulation/Standard (graph.md), never both.
 const LIST_OBLIGATION_MAPPINGS = `
     MATCH (a:Asset)
     OPTIONAL MATCH (d:Decision {type: 'subject-type-proposal'})-[:ABOUT]->(a)
@@ -378,8 +386,22 @@ const LIST_OBLIGATION_MAPPINGS = `
     WITH a, d, resolvedSt, coalesce(resolvedSt.id, d.proposedSubjectTypeId) AS previewSubjectTypeId
     OPTIONAL MATCH (previewSt:SubjectType {id: previewSubjectTypeId})
     OPTIONAL MATCH (obl:Obligation)-[:BINDS_TO_TYPE]->(previewSt)
+    OPTIONAL MATCH (obl)-[:DEFINED_BY]->(cls:Clause)
+    OPTIONAL MATCH (cls)-[:BELONGS_TO]->(reg:Regulation)
+    OPTIONAL MATCH (cls)-[:BELONGS_TO]->(std:Standard)
+    OPTIONAL MATCH (obl)<-[:IMPLEMENTS]-(ctl:Control)
+    OPTIONAL MATCH (obl)-[:REQUIRES_FILING]->(rpt:Report)
+    WITH a, d, resolvedSt, previewSt, obl, cls, reg, std, rpt, collect(DISTINCT properties(ctl)) AS controls
     RETURN properties(a) AS asset, properties(d) AS decision, properties(resolvedSt) AS resolvedSubjectType,
-           properties(previewSt) AS previewSubjectType, collect(DISTINCT properties(obl)) AS obligations
+           properties(previewSt) AS previewSubjectType,
+           collect(DISTINCT {
+               obligation: properties(obl),
+               clause: properties(cls),
+               regulation: properties(reg),
+               standard: properties(std),
+               report: properties(rpt),
+               controls: controls
+           }) AS obligations
     ORDER BY asset.category, asset.name
 `;
 
@@ -402,7 +424,16 @@ export const listObligationMappings = async () => {
             status,
             decisionId: r.decision?.id ?? null,
             previewSubjectType: showPreview ? (r.previewSubjectType ?? null) : null,
-            obligations: showPreview ? (r.obligations ?? []).filter(Boolean) : [],
+            // Only the "no obligations at all" placeholder row from the OPTIONAL
+            // MATCH chain has a null `.obligation` — real rows always have one.
+            obligations: showPreview ? (r.obligations ?? []).filter((o: any) => o?.obligation).map((o: any) => ({
+                id: o.obligation.id,
+                name: o.obligation.name,
+                regulation: o.regulation ?? o.standard ?? null,
+                clause: o.clause ?? null,
+                report: o.report ?? null,
+                controls: (o.controls ?? []).filter(Boolean),
+            })) : [],
         };
     });
 };
