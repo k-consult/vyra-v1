@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Building2, Settings2, Upload } from 'lucide-react';
 import { blueprint, tenants, type StructureTreeNode } from '@/lib/api';
 import { PageHeader } from '@/components/page-header';
-import { LoadingState, ErrorState, RefreshButton, ToolbarMenu, UploadTrigger, InstanceTree } from './shared';
+import { LoadingState, ErrorState, RefreshButton, ToolbarMenu, UploadTrigger, InstanceTree, StructureLegend } from './shared';
 
 export function TenantStructureView() {
     const [tree, setTree] = useState<StructureTreeNode[]>([]);
@@ -39,7 +39,8 @@ export function TenantStructureView() {
                 </ToolbarMenu>
                 <RefreshButton onClick={load} />
             </PageHeader>
-            <div className="flex-1 overflow-auto px-6 py-4 flex flex-col gap-2">
+            <div className="flex-1 overflow-auto px-6 py-4 flex flex-col gap-3">
+                <StructureLegend nodes={tree} />
                 <InstanceTree nodes={tree} />
             </div>
         </div>

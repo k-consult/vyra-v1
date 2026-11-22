@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Rocket, Circle, Upload, CheckCircle2, HelpCircle, Clock, FileText, Sparkles } from 'lucide-react';
 import { blueprint, catalog, intelligence, onboarding, tenants, type ObligationMapping, type StructureSummary, type StructureTreeNode, type Tenant } from '@/lib/api';
 import { PageHeader } from '@/components/page-header';
-import { LoadingState, ErrorState, RefreshButton, UploadTrigger, InstanceTree, iconForLabel } from '@/features/tenant/shared';
+import { LoadingState, ErrorState, RefreshButton, UploadTrigger, InstanceTree, StructureLegend, iconForLabel } from '@/features/tenant/shared';
 import { getActiveTenant } from '@/lib/active-tenant';
 import { formatValue } from '@/features/validation/display';
 
@@ -110,6 +110,7 @@ function StructureStage({ onClassificationStarted }: { onClassificationStarted: 
                 </div>
             )}
 
+            <StructureLegend nodes={tree} />
             <InstanceTree nodes={tree} />
         </div>
     );
