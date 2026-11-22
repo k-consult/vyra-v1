@@ -1,12 +1,12 @@
-id,name,bindsAt,description
-ST-SITE,Site,Facility,The facility/site itself as the regulated unit
-ST-ORGANIZATION,Organization,Organisation,The legal entity holding the instrument (consent/authorization/registration)
-ST-STP,STP,Asset,Sewage treatment plant
-ST-DG_SET,DG Set,Asset,Diesel generator set
-ST-BOILER,Boiler,Asset,Boiler
-ST-HAZARDOUS_WASTE_YARD,Hazardous Waste Yard,Asset,On-site hazardous waste storage yard
-ST-IT_ELECTRONIC_ASSET,IT/Electronic Asset,Asset,End-of-life electronic/IT equipment
-ST-UPS_BATTERY,UPS Battery,Asset,DG-set/UPS lead-acid or other battery
-ST-BIO_MEDICAL_WASTE_STORE,Bio-Medical Waste Store,Asset,On-site bio-medical waste storage point
-ST-AUTOCLAVE,Autoclave,Asset,On-site bio-medical waste autoclave
-ST-DEEP_BURIAL_PIT,Deep Burial Pit,Asset,On-site bio-medical waste deep burial pit
+id,name,bindsAt,description,status
+ST-SITE,Site,Facility,The facility/site itself as the regulated unit,active
+ST-ORGANIZATION,Organization,Organisation,The legal entity holding the instrument (consent/authorization/registration),active
+ST-STP,STP,Asset,Sewage treatment plant,active
+ST-DG_SET,DG Set,Asset,Diesel generator set,active
+ST-BOILER,Boiler,Asset,Boiler,active
+ST-HAZARDOUS_WASTE_YARD,Hazardous Waste Yard,General,On-site hazardous waste storage yard,active
+ST-IT_ELECTRONIC_ASSET,IT/Electronic Asset,Asset,End-of-life electronic/IT equipment,active
+ST-UPS_BATTERY,UPS Battery,Asset,DG-set/UPS lead-acid or other battery,active
+ST-BIO_MEDICAL_WASTE_STORE,Bio-Medical Waste Store,Asset,On-site bio-medical waste storage point,active
+ST-AUTOCLAVE,Autoclave,Asset,On-site bio-medical waste autoclave,active
+ST-DEEP_BURIAL_PIT,Deep Burial Pit,General,On-site bio-medical waste deep burial pit,active

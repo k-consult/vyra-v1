@@ -13,6 +13,10 @@ import {
     listJurisdictions,
     listComplianceAreas,
     listSubjectTypes,
+    addSubjectType,
+    updateSubjectType,
+    retireSubjectType,
+    getSubjectTypeUsage,
     getLastSyncedAt,
     listReportSubmissions,
     proposeReportSubmission,
@@ -86,8 +90,50 @@ const catalog: any = async (fastify: FastifyInstance) => {
         reply.send({ complianceAreas: await listComplianceAreas() });
     });
 
-    fastify.get('/subject-types', async (_req, reply) => {
-        reply.send({ subjectTypes: await listSubjectTypes() });
+    fastify.get('/subject-types', async (req: any, reply) => {
+        const includeRetired = req.query?.includeRetired === 'true';
+        reply.send({ subjectTypes: await listSubjectTypes(includeRetired) });
+    });
+
+    // Direct admin write, no Decision gate (subtype-registry-plan.md's scoped-down
+    // 2026-11-22 decision) — central-catalog-scoped only, not reachable from any
+    // tenant route.
+    fastify.post('/subject-types', async (req: any, reply) => {
+        try {
+            await spec.isValidNewSubjectType(req.body ?? {});
+        } catch (err: any) {
+            return reply.code(400).send({ error: err.message });
+        }
+        const subjectType = await addSubjectType(req.body);
+        reply.code(201).send({ subjectType });
+    });
+
+    fastify.get('/subject-types/:id/usage', async (req: any, reply) => {
+        const { id } = req.params;
+        reply.send({ subjectTypeId: id, usage: await getSubjectTypeUsage(id) });
+    });
+
+    fastify.patch('/subject-types/:id', async (req: any, reply) => {
+        try {
+            await spec.isValidSubjectTypeUpdate(req.params.id, req.body ?? {});
+        } catch (err: any) {
+            return reply.code(400).send({ error: err.message });
+        }
+        try {
+            const subjectType = await updateSubjectType(req.params.id, req.body);
+            reply.send({ subjectType });
+        } catch (err: any) {
+            reply.code(404).send({ error: err.message });
+        }
+    });
+
+    fastify.post('/subject-types/:id/retire', async (req: any, reply) => {
+        try {
+            const subjectType = await retireSubjectType(req.params.id);
+            reply.send({ subjectType });
+        } catch (err: any) {
+            reply.code(404).send({ error: err.message });
+        }
     });
 
     fastify.get('/report-submissions', async (_req, reply) => {

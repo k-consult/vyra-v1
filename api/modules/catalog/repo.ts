@@ -1,6 +1,8 @@
 import { DB } from '../../../lib/graph-db';
 import { config } from '../../../lib/config';
 import * as domain from './domain';
+import { listTenants } from '../tenants/repo';
+import { upsertSubjectTypeSeedRow } from './subject-type-seed';
 
 const db = () => DB.get(config.db.twin.database, {
     uri: config.db.twin.uri,
@@ -155,10 +157,166 @@ export const listComplianceAreas = async () => {
     return rows.map((r: any) => r.complianceArea).filter(Boolean);
 };
 
-export const listSubjectTypes = async () => {
+export const listSubjectTypes = async (includeRetired = false) => {
     const raw: any = await db().fetch(LIST_SUBJECT_TYPES, {});
     const rows = Array.isArray(raw) ? raw : [raw];
-    return rows.map((r: any) => r.subjectType).filter(Boolean);
+    const subjectTypes = rows.map((r: any) => r.subjectType).filter(Boolean);
+    return includeRetired ? subjectTypes : subjectTypes.filter((st) => !domain.isRetired(st));
+};
+
+export interface AddSubjectTypeInput {
+    id: string;
+    name: string;
+    bindsAt: string;
+    description?: string;
+}
+
+const SUBJECT_TYPE_EXISTS = `MATCH (st:SubjectType {id: $id}) RETURN count(st) > 0 AS subjectTypeExists`;
+export const subjectTypeExists = async (id: string): Promise<boolean> => {
+    const raw: any = await db().fetch(SUBJECT_TYPE_EXISTS, { id });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    return Boolean(row?.subjectTypeExists);
+};
+
+// MERGE, not CREATE (graph-spine §5) — idempotent on retry even though the id
+// collision case itself is rejected earlier, by spec.ts's subjectTypeExists check.
+const ADD_SUBJECT_TYPE = `
+    MERGE (st:SubjectType {id: $id})
+    ON CREATE SET
+        st.name = $name,
+        st.bindsAt = $bindsAt,
+        st.description = $description,
+        st.status = 'active',
+        st.createdAt = datetime(),
+        st.version = 1
+    RETURN properties(st) AS subjectType
+`;
+
+// SubjectType is replicated into every tenant's own database at provisioning time
+// (catalog-sync.ts's CSV replay) rather than read live from the central database at
+// query time — Obligation.BINDS_TO_TYPE and Asset.OF_TYPE both join against
+// SubjectType in the same single Cypher statement as the tenant's own Asset/Obligation
+// data (onboarding/repo.ts's LIST_OBLIGATION_MAPPINGS, agents/tools/graph-read.ts's
+// fetchAssetSubjectTypes), which Neo4j can only do within one database. A central-only
+// write is therefore invisible everywhere a tenant reads SubjectType — this fans the
+// same idempotent write out to every currently-registered tenant database so an
+// admin-added type is classifiable immediately, not just visible centrally.
+const replicateToTenants = async (cypher: string, params: Record<string, unknown>): Promise<void> => {
+    const tenants = await listTenants();
+    await Promise.all(tenants.map((tenant: any) => DB.get(tenant.database, {
+        uri: config.db.twin.uri,
+        user: config.db.twin.user,
+        password: config.db.twin.password,
+    }).exec(cypher, params)));
+};
+
+export const addSubjectType = async (input: AddSubjectTypeInput) => {
+    const params = {
+        id: input.id,
+        name: input.name,
+        bindsAt: input.bindsAt,
+        description: input.description ?? '',
+    };
+    const raw: any = await db().exec(ADD_SUBJECT_TYPE, params);
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    await replicateToTenants(ADD_SUBJECT_TYPE, params);
+    upsertSubjectTypeSeedRow({ ...params, status: 'active' });
+    return row?.subjectType;
+};
+
+export interface UpdateSubjectTypeInput {
+    name: string;
+    description?: string;
+    bindsAt?: string;
+}
+
+// id stays immutable always. bindsAt ("Category" in the UI) was immutable always too
+// until 2026-11-22 — spec.ts's isValidSubjectTypeUpdate gates a bindsAt change behind
+// a zero-usage check (same instinct as retire: a category change on a row still
+// bound to real Obligations/Assets would silently strand those references).
+// coalesce($bindsAt, st.bindsAt) leaves the category untouched when the caller isn't
+// changing it — $bindsAt is null, not a value, on a plain name/description edit.
+const UPDATE_SUBJECT_TYPE = `
+    MATCH (st:SubjectType {id: $id})
+    SET st.name = $name, st.description = $description, st.bindsAt = coalesce($bindsAt, st.bindsAt)
+    RETURN properties(st) AS subjectType
+`;
+
+export const updateSubjectType = async (id: string, input: UpdateSubjectTypeInput) => {
+    const params = { id, name: input.name, description: input.description ?? '', bindsAt: input.bindsAt ?? null };
+    const raw: any = await db().exec(UPDATE_SUBJECT_TYPE, params);
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    if (!row?.subjectType) throw new Error(`SubjectType not found: ${id}`);
+    // A tenant provisioned before this id existed simply has no matching row to SET —
+    // MATCH affecting zero rows is not an error, so no per-tenant existence check here.
+    await replicateToTenants(UPDATE_SUBJECT_TYPE, params);
+    // upsertSubjectTypeSeedRow's patch must omit bindsAt entirely when unchanged —
+    // unlike the Cypher side, it has no coalesce; passing bindsAt: null here would
+    // write the literal string "null" into the CSV.
+    upsertSubjectTypeSeedRow({
+        id,
+        name: input.name,
+        description: input.description ?? '',
+        ...(input.bindsAt ? { bindsAt: input.bindsAt } : {}),
+    });
+    return row.subjectType;
+};
+
+// Retire, never delete (subtype-registry-plan.md decision 4) — a hard delete would
+// orphan every BINDS_TO_TYPE/OF_TYPE edge pointing at this row.
+const RETIRE_SUBJECT_TYPE = `
+    MATCH (st:SubjectType {id: $id})
+    SET st.status = 'retired'
+    RETURN properties(st) AS subjectType
+`;
+
+export const retireSubjectType = async (id: string) => {
+    const raw: any = await db().exec(RETIRE_SUBJECT_TYPE, { id });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+    if (!row?.subjectType) throw new Error(`SubjectType not found: ${id}`);
+    await replicateToTenants(RETIRE_SUBJECT_TYPE, { id });
+    upsertSubjectTypeSeedRow({ id, status: 'retired' });
+    return row.subjectType;
+};
+
+const SUBJECT_TYPE_OBLIGATION_USAGE = `
+    MATCH (st:SubjectType {id: $id})
+    OPTIONAL MATCH (obl:Obligation)-[:BINDS_TO_TYPE]->(st)
+    RETURN count(DISTINCT obl) AS obligationCount, collect(DISTINCT obl.id) AS obligationIds
+`;
+
+const TENANT_SUBJECT_TYPE_ASSET_USAGE = `
+    MATCH (a:Asset)-[:OF_TYPE]->(:SubjectType {id: $id})
+    RETURN count(a) AS assetCount
+`;
+
+// Assets live in per-tenant Neo4j databases, not the catalog database, so the
+// OF_TYPE count isn't a single query — loop every registered tenant's own database
+// and sum. Required before any retire decision (subtype-registry-plan.md decision 5):
+// retiring a SubjectType still in use would silently break obligation mapping or
+// tenant classification for whoever's using it.
+export const getSubjectTypeUsage = async (id: string) => {
+    const raw: any = await db().fetch(SUBJECT_TYPE_OBLIGATION_USAGE, { id });
+    const row = Array.isArray(raw) ? raw[0] : raw;
+
+    const tenants = await listTenants();
+    const assetsByTenant = await Promise.all(tenants.map(async (tenant: any) => {
+        const tenantDb = DB.get(tenant.database, {
+            uri: config.db.twin.uri,
+            user: config.db.twin.user,
+            password: config.db.twin.password,
+        });
+        const tenantRaw: any = await tenantDb.fetch(TENANT_SUBJECT_TYPE_ASSET_USAGE, { id });
+        const tenantRow = Array.isArray(tenantRaw) ? tenantRaw[0] : tenantRaw;
+        return { tenantId: tenant.id, assetCount: tenantRow?.assetCount ?? 0 };
+    }));
+
+    return {
+        obligationCount: row?.obligationCount ?? 0,
+        obligationIds: row?.obligationIds ?? [],
+        assetCount: assetsByTenant.reduce((sum, t) => sum + t.assetCount, 0),
+        assetsByTenant: assetsByTenant.filter((t) => t.assetCount > 0),
+    };
 };
 
 export const getLastSyncedAt = async () => {

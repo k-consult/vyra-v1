@@ -211,10 +211,10 @@ function DecisionRow({ decision, people, subjectTypes, onResolved, onViewResult 
                                     <select
                                         value={subjectTypeChoice}
                                         onChange={(e) => setSubjectTypeChoice(e.target.value)}
-                                        title="Override the agent's recommended SubjectType before approving"
+                                        title="Override the agent's recommended Asset Category before approving"
                                         className="min-w-0 flex-1 rounded border border-sky-800/60 bg-zinc-950 px-1.5 py-1 text-[10px] text-sky-300"
                                     >
-                                        <option value={NONE_SUBJECT_TYPE}>None — no SubjectType applies</option>
+                                        <option value={NONE_SUBJECT_TYPE}>None — no Asset Category applies</option>
                                         {assetSubjectTypes.map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
                                     </select>
                                 </div>

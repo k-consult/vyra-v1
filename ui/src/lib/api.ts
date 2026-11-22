@@ -36,10 +36,10 @@ const post = async <T>(path: string, body?: any, opts?: ReqOpts): Promise<T> => 
     return res.json();
 };
 
-const patch = async <T>(path: string, body?: any): Promise<T> => {
+const patch = async <T>(path: string, body?: any, opts?: ReqOpts): Promise<T> => {
     const res = await fetch(`${BASE}${path}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...tenantHeaders() },
+        headers: { 'Content-Type': 'application/json', ...tenantHeaders(opts) },
         body: JSON.stringify(body ?? {}),
     });
     if (!res.ok) {
@@ -159,7 +159,35 @@ export const catalog = {
     authorities:     (opts?: ReqOpts) => get<{ authorities: any[] }>('/catalog/authorities', opts),
     jurisdictions:   (opts?: ReqOpts) => get<{ jurisdictions: any[] }>('/catalog/jurisdictions', opts),
     complianceAreas: (opts?: ReqOpts) => get<{ complianceAreas: any[] }>('/catalog/compliance-areas', opts),
-    subjectTypes:    (opts?: ReqOpts) => get<{ subjectTypes: any[] }>('/catalog/subject-types', opts),
+    subjectTypes:    (includeRetired?: boolean, opts?: ReqOpts) => get<{ subjectTypes: any[] }>(`/catalog/subject-types${includeRetired ? '?includeRetired=true' : ''}`, opts),
+    // SubjectType is Vyra-Central-only reference data (subtype-registry-plan.md
+    // decision 1) — these always force `central: true`, regardless of whichever
+    // tenant is active elsewhere in the app, same invariant `syncStatus`/`regulations`
+    // enforce on the global (non-tenantScoped) CatalogView.
+    addSubjectType:  (input: AddSubjectTypeInput) => post<{ subjectType: any }>('/catalog/subject-types', input, { central: true }),
+    updateSubjectType: (id: string, input: UpdateSubjectTypeInput) => patch<{ subjectType: any }>(`/catalog/subject-types/${id}`, input, { central: true }),
+    retireSubjectType: (id: string) => post<{ subjectType: any }>(`/catalog/subject-types/${id}/retire`, {}, { central: true }),
+    subjectTypeUsage: (id: string) => get<{ subjectTypeId: string; usage: SubjectTypeUsage }>(`/catalog/subject-types/${id}/usage`, { central: true }),
+};
+
+export type AddSubjectTypeInput = {
+    id: string;
+    name: string;
+    bindsAt: string;
+    description?: string;
+};
+
+export type UpdateSubjectTypeInput = {
+    name: string;
+    description?: string;
+    bindsAt?: string;
+};
+
+export type SubjectTypeUsage = {
+    obligationCount: number;
+    obligationIds: string[];
+    assetCount: number;
+    assetsByTenant: { tenantId: string; assetCount: number }[];
 };
 
 export type ProposeContractInput = {

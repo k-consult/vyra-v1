@@ -9,7 +9,7 @@ import { formatValue } from '@/features/validation/display';
 import { PageHeader } from '@/components/page-header';
 import { CalendarView } from '@/features/calendar/calendar';
 
-type View = 'regulations' | 'obligations' | 'graph' | 'calendar';
+type View = 'regulations' | 'obligations' | 'classifications' | 'graph' | 'calendar';
 
 function EmptyState({ label }: { label: string }) {
     return (
@@ -132,7 +132,7 @@ function ChainRow({ row, complianceAreaName, reportAuthorityName }: { row: any; 
             </div>
             <PropRow label="obligation" value={row.obligation?.name} />
             <PropRow label="mandatory" value={row.obligation?.mandatory} />
-            {row.subjectType && <PropRow label="binds to" value={`${row.subjectType.name} (${row.subjectType.bindsAt})`} />}
+            {row.subjectType && <PropRow label="binds to" value={row.subjectType.name} />}
             <TagPills tags={row.obligation?.tags} />
             {row.control ? (
                 <>
@@ -364,6 +364,246 @@ function ProposeObligationForm({ clauses, onProposed, reqOpts }: { clauses: any[
     );
 }
 
+// "General" (added 2026-11-22) names no tenant node type — unlike Site/Organisation/
+// Asset, a General classification is never an OF_TYPE target; it's descriptive
+// catalog vocabulary for concepts like Deep Burial Pit / Hazardous Waste Yard that
+// are real regulated things but not literally a tenant's physical Asset/Facility/
+// Organisation. It groups under the "Others" facet the same way Site/Organisation do
+// (the facet filter is just "not Asset" — General needs no special-casing there).
+const CLASSIFICATION_CATEGORIES = ['Site', 'Organisation', 'Asset', 'General'] as const;
+type ClassificationCategory = typeof CLASSIFICATION_CATEGORIES[number];
+
+// "Site" is the business-facing word for the graph's Facility bindsAt grain (matches
+// ST-SITE's own name) — kept distinct from the internal tenant-node-label vocabulary
+// so an admin never has to know what "Facility" means at the graph layer.
+const CATEGORY_TO_BINDS_AT: Record<ClassificationCategory, string> = { Site: 'Facility', Organisation: 'Organisation', Asset: 'Asset', General: 'General' };
+const BINDS_AT_TO_CATEGORY: Record<string, string> = { Facility: 'Site', Organisation: 'Organisation', Asset: 'Asset', General: 'General' };
+
+// Shown under the Category select so an admin picking a category sees what it means,
+// not just its name — only General needs this today (the other three are
+// self-explanatory tenant-node grains).
+const CATEGORY_DESCRIPTIONS: Partial<Record<ClassificationCategory, string>> = {
+    General: 'Everything owned by a site/organisation — not a discrete physical asset.',
+};
+
+// Direct admin write, no Decision gate (subtype-registry-plan.md's scoped-down
+// 2026-11-22 decision — a Vyra Central admin editing central reference data is the
+// only actor here, so there's no second party for a propose/ratify step to check).
+// Central-catalog-only (decision 1): api.ts's subjectType* client functions always
+// force `central: true`. Facet-driven like Regulations/Obligations (2026-11-22
+// restructure) — ASSETS/OTHERS live in the shared facet rail (CatalogView's
+// <aside>), so `subjectTypes`/`facet` are props, not locally fetched state.
+function ClassificationsPanel({ subjectTypes, facet, includeRetired, onIncludeRetiredChange, onChanged }: {
+    subjectTypes: any[];
+    facet: 'assets' | 'others';
+    includeRetired: boolean;
+    onIncludeRetiredChange: (v: boolean) => void;
+    onChanged: () => void;
+}) {
+    const visible = useMemo(
+        () => subjectTypes.filter((st: any) => (facet === 'assets' ? st.bindsAt === 'Asset' : st.bindsAt !== 'Asset')),
+        [subjectTypes, facet]
+    );
+
+    const [adding, setAdding] = useState(false);
+    const [newName, setNewName] = useState('');
+    const [newCategory, setNewCategory] = useState<ClassificationCategory>('Asset');
+    const [newDescription, setNewDescription] = useState('');
+    const [addError, setAddError] = useState<string | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+
+    // id is never typed — ST-<NAME_UPPER_SNAKE>, auto-derived from Name, matching the
+    // existing ST- id family (ST-SITE, ST-DG_SET, ...) rather than a new prefix.
+    const newId = newName.trim() ? `ST-${newName.trim().toUpperCase().replace(/\s+/g, '_')}` : '';
+
+    const submitAdd = () => {
+        setSubmitting(true);
+        setAddError(null);
+        catalog.addSubjectType({ id: newId, name: newName.trim(), bindsAt: CATEGORY_TO_BINDS_AT[newCategory], description: newDescription || undefined })
+            .then(() => {
+                setAdding(false);
+                setNewName(''); setNewCategory('Asset'); setNewDescription('');
+                onChanged();
+            })
+            .catch((err: any) => setAddError(err.message))
+            .finally(() => setSubmitting(false));
+    };
+
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editName, setEditName] = useState('');
+    const [editDescription, setEditDescription] = useState('');
+    const [editCategory, setEditCategory] = useState<ClassificationCategory>('Asset');
+    const [editOriginalCategory, setEditOriginalCategory] = useState<ClassificationCategory>('Asset');
+    const [editError, setEditError] = useState<string | null>(null);
+
+    const startEdit = (st: any) => {
+        setEditingId(st.id);
+        setEditName(st.name ?? '');
+        setEditDescription(st.description ?? '');
+        const category = (BINDS_AT_TO_CATEGORY[st.bindsAt] ?? st.bindsAt) as ClassificationCategory;
+        setEditCategory(category);
+        setEditOriginalCategory(category);
+        setEditError(null);
+    };
+
+    const submitEdit = () => {
+        if (!editingId) return;
+        setEditError(null);
+        // bindsAt is only sent when the category actually changed — the backend
+        // treats a present bindsAt as "change it" and runs the zero-usage gate, which
+        // would otherwise block a routine name/description edit on an in-use row for
+        // no reason.
+        const categoryChanged = editCategory !== editOriginalCategory;
+        catalog.updateSubjectType(editingId, {
+            name: editName,
+            description: editDescription || undefined,
+            ...(categoryChanged ? { bindsAt: CATEGORY_TO_BINDS_AT[editCategory] } : {}),
+        })
+            .then(() => { setEditingId(null); onChanged(); })
+            .catch((err: any) => setEditError(err.message));
+    };
+
+    // Retire gated behind the usage view (subtype-registry-plan.md decision 5) —
+    // retiring a classification still bound to Obligations or classified Assets
+    // would silently break obligation mapping or tenant classification.
+    const [retireTarget, setRetireTarget] = useState<string | null>(null);
+    const [usage, setUsage] = useState<any>(null);
+    const [usageLoading, setUsageLoading] = useState(false);
+    const [retiring, setRetiring] = useState(false);
+
+    const openRetire = (id: string) => {
+        setRetireTarget(id);
+        setUsage(null);
+        setUsageLoading(true);
+        catalog.subjectTypeUsage(id)
+            .then(r => setUsage(r.usage))
+            .finally(() => setUsageLoading(false));
+    };
+
+    const confirmRetire = () => {
+        if (!retireTarget) return;
+        setRetiring(true);
+        catalog.retireSubjectType(retireTarget)
+            .then(() => { setRetireTarget(null); onChanged(); })
+            .finally(() => setRetiring(false));
+    };
+
+    return (
+        <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+                {adding ? null : (
+                    <button
+                        onClick={() => setAdding(true)}
+                        className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs text-zinc-400 hover:border-zinc-700 hover:text-zinc-200 transition-colors"
+                    >
+                        <Plus size={13} /> Add classification
+                    </button>
+                )}
+                <label className="flex items-center gap-2 text-xs text-zinc-400 ml-auto">
+                    <input type="checkbox" checked={includeRetired} onChange={e => onIncludeRetiredChange(e.target.checked)} />
+                    show retired
+                </label>
+            </div>
+
+            {adding && (
+                <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 flex flex-col gap-3">
+                    <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">Add Classification</p>
+                    <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="name (e.g. Fire System)" className="bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200" />
+                    <input value={newDescription} onChange={e => setNewDescription(e.target.value)} placeholder="description" className="bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200" />
+                    <select value={newCategory} onChange={e => setNewCategory(e.target.value as ClassificationCategory)} className="bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200">
+                        {CLASSIFICATION_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                    {CATEGORY_DESCRIPTIONS[newCategory] && <p className="text-[10px] text-zinc-500">{CATEGORY_DESCRIPTIONS[newCategory]}</p>}
+                    {newId && <p className="text-[10px] text-zinc-600 font-mono">id: {newId}</p>}
+                    {addError && <p className="text-[11px] text-red-400">{addError}</p>}
+                    <div className="flex gap-2">
+                        <button onClick={submitAdd} disabled={submitting || !newName.trim()} className="text-xs px-3 py-1.5 rounded bg-emerald-600 text-zinc-950 disabled:opacity-40">
+                            {submitting ? 'Adding…' : 'Add'}
+                        </button>
+                        <button onClick={() => setAdding(false)} className="text-xs px-3 py-1.5 rounded border border-zinc-800 text-zinc-400">Cancel</button>
+                    </div>
+                </div>
+            )}
+
+            <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mt-1">
+                Classifications · {visible.length}
+            </p>
+
+            {visible.length === 0 ? (
+                <EmptyState label="No classifications match." />
+            ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                    {visible.map((st: any) => (
+                        <div key={st.id} className="rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 flex flex-col gap-2">
+                            <div className="flex items-center justify-between">
+                                <p className="text-[11px] font-mono text-zinc-500">{st.id}</p>
+                                {st.status === 'retired' && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-500">retired</span>
+                                )}
+                            </div>
+
+                            {editingId === st.id ? (
+                                <div className="flex flex-col gap-2">
+                                    <input value={editName} onChange={e => setEditName(e.target.value)} className="bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200" />
+                                    <input value={editDescription} onChange={e => setEditDescription(e.target.value)} placeholder="description" className="bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200" />
+                                    <select value={editCategory} onChange={e => setEditCategory(e.target.value as ClassificationCategory)} className="bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200">
+                                        {CLASSIFICATION_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                    </select>
+                                    {CATEGORY_DESCRIPTIONS[editCategory] && <p className="text-[10px] text-zinc-500">{CATEGORY_DESCRIPTIONS[editCategory]}</p>}
+                                    {editCategory !== editOriginalCategory && (
+                                        <p className="text-[10px] text-amber-400">Category change will be rejected if this classification is still in use (checked on save).</p>
+                                    )}
+                                    {editError && <p className="text-[11px] text-red-400">{editError}</p>}
+                                    <div className="flex gap-2">
+                                        <button onClick={submitEdit} disabled={!editName} className="text-xs px-3 py-1.5 rounded bg-emerald-600 text-zinc-950 disabled:opacity-40">Save</button>
+                                        <button onClick={() => setEditingId(null)} className="text-xs px-3 py-1.5 rounded border border-zinc-800 text-zinc-400">Cancel</button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <p className="text-sm text-zinc-200 font-medium">{st.name}</p>
+                                    <PropRow label="category" value={BINDS_AT_TO_CATEGORY[st.bindsAt] ?? st.bindsAt} />
+                                    {st.description && <p className="text-xs text-zinc-500">{st.description}</p>}
+                                </>
+                            )}
+
+                            {editingId !== st.id && st.status !== 'retired' && (
+                                <div className="flex gap-2 mt-1">
+                                    <button onClick={() => startEdit(st)} className="text-[11px] px-2 py-1 rounded border border-zinc-800 text-zinc-400 hover:text-zinc-200">Edit</button>
+                                    <button onClick={() => openRetire(st.id)} className="text-[11px] px-2 py-1 rounded border border-zinc-800 text-zinc-400 hover:text-amber-400">Retire…</button>
+                                </div>
+                            )}
+
+                            {retireTarget === st.id && (
+                                <div className="mt-2 rounded border border-amber-900/50 bg-amber-950/20 px-3 py-2 flex flex-col gap-2">
+                                    {usageLoading ? (
+                                        <p className="text-[11px] text-zinc-500">Checking usage…</p>
+                                    ) : (
+                                        <>
+                                            <p className="text-[11px] text-zinc-400">
+                                                {usage?.obligationCount ?? 0} obligation(s) bind to this classification; {usage?.assetCount ?? 0} asset(s) across all tenants are classified under it.
+                                            </p>
+                                            {(usage?.obligationCount > 0 || usage?.assetCount > 0) && (
+                                                <p className="text-[11px] text-amber-400">Retiring will not remove these references, but new classification/binding against this type should stop.</p>
+                                            )}
+                                        </>
+                                    )}
+                                    <div className="flex gap-2">
+                                        <button onClick={confirmRetire} disabled={usageLoading || retiring} className="text-xs px-3 py-1.5 rounded bg-amber-600 text-zinc-950 disabled:opacity-40">
+                                            {retiring ? 'Retiring…' : 'Confirm retire'}
+                                        </button>
+                                        <button onClick={() => setRetireTarget(null)} className="text-xs px-3 py-1.5 rounded border border-zinc-800 text-zinc-400">Cancel</button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ── Root view ─────────────────────────────────────────────────────────────────
 
 // tenantScoped unset (default) is the global Control-Plane /catalog screen — it
@@ -385,6 +625,8 @@ export function CatalogView({ tenantScoped = false }: { tenantScoped?: boolean }
     const [jurisdictions, setJurisdictions] = useState<any[]>([]);
     const [complianceAreas, setComplianceAreas] = useState<any[]>([]);
     const [subjectTypes, setSubjectTypes] = useState<any[]>([]);
+    const [classificationFacet, setClassificationFacet] = useState<'assets' | 'others'>('assets');
+    const [includeRetiredClassifications, setIncludeRetiredClassifications] = useState(false);
     const [clauses, setClauses] = useState<any[]>([]);
     const [controls, setControls] = useState<any[]>([]);
 
@@ -416,7 +658,7 @@ export function CatalogView({ tenantScoped = false }: { tenantScoped?: boolean }
             catalog.authorities(reqOpts),
             catalog.jurisdictions(reqOpts),
             catalog.complianceAreas(reqOpts),
-            catalog.subjectTypes(reqOpts),
+            catalog.subjectTypes(includeRetiredClassifications, reqOpts),
             catalog.clauses(reqOpts),
             catalog.controls(reqOpts),
             uncontrolledOnly ? catalog.uncontrolledObligations(reqOpts) : catalog.obligations(reqOpts),
@@ -454,7 +696,7 @@ export function CatalogView({ tenantScoped = false }: { tenantScoped?: boolean }
         }
     };
 
-    useEffect(load, [currentOnly, uncontrolledOnly]);
+    useEffect(load, [currentOnly, uncontrolledOnly, includeRetiredClassifications]);
 
     // The selected regulation (and its chain/history) can fall outside the Authority
     // facet's new result set the moment it changes — clearing the selection here is
@@ -725,7 +967,7 @@ export function CatalogView({ tenantScoped = false }: { tenantScoped?: boolean }
 
             <PageHeader icon={BookOpen} iconClassName="text-emerald-400" title="Catalog" subtitle="Regulation → Clause → Obligation → Control">
                 <div className="flex items-center gap-1 rounded-md border border-zinc-800 p-0.5">
-                    {(['regulations', 'obligations', 'graph', 'calendar'] as View[]).map(v => (
+                    {((tenantScoped ? ['regulations', 'obligations', 'graph', 'calendar'] : ['regulations', 'obligations', 'classifications', 'graph', 'calendar']) as View[]).map(v => (
                         <button
                             key={v}
                             onClick={() => setView(v)}
@@ -823,7 +1065,7 @@ export function CatalogView({ tenantScoped = false }: { tenantScoped?: boolean }
                                 onToggle={v => toggleInSet(versionStatusFilter, setVersionStatusFilter, v)}
                             />
                         </>
-                    ) : (
+                    ) : view === 'obligations' ? (
                         <>
                             <label className="flex items-center gap-2 text-xs text-zinc-400">
                                 <input type="checkbox" checked={mandatoryOnly} onChange={e => setMandatoryOnly(e.target.checked)} />
@@ -833,6 +1075,17 @@ export function CatalogView({ tenantScoped = false }: { tenantScoped?: boolean }
                                 {uncontrolledOnly && <ShieldAlert size={12} className="text-amber-500 shrink-0" />}
                                 <input type="checkbox" checked={uncontrolledOnly} onChange={e => setUncontrolledOnly(e.target.checked)} />
                                 uncontrolled only
+                            </label>
+                        </>
+                    ) : (
+                        <>
+                            <label className="flex items-center gap-2 text-xs text-zinc-400">
+                                <input type="radio" name="classification-facet" checked={classificationFacet === 'assets'} onChange={() => setClassificationFacet('assets')} />
+                                Assets
+                            </label>
+                            <label className="flex items-center gap-2 text-xs text-zinc-400">
+                                <input type="radio" name="classification-facet" checked={classificationFacet === 'others'} onChange={() => setClassificationFacet('others')} />
+                                Others
                             </label>
                         </>
                     )}
@@ -894,6 +1147,16 @@ export function CatalogView({ tenantScoped = false }: { tenantScoped?: boolean }
                             </div>
                         )}
                     </>
+                ) : view === 'classifications' ? (
+                    <div className="flex-1 min-w-0 overflow-auto px-6 py-4">
+                        <ClassificationsPanel
+                            subjectTypes={subjectTypes}
+                            facet={classificationFacet}
+                            includeRetired={includeRetiredClassifications}
+                            onIncludeRetiredChange={setIncludeRetiredClassifications}
+                            onChanged={load}
+                        />
+                    </div>
                 ) : (
                     <div className="flex-1 min-w-0 overflow-auto px-6 py-4 flex flex-col gap-3">
                         <ProposeObligationForm clauses={clauses} onProposed={load} reqOpts={reqOpts} />
