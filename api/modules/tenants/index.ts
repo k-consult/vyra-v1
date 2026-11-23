@@ -16,7 +16,7 @@ const tenants: any = async (fastify: FastifyInstance) => {
     // than introducing one for a first, simple provisioning step.
     fastify.post('/', async (req: any, reply) => {
         try {
-            spec.isValidTenantProvisionRequest(req.body ?? {});
+            await spec.isValidTenantProvisionRequest(req.body ?? {});
         } catch (err: any) {
             return reply.code(400).send({ error: err.message });
         }

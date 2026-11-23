@@ -17,7 +17,7 @@ function formatCreatedAt(createdAt: any): string {
     return `${year}-${pad(month)}-${pad(day)} ${pad(hour)}:${pad(minute)}`;
 }
 
-function NewTenantForm({ onCreated, onCancel }: { onCreated: () => void; onCancel: () => void }) {
+function NewTenantForm({ onCreated, onCancel }: { onCreated: (name: string) => void; onCancel: () => void }) {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -28,9 +28,9 @@ function NewTenantForm({ onCreated, onCancel }: { onCreated: () => void; onCance
         setError(null);
         tenants.provision({ name, description: description || undefined })
             .then(() => {
+                onCreated(name);
                 setName('');
                 setDescription('');
-                onCreated();
             })
             .catch((err: any) => setError(err.message))
             .finally(() => setSubmitting(false));
@@ -197,7 +197,12 @@ export function TenantManagementDialog({ open, onClose }: { open: boolean; onClo
                 </button>
             }
         >
-            {creating && <NewTenantForm onCreated={() => { setCreating(false); loadList(); }} onCancel={() => setCreating(false)} />}
+            {/* Switches straight to the new tenant on creation, same as activate()
+                does for an existing one — otherwise the active tenant stays
+                whatever it was before, and every view (Onboarding's Blueprint
+                stage included) keeps reading that tenant's data, which looks
+                exactly like the new tenant's structure "copied" from the old one. */}
+            {creating && <NewTenantForm onCreated={(name) => { setCreating(false); activate(name); }} onCancel={() => setCreating(false)} />}
 
             {activeTenant && (
                 <button onClick={() => activate(null)} className="text-[10px] text-zinc-500 hover:text-zinc-300 underline mb-2">

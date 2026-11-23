@@ -13,9 +13,9 @@ export const RESERVED_LABELS = new Set(['Facility', 'Asset']);
 // three labels is blocked at spec.ts's isValidLevelRemoval.
 export const UNDELETABLE_LABELS = new Set(['Organisation', 'Facility', 'Asset']);
 
-// Roles stamped only on specific seeded properties (api/modules/blueprint/
-// repo.ts's seedDefaultBlueprint) — never settable through the public
-// add/update-property API. This is what lets structure-sync.ts resolve
+// Roles stamped only by a blueprint restore (api/modules/blueprint/repo.ts's
+// restoreBlueprint) — never settable through the public add/update-property
+// API. This is what lets structure-sync.ts resolve
 // "which property is this Facility/Asset's identifier/display name/etc"
 // without hardcoding a literal ingestKey string, so every property stays
 // fully editable (including a rename) without breaking ingestion or silently

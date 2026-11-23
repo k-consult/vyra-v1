@@ -4,7 +4,6 @@ import * as path from 'path';
 import { DB } from '../../../lib/graph-db';
 import { config } from '../../../lib/config';
 import log from '../../../lib/log';
-import { seedDefaultBlueprint } from '../blueprint/repo';
 
 const credentials = () => ({
     uri: config.db.twin.uri,
@@ -99,6 +98,8 @@ export const getTenant = async (name: string) => {
     return row?.tenant ?? null;
 };
 
+export const tenantExists = async (name: string): Promise<boolean> => !!(await getTenant(name));
+
 // Registers (or refreshes, on re-provision) the tenant's entry — never a password or
 // any other credential, only what's needed to resolve which database a tenant's
 // requests should hit. createdAt is stamped once via ON CREATE; every other field is
@@ -183,11 +184,12 @@ export const provisionTenant = async (input: ProvisionTenantInput) => {
     await runCatalogSync(null, databaseName);
     const authoritiesLoaded = listAuthorityBoards();
 
-    // Standard 7-level org/location/asset hierarchy every tenant starts with —
-    // structure-sync.ts reads this back to know what CSV columns to expect and
-    // what real nodes to create (graph.md's Tenant Blueprint Graph).
-    await seedDefaultBlueprint(databaseName);
-
+    // Deliberately no blueprint seeding here — a new tenant's org/location/asset
+    // hierarchy starts empty (api/modules/blueprint/repo.ts's getBlueprint
+    // returns `levels: []` for it), surfaced as the Onboarding wizard's first,
+    // empty-state Blueprint stage. The admin either builds it via Add Level or
+    // restores one from an exported JSON (POST /blueprint/restore) — never an
+    // implicit copy of a standard template they didn't ask for.
     const tenant = await registerTenant({
         name: input.name,
         description: input.description ?? '',

@@ -37,21 +37,19 @@ interface LevelRow {
 }
 
 // Fetches the tenant's singleton blueprint as an ordered Level[] tree, each
-// carrying its Property[]. Ensures the singleton exists first — a tenant
-// provisioned before this feature landed would otherwise 404 on first read.
-// If it has no Levels at all (same "provisioned before this landed" case,
-// structure-sync.ts's "no TenantBlueprint found" error), self-heals by
-// seeding the standard default hierarchy rather than leaving it an empty
-// tree a human has to notice and rebuild by hand.
+// carrying its Property[]. Ensures the singleton TenantBlueprint anchor node
+// exists first so STARTS has somewhere to attach once a Level is added — this
+// is the only auto-write here. A tenant with no Levels yet (every tenant,
+// right after provisioning — see tenants/repo.ts's provisionTenant, which
+// deliberately seeds nothing) returns an empty `levels: []`, not a silently
+// materialized default: the Blueprint onboarding stage's own empty-state UI
+// (ui/src/features/tenant/blueprint.tsx's AddLevelForm) is what a human sees,
+// and restoreBlueprint (below) is the other legitimate way to populate it —
+// never an implicit side effect of reading it.
 export const getBlueprint = async (databaseName?: string) => {
     await db(databaseName).exec(ENSURE_BLUEPRINT, { id: BLUEPRINT_ID });
-    let raw: any = await db(databaseName).fetch(GET_BLUEPRINT_LEVELS, { id: BLUEPRINT_ID });
-    let rows: LevelRow[] = Array.isArray(raw) ? raw : [raw];
-    if (!rows.some(r => r?.level)) {
-        await seedDefaultBlueprint(databaseName);
-        raw = await db(databaseName).fetch(GET_BLUEPRINT_LEVELS, { id: BLUEPRINT_ID });
-        rows = Array.isArray(raw) ? raw : [raw];
-    }
+    const raw: any = await db(databaseName).fetch(GET_BLUEPRINT_LEVELS, { id: BLUEPRINT_ID });
+    const rows: LevelRow[] = Array.isArray(raw) ? raw : [raw];
     const levels = rows
         .filter(r => r?.level)
         .map(r => ({ ...r.level, properties: (r.properties ?? []).filter(Boolean) }));
@@ -395,64 +393,6 @@ export const getStructureTree = async (databaseName?: string): Promise<TreeNode[
         else roots.push(entry);
     }
     return roots;
-};
-
-// The standard 7-level hierarchy every tenant is seeded with at provisioning —
-// Facility/Asset are reserved aliases onto the two already-live node types (see
-// graph.md's Tenant Blueprint Graph section), every other module keeps working
-// against them untouched.
-const DEFAULT_HIERARCHY: Array<{ name: string; alias?: string; properties: Array<{ ingestKey: string; name: string; role?: PropertyRole }> }> = [
-    { name: 'Organisation', properties: [{ ingestKey: 'ORGANISATION_NAME', name: 'Organisation Name' }] },
-    { name: 'Business Unit', properties: [{ ingestKey: 'BUSINESS_UNIT_NAME', name: 'Business Unit Name' }] },
-    {
-        name: 'Facility', alias: 'Site',
-        properties: [
-            { ingestKey: 'SITE_CODE', name: 'Site Code', role: 'code' },
-            { ingestKey: 'SITE_NAME', name: 'Site Name', role: 'name' },
-        ],
-    },
-    { name: 'Building', properties: [{ ingestKey: 'BUILDING_NAME', name: 'Building Name' }] },
-    { name: 'Floor', properties: [{ ingestKey: 'FLOOR_NAME', name: 'Floor Name' }] },
-    { name: 'Area', properties: [{ ingestKey: 'AREA_NAME', name: 'Area Name' }] },
-    {
-        name: 'Asset',
-        properties: [
-            { ingestKey: 'ASSET_CODE', name: 'Asset Code', role: 'code' },
-            { ingestKey: 'ASSET_NAME', name: 'Asset Name', role: 'name' },
-            { ingestKey: 'ASSET_CATEGORY', name: 'Asset Category', role: 'category' },
-            { ingestKey: 'ASSET_TYPE', name: 'Asset Type', role: 'assetType' },
-        ],
-    },
-];
-
-// Called from tenants/repo.ts's provisionTenant against the freshly-created
-// tenant database (explicit databaseName, no ambient tenant-context yet), and
-// from getBlueprint above as a self-heal for a tenant provisioned before this
-// feature existed (ambient databaseName, possibly undefined) — idempotent
-// (MERGE throughout) either way, so calling it against an already-seeded
-// tenant is harmless.
-export const seedDefaultBlueprint = async (databaseName?: string): Promise<void> => {
-    await db(databaseName).exec(ENSURE_BLUEPRINT, { id: BLUEPRINT_ID });
-    const orderedIds: string[] = [];
-    for (const level of DEFAULT_HIERARCHY) {
-        const id = `LVL-${labelFromName(level.name)}`;
-        orderedIds.push(id);
-        await db(databaseName).exec(UPSERT_LEVEL, {
-            id,
-            props: { name: level.name, alias: level.alias ?? '', description: '' },
-        });
-        for (const prop of level.properties) {
-            await db(databaseName).exec(UPSERT_PROPERTY, {
-                id: `PROP-${prop.ingestKey}`,
-                levelId: id,
-                // `role` only ever stamped here, at seed time — not part of
-                // AddPropertyInput/updateProperty's public surface, so a user
-                // can freely rename/edit the property without ever touching it.
-                props: { name: prop.name, ingestKey: prop.ingestKey, description: '', dataType: 'STRING', defaultValue: '', required: false, role: prop.role ?? '' },
-            });
-        }
-    }
-    await rebuildChain(orderedIds, databaseName);
 };
 
 // Clean, portable JSON — ids/createdAt are derived (from name/ingestKey) and

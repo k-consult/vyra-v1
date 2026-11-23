@@ -65,8 +65,9 @@ interface BlueprintLevel {
 }
 
 // Resolves "which property is this Level's code/name" by the `role` stamp
-// seeded on it (api/modules/blueprint/repo.ts's seedDefaultBlueprint), not by
-// matching a literal ingestKey string — so renaming SITE_CODE/SITE_NAME/
+// on it (api/modules/blueprint/repo.ts's restoreBlueprint is the only path
+// that writes one — never exposed through the public add/update-property API),
+// not by matching a literal ingestKey string — so renaming SITE_CODE/SITE_NAME/
 // ASSET_CODE/ASSET_NAME (fully editable, same as any other property) never
 // breaks ingestion. Only Facility/Asset's reserved identity properties carry
 // a role; every other property returns undefined here and is never excluded.
@@ -94,7 +95,7 @@ async function main() {
 
     const levels = await fetchBlueprintLevels();
     if (!levels.length) {
-        log.error('[structure-sync] no TenantBlueprint found for this tenant — provisioning seeds one automatically; re-provision or seed one before uploading structure');
+        log.error('[structure-sync] this tenant has no blueprint levels yet — define one via the Onboarding wizard\'s Blueprint stage, or restore one from an exported JSON, before uploading structure');
         process.exit(1);
     }
     // Each Level's Neo4j label is derived from its `name` (no ingestKey of its
